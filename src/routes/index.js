@@ -1,0 +1,32 @@
+const express = require('express');
+const router = express.Router();
+
+const authRoutes = require('./authRoutes');
+const userRoutes = require('./userRoutes');
+const systemRoutes = require('./systemRoutes');
+const monitoringPointRoutes = require('./monitoringPointRoutes');
+const checklistItemRoutes = require('./checklistItemRoutes');
+const dailyLogRoutes = require('./dailyLogRoutes');
+const inspectionRoutes = require('./inspectionRoutes');
+const incidentRoutes = require('./incidentRoutes');
+const reportRoutes = require('./reportRoutes');
+const productRoutes = require('./productRoutes');
+const libraryRoutes = require('./libraryRoutes');
+const notificationRoutes = require('./notificationRoutes');
+const dashboardRoutes = require('./dashboardRoutes');
+
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/systems', systemRoutes);
+router.use('/monitoring-points', monitoringPointRoutes);
+router.use('/checklist-items', checklistItemRoutes);
+router.use('/daily-logs', dailyLogRoutes);
+router.use('/inspections', inspectionRoutes);
+router.use('/incidents', incidentRoutes);
+router.use('/reports', reportRoutes);
+router.use('/products', productRoutes);
+router.use('/library', libraryRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/dashboard', dashboardRoutes);
+
+module.exports = router;
