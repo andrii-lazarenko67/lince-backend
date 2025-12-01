@@ -23,7 +23,6 @@ const systemController = {
           {
             model: MonitoringPoint,
             as: 'monitoringPoints',
-            where: { isActive: true },
             required: false
           },
           {
@@ -52,7 +51,6 @@ const systemController = {
           {
             model: MonitoringPoint,
             as: 'monitoringPoints',
-            where: { isActive: true },
             required: false
           },
           {
