@@ -136,6 +136,40 @@ const authController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async updateProfile(req, res, next) {
+    try {
+      const { name, email, phone } = req.body;
+      const userId = req.user.id;
+
+      // Check if email is being changed and if it's already in use
+      if (email && email !== req.user.email) {
+        const existingUser = await User.findOne({ where: { email } });
+        if (existingUser) {
+          return res.status(400).json({
+            success: false,
+            message: 'Email is already in use'
+          });
+        }
+      }
+
+      // Build update object with only provided fields
+      const updateData = {};
+      if (name !== undefined) updateData.name = name;
+      if (email !== undefined) updateData.email = email;
+      if (phone !== undefined) updateData.phone = phone;
+
+      const user = await User.findByPk(userId);
+      await user.update(updateData);
+
+      res.json({
+        success: true,
+        data: user.toJSON()
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 
