@@ -34,10 +34,6 @@ module.exports = (sequelize, DataTypes) => {
     alertEnabled: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
-    },
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true
     }
   }, {
     tableName: 'MonitoringPoints',

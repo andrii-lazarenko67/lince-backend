@@ -3,12 +3,11 @@ const { MonitoringPoint, System } = require('../../db/models');
 const monitoringPointController = {
   async getAll(req, res, next) {
     try {
-      const { systemId, isActive } = req.query;
+      const { systemId } = req.query;
 
       const where = {};
 
       if (systemId) where.systemId = systemId;
-      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       const monitoringPoints = await MonitoringPoint.findAll({
         where,
@@ -30,7 +29,7 @@ const monitoringPointController = {
       const { systemId } = req.params;
 
       const monitoringPoints = await MonitoringPoint.findAll({
-        where: { systemId, isActive: true },
+        where: { systemId },
         order: [['name', 'ASC']]
       });
 
@@ -98,7 +97,7 @@ const monitoringPointController = {
 
   async update(req, res, next) {
     try {
-      const { name, parameter, unit, minValue, maxValue, alertEnabled, isActive } = req.body;
+      const { name, parameter, unit, minValue, maxValue, alertEnabled } = req.body;
 
       const monitoringPoint = await MonitoringPoint.findByPk(req.params.id);
 
@@ -115,8 +114,7 @@ const monitoringPointController = {
         unit: unit || monitoringPoint.unit,
         minValue: minValue !== undefined ? minValue : monitoringPoint.minValue,
         maxValue: maxValue !== undefined ? maxValue : monitoringPoint.maxValue,
-        alertEnabled: alertEnabled !== undefined ? alertEnabled : monitoringPoint.alertEnabled,
-        isActive: isActive !== undefined ? isActive : monitoringPoint.isActive
+        alertEnabled: alertEnabled !== undefined ? alertEnabled : monitoringPoint.alertEnabled
       });
 
       res.json({
@@ -139,11 +137,11 @@ const monitoringPointController = {
         });
       }
 
-      await monitoringPoint.update({ isActive: false });
+      await monitoringPoint.destroy();
 
       res.json({
         success: true,
-        message: 'Monitoring point deactivated successfully'
+        message: 'Monitoring point deleted successfully'
       });
     } catch (error) {
       next(error);
