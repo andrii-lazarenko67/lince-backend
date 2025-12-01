@@ -1,4 +1,4 @@
-const { System, DailyLog, DailyLogEntry, Inspection, Incident, Product, Notification, User, MonitoringPoint } = require('../../db/models');
+const { System, DailyLog, DailyLogEntry, Inspection, Incident, Product, NotificationRecipient, User, MonitoringPoint } = require('../../db/models');
 const { Op } = require('sequelize');
 
 const dashboardController = {
@@ -34,7 +34,7 @@ const dashboardController = {
       ).length;
 
       // Unread notifications for current user
-      const unreadNotifications = await Notification.count({
+      const unreadNotifications = await NotificationRecipient.count({
         where: { userId: req.user.id, isRead: false }
       });
 

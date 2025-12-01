@@ -7,10 +7,6 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true
     },
-    userId: {
-      type: DataTypes.INTEGER,
-      allowNull: false
-    },
     type: {
       type: DataTypes.ENUM('alert', 'incident', 'inspection', 'stock', 'system'),
       allowNull: false
@@ -27,14 +23,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('low', 'medium', 'high', 'critical'),
       defaultValue: 'medium'
     },
-    isRead: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false
-    },
-    readAt: {
-      type: DataTypes.DATE,
-      allowNull: true
-    },
     referenceType: {
       type: DataTypes.STRING(50),
       allowNull: true
@@ -42,14 +30,20 @@ module.exports = (sequelize, DataTypes) => {
     referenceId: {
       type: DataTypes.INTEGER,
       allowNull: true
+    },
+    createdById: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     tableName: 'Notifications',
-    timestamps: true
+    timestamps: true,
+    updatedAt: false
   });
 
   Notification.associate = function(models) {
-    Notification.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+    Notification.belongsTo(models.User, { foreignKey: 'createdById', as: 'createdBy' });
+    Notification.hasMany(models.NotificationRecipient, { foreignKey: 'notificationId', as: 'recipients' });
   };
 
   return Notification;

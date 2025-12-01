@@ -2,22 +2,13 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Create Notifications table (shared notification content)
     await queryInterface.createTable('Notifications', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
-      },
-      userId: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'Users',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
       },
       type: {
         type: Sequelize.ENUM('alert', 'incident', 'inspection', 'stock', 'system'),
@@ -35,14 +26,6 @@ module.exports = {
         type: Sequelize.ENUM('low', 'medium', 'high', 'critical'),
         defaultValue: 'medium'
       },
-      isRead: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false
-      },
-      readAt: {
-        type: Sequelize.DATE,
-        allowNull: true
-      },
       referenceType: {
         type: Sequelize.STRING(50),
         allowNull: true
@@ -51,18 +34,69 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: true
       },
-      createdAt: {
-        allowNull: false,
-        type: Sequelize.DATE
+      createdById: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Users',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
       },
-      updatedAt: {
+      createdAt: {
         allowNull: false,
         type: Sequelize.DATE
       }
     });
+
+    // Create NotificationRecipients table (tracks read status per user)
+    await queryInterface.createTable('NotificationRecipients', {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: Sequelize.INTEGER
+      },
+      notificationId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Notifications',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      },
+      userId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Users',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      },
+      isRead: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      }
+    });
+
+    // Add unique constraint to prevent duplicate recipient entries
+    await queryInterface.addIndex('NotificationRecipients', ['notificationId', 'userId'], {
+      unique: true,
+      name: 'notification_recipient_unique'
+    });
   },
 
   async down(queryInterface, Sequelize) {
+    await queryInterface.dropTable('NotificationRecipients');
     await queryInterface.dropTable('Notifications');
   }
 };
