@@ -29,6 +29,14 @@ module.exports = (sequelize, DataTypes) => {
     status: {
       type: DataTypes.ENUM('active', 'inactive', 'maintenance'),
       defaultValue: 'active'
+    },
+    parentId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Systems',
+        key: 'id'
+      }
     }
   }, {
     tableName: 'Systems',
@@ -36,6 +44,7 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   System.associate = function(models) {
+    // Regular associations
     System.hasMany(models.MonitoringPoint, { foreignKey: 'systemId', as: 'monitoringPoints' });
     System.hasMany(models.ChecklistItem, { foreignKey: 'systemId', as: 'checklistItems' });
     System.hasMany(models.DailyLog, { foreignKey: 'systemId', as: 'dailyLogs' });
@@ -43,6 +52,10 @@ module.exports = (sequelize, DataTypes) => {
     System.hasMany(models.Incident, { foreignKey: 'systemId', as: 'incidents' });
     System.hasMany(models.Document, { foreignKey: 'systemId', as: 'documents' });
     System.hasMany(models.ProductUsage, { foreignKey: 'systemId', as: 'productUsages' });
+
+    // Hierarchical associations (parent-child)
+    System.belongsTo(models.System, { foreignKey: 'parentId', as: 'parent' });
+    System.hasMany(models.System, { foreignKey: 'parentId', as: 'children' });
   };
 
   return System;

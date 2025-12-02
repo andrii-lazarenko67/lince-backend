@@ -4,12 +4,16 @@ const { Op } = require('sequelize');
 const systemController = {
   async getAll(req, res, next) {
     try {
-      const { status, type, search } = req.query;
+      const { status, type, search, parentId } = req.query;
 
       const where = {};
 
       if (status) where.status = status;
       if (type) where.type = type;
+      if (parentId !== undefined) {
+        // Filter by parent: if parentId is 'null' or '', get root systems only
+        where.parentId = parentId === 'null' || parentId === '' ? null : parentId;
+      }
       if (search) {
         where[Op.or] = [
           { name: { [Op.iLike]: `%${search}%` } },
@@ -29,6 +33,18 @@ const systemController = {
             model: ChecklistItem,
             as: 'checklistItems',
             where: { isActive: true },
+            required: false
+          },
+          {
+            model: System,
+            as: 'parent',
+            attributes: ['id', 'name', 'type'],
+            required: false
+          },
+          {
+            model: System,
+            as: 'children',
+            attributes: ['id', 'name', 'type', 'status'],
             required: false
           }
         ],
@@ -59,6 +75,18 @@ const systemController = {
             where: { isActive: true },
             required: false,
             order: [['order', 'ASC']]
+          },
+          {
+            model: System,
+            as: 'parent',
+            attributes: ['id', 'name', 'type'],
+            required: false
+          },
+          {
+            model: System,
+            as: 'children',
+            attributes: ['id', 'name', 'type', 'status', 'location'],
+            required: false
           }
         ]
       });
@@ -81,19 +109,43 @@ const systemController = {
 
   async create(req, res, next) {
     try {
-      const { name, type, location, description, status } = req.body;
+      const { name, type, location, description, status, parentId } = req.body;
+
+      // Validate parent exists if parentId is provided
+      if (parentId) {
+        const parent = await System.findByPk(parentId);
+        if (!parent) {
+          return res.status(404).json({
+            success: false,
+            message: 'Parent system not found'
+          });
+        }
+      }
 
       const system = await System.create({
         name,
         type,
         location,
         description,
-        status: status || 'active'
+        status: status || 'active',
+        parentId: parentId || null
+      });
+
+      // Fetch with associations for response
+      const createdSystem = await System.findByPk(system.id, {
+        include: [
+          {
+            model: System,
+            as: 'parent',
+            attributes: ['id', 'name', 'type'],
+            required: false
+          }
+        ]
       });
 
       res.status(201).json({
         success: true,
-        data: system
+        data: createdSystem
       });
     } catch (error) {
       next(error);
@@ -102,7 +154,7 @@ const systemController = {
 
   async update(req, res, next) {
     try {
-      const { name, type, location, description, status } = req.body;
+      const { name, type, location, description, status, parentId } = req.body;
 
       const system = await System.findByPk(req.params.id);
 
@@ -113,17 +165,71 @@ const systemController = {
         });
       }
 
+      // Validate parent exists if parentId is provided
+      if (parentId !== undefined && parentId !== null) {
+        // Prevent circular reference (system can't be its own parent)
+        if (parseInt(parentId) === parseInt(req.params.id)) {
+          return res.status(400).json({
+            success: false,
+            message: 'System cannot be its own parent'
+          });
+        }
+
+        const parent = await System.findByPk(parentId);
+        if (!parent) {
+          return res.status(404).json({
+            success: false,
+            message: 'Parent system not found'
+          });
+        }
+
+        // Prevent circular reference (parent can't be a child of this system)
+        const checkCircular = async (checkId, targetId) => {
+          const checkSystem = await System.findByPk(checkId);
+          if (!checkSystem || !checkSystem.parentId) return false;
+          if (checkSystem.parentId === targetId) return true;
+          return await checkCircular(checkSystem.parentId, targetId);
+        };
+
+        const isCircular = await checkCircular(parentId, parseInt(req.params.id));
+        if (isCircular) {
+          return res.status(400).json({
+            success: false,
+            message: 'Cannot create circular reference in system hierarchy'
+          });
+        }
+      }
+
       await system.update({
         name: name || system.name,
         type: type || system.type,
         location: location !== undefined ? location : system.location,
         description: description !== undefined ? description : system.description,
-        status: status || system.status
+        status: status || system.status,
+        parentId: parentId !== undefined ? (parentId || null) : system.parentId
+      });
+
+      // Fetch with associations for response
+      const updatedSystem = await System.findByPk(system.id, {
+        include: [
+          {
+            model: System,
+            as: 'parent',
+            attributes: ['id', 'name', 'type'],
+            required: false
+          },
+          {
+            model: System,
+            as: 'children',
+            attributes: ['id', 'name', 'type', 'status'],
+            required: false
+          }
+        ]
       });
 
       res.json({
         success: true,
-        data: system
+        data: updatedSystem
       });
     } catch (error) {
       next(error);
