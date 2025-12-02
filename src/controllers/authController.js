@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../../db/models');
+const uploadService = require('../services/uploadService');
 
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -162,6 +163,48 @@ const authController = {
 
       const user = await User.findByPk(userId);
       await user.update(updateData);
+
+      res.json({
+        success: true,
+        data: user.toJSON()
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async uploadAvatar(req, res, next) {
+    try {
+      const userId = req.user.id;
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'Avatar image is required'
+        });
+      }
+
+      const user = await User.findByPk(userId);
+
+      // Delete old avatar from Cloudinary if exists
+      if (user.avatar) {
+        // Extract public ID from avatar URL
+        const urlParts = user.avatar.split('/');
+        const filename = urlParts[urlParts.length - 1];
+        const publicId = `lince/avatars/${filename.split('.')[0]}`;
+        try {
+          await uploadService.deleteImage(publicId);
+        } catch (error) {
+          console.error('Error deleting old avatar:', error);
+          // Continue even if deletion fails
+        }
+      }
+
+      // Upload new avatar to Cloudinary
+      const result = await uploadService.uploadImage(req.file.buffer, 'avatars');
+
+      // Update user with new avatar URL
+      await user.update({ avatar: result.secure_url });
 
       res.json({
         success: true,

@@ -1,10 +1,8 @@
 const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinaryUpload');
-const { uploadToGCS, deleteFromGCS } = require('../utils/gcsUpload');
 
 /**
  * Upload Service
- * - Images (inspections, incidents) -> Cloudinary
- * - Documents (library) -> Google Cloud Storage
+ * Uses Cloudinary for all file uploads (images and documents)
  */
 const uploadService = {
   /**
@@ -27,21 +25,22 @@ const uploadService = {
   },
 
   /**
-   * Upload document to Google Cloud Storage (for library)
+   * Upload document to Cloudinary (for library)
    * @param {Buffer} buffer - File buffer
    * @param {string} folder - Folder name (e.g., 'documents', 'manuals')
-   * @param {string} originalFilename - Original filename
+   * @param {string} originalFilename - Original filename (optional, for logging)
    * @returns {Promise<{secure_url: string, public_id: string}>}
    */
   async uploadDocument(buffer, folder = 'documents', originalFilename) {
     try {
-      const result = await uploadToGCS(buffer, folder, originalFilename);
+      // Use 'raw' resource type for documents (PDF, DOC, etc.)
+      const result = await uploadToCloudinary(buffer, folder, 'raw');
       return {
         secure_url: result.url,
-        public_id: result.filename // Using filename as public_id for GCS
+        public_id: result.publicId
       };
     } catch (error) {
-      console.error('Error uploading document to GCS:', error);
+      console.error('Error uploading document to Cloudinary:', error);
       throw new Error('Failed to upload document');
     }
   },
@@ -62,22 +61,26 @@ const uploadService = {
   },
 
   /**
-   * Delete document from Google Cloud Storage
-   * @param {string} filename - GCS filename (path in bucket)
-   * @returns {Promise<void>}
+   * Delete document from Cloudinary
+   * @param {string} publicId - Cloudinary public ID
+   * @returns {Promise<any>}
    */
-  async deleteDocument(filename) {
+  async deleteDocument(publicId) {
     try {
-      await deleteFromGCS(filename);
+      const result = await deleteFromCloudinary(publicId, 'raw');
+      return result;
     } catch (error) {
-      console.error('Error deleting document from GCS:', error);
+      console.error('Error deleting document from Cloudinary:', error);
       throw error;
     }
   },
 
   /**
-   * Legacy method for backward compatibility
-   * Uploads file to Cloudinary (deprecated - use uploadImage or uploadDocument)
+   * Generic file upload (auto-detects type)
+   * @param {Buffer} buffer - File buffer
+   * @param {string} folder - Folder name
+   * @param {string} resourceType - 'image', 'raw', or 'auto'
+   * @returns {Promise<{secure_url: string, public_id: string}>}
    */
   async uploadFile(buffer, folder = 'general', resourceType = 'auto') {
     try {

@@ -74,7 +74,7 @@ const libraryController = {
         });
       }
 
-      // Upload file to Google Cloud Storage
+      // Upload file to Cloudinary
       const result = await uploadService.uploadDocument(
         req.file.buffer,
         'documents',
@@ -150,7 +150,7 @@ const libraryController = {
         });
       }
 
-      // Delete from Google Cloud Storage
+      // Delete from Cloudinary
       if (document.publicId) {
         await uploadService.deleteDocument(document.publicId);
       }

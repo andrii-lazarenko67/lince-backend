@@ -2,31 +2,24 @@
 
 ## Overview
 
-The LINCE file upload system uses two different storage providers based on file type:
+The LINCE file upload system uses **Cloudinary** for all file uploads:
 
-- **Images** (Inspections, Incidents) → **Cloudinary**
-- **Documents** (Library) → **Google Cloud Storage (GCS)**
+- **Images** (Inspections, Incidents) → **Cloudinary** (resource_type: 'image')
+- **Documents** (Library) → **Cloudinary** (resource_type: 'raw')
 
 ## Architecture
 
 ### Configuration Files
 
-1. **`.env`** - Contains all credentials
+1. **`.env`** - Contains Cloudinary credentials
    ```env
-   # Cloudinary (for images)
+   # Cloudinary (for all file uploads - images and documents)
    CLOUDINARY_CLOUD_NAME=dcfjvxt5h
    CLOUDINARY_API_KEY=541445981138132
    CLOUDINARY_API_SECRET=nQ_dj1uLkdVITmP1aVh4FWMlMCY
-
-   # Google Cloud Storage (for documents)
-   GCS_PROJECT_ID=tidal-cipher-470316-r1
-   GCS_BUCKET_NAME=lince-documents
-   GCS_CLIENT_EMAIL=<service_account_email>
-   GCS_PRIVATE_KEY=<service_account_private_key>
    ```
 
 2. **`src/config/cloudinary.js`** - Cloudinary configuration
-3. **`src/config/googleCloudStorage.js`** - GCS configuration
 
 ### Middleware
 
@@ -38,22 +31,19 @@ The LINCE file upload system uses two different storage providers based on file 
 
 ### Utilities
 
-1. **`src/utils/cloudinaryUpload.js`** - Cloudinary upload/delete utilities
-   - `uploadToCloudinary(buffer, folder, resourceType)` - Upload file to Cloudinary
-   - `deleteFromCloudinary(publicId, resourceType)` - Delete file from Cloudinary
-   - `uploadMultipleToCloudinary(files, folder, resourceType)` - Upload multiple files
-
-2. **`src/utils/gcsUpload.js`** - Google Cloud Storage upload/delete utilities
-   - `uploadToGCS(buffer, folder, originalFilename)` - Upload file to GCS
-   - `deleteFromGCS(filename)` - Delete file from GCS
+**`src/utils/cloudinaryUpload.js`** - Cloudinary upload/delete utilities
+- `uploadToCloudinary(buffer, folder, resourceType)` - Upload file to Cloudinary
+- `deleteFromCloudinary(publicId, resourceType)` - Delete file from Cloudinary
+- `uploadMultipleToCloudinary(files, folder, resourceType)` - Upload multiple files
 
 ### Service Layer
 
-**`src/services/uploadService.js`** - Unified upload service
-- `uploadImage(buffer, folder)` - Upload image to Cloudinary
-- `uploadDocument(buffer, folder, originalFilename)` - Upload document to GCS
+**`src/services/uploadService.js`** - Unified upload service (all files use Cloudinary)
+- `uploadImage(buffer, folder)` - Upload image to Cloudinary (resource_type: 'image')
+- `uploadDocument(buffer, folder, originalFilename)` - Upload document to Cloudinary (resource_type: 'raw')
 - `deleteImage(publicId)` - Delete image from Cloudinary
-- `deleteDocument(filename)` - Delete document from GCS
+- `deleteDocument(publicId)` - Delete document from Cloudinary
+- `uploadFile(buffer, folder, resourceType)` - Generic upload with custom resource type
 
 ## Usage in Controllers
 
@@ -111,8 +101,9 @@ for (const photo of incident.photos) {
 
 ### Library Controller
 
-**Upload Document:**
+**Upload Document (PDF, DOC, etc. to Cloudinary):**
 ```javascript
+// Upload file to Cloudinary
 const result = await uploadService.uploadDocument(
   req.file.buffer,
   'documents',
@@ -128,13 +119,14 @@ const document = await Document.create({
   fileUrl: result.secure_url,
   fileType: req.file.mimetype,
   fileSize: req.file.size,
-  publicId: result.public_id,
+  publicId: result.public_id, // Cloudinary public ID
   uploadedBy
 });
 ```
 
 **Delete Document:**
 ```javascript
+// Delete from Cloudinary
 if (document.publicId) {
   await uploadService.deleteDocument(document.publicId);
 }
@@ -172,7 +164,7 @@ if (document.publicId) {
   id: INTEGER,
   inspectionId/incidentId: INTEGER,
   url: STRING(500),      -- Cloudinary URL
-  publicId: STRING(200), -- Cloudinary public ID
+  publicId: STRING(200), -- Cloudinary public ID (for deletion)
   caption: STRING(255)
 }
 ```
@@ -186,10 +178,10 @@ if (document.publicId) {
   category: STRING(50),
   systemId: INTEGER,
   fileName: STRING(255),
-  fileUrl: STRING(500),   -- GCS public URL
+  fileUrl: STRING(500),   -- Cloudinary URL
   fileType: STRING(50),
   fileSize: INTEGER,
-  publicId: STRING(200),  -- GCS filename (path in bucket)
+  publicId: STRING(200),  -- Cloudinary public ID (for deletion)
   uploadedBy: INTEGER,
   version: INTEGER,
   isActive: BOOLEAN
@@ -279,19 +271,24 @@ All upload functions handle errors gracefully:
 
 ### Cloudinary Setup
 1. Create account at https://cloudinary.com
-2. Get Cloud Name, API Key, API Secret from dashboard
-3. Add credentials to `.env` file
+2. Go to Dashboard → Account Details
+3. Copy your credentials:
+   - Cloud Name
+   - API Key
+   - API Secret
+4. Add credentials to `.env` file:
+   ```env
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_API_KEY=your_api_key
+   CLOUDINARY_API_SECRET=your_api_secret
+   ```
 
-### Google Cloud Storage Setup
-1. Create project in Google Cloud Console
-2. Create storage bucket (e.g., `lince-documents`)
-3. Create service account with Storage Admin role
-4. Download service account JSON key
-5. Add credentials to `.env` file:
-   - `GCS_PROJECT_ID` - From service account JSON
-   - `GCS_BUCKET_NAME` - Your bucket name
-   - `GCS_CLIENT_EMAIL` - From service account JSON
-   - `GCS_PRIVATE_KEY` - From service account JSON (replace \n with actual newlines)
+### Cloudinary Features Used
+- **Image Upload**: `resource_type: 'image'` - For JPEG, PNG, GIF, WEBP
+- **Document Upload**: `resource_type: 'raw'` - For PDF, DOC, DOCX, XLS, XLSX, TXT, CSV
+- **Folders**: Files organized in folders (`lince/inspections`, `lince/incidents`, `lince/documents`)
+- **Public URLs**: All uploaded files get secure public URLs
+- **Transformation**: Cloudinary supports image transformations (resize, crop, format conversion)
 
 ## Testing
 
@@ -319,7 +316,18 @@ curl -X POST http://localhost:5000/api/library \
 
 ## Maintenance
 
-- Monitor Cloudinary usage dashboard for image storage limits
-- Monitor GCS console for bucket size and costs
+- Monitor Cloudinary usage dashboard for storage limits
+- Cloudinary free tier: 25GB storage, 25GB bandwidth/month
 - Regularly clean up unused/deleted files
 - Update credentials when they expire or are compromised
+- Consider Cloudinary's auto-backup feature for critical files
+
+## Benefits of Using Cloudinary Only
+
+1. **Simplicity**: Single provider for all file types
+2. **Cost-effective**: Free tier covers most small to medium projects
+3. **No Complex Setup**: No service accounts or OAuth required
+4. **Built-in CDN**: Fast global delivery
+5. **Easy Management**: Single dashboard for all files
+6. **Transformations**: Support for image optimization and transformations
+7. **Backup**: Cloudinary handles redundancy and backups
