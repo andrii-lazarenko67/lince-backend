@@ -3,10 +3,7 @@ const router = express.Router();
 const libraryController = require('../controllers/libraryController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
-const multer = require('multer');
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = require('../middlewares/upload');
 
 router.use(authMiddleware);
 
