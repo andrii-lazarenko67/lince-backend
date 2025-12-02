@@ -139,6 +139,12 @@ const systemController = {
             as: 'parent',
             attributes: ['id', 'name', 'type'],
             required: false
+          },
+          {
+            model: System,
+            as: 'children',
+            attributes: ['id', 'name', 'type', 'status'],
+            required: false
           }
         ]
       });
@@ -247,11 +253,21 @@ const systemController = {
         });
       }
 
-      await system.update({ status: 'inactive' });
+      // Check if system has children
+      const childrenCount = await System.count({ where: { parentId: req.params.id } });
+      if (childrenCount > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot delete system with sub-systems. Please delete sub-systems first.'
+        });
+      }
+
+      // Delete the system
+      await system.destroy();
 
       res.json({
         success: true,
-        message: 'System deactivated successfully'
+        message: 'System deleted successfully'
       });
     } catch (error) {
       next(error);
