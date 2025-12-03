@@ -190,12 +190,81 @@ const productController = {
         });
       }
 
+      // Fetch the usage with associations for proper frontend display
+      const usageWithAssociations = await ProductUsage.findByPk(usage.id, {
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: System, as: 'system' }
+        ]
+      });
+
       res.status(201).json({
         success: true,
-        data: {
-          usage,
-          product: await Product.findByPk(product.id)
-        }
+        data: usageWithAssociations
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateStock(req, res, next) {
+    try {
+      const { quantity, type, notes } = req.body;
+      const userId = req.user.id;
+
+      const product = await Product.findByPk(req.params.id);
+
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: 'Product not found'
+        });
+      }
+
+      // Calculate new stock
+      let newStock;
+      if (type === 'add') {
+        newStock = parseFloat(product.currentStock) + parseFloat(quantity);
+      } else {
+        newStock = parseFloat(product.currentStock) - parseFloat(quantity);
+      }
+
+      // Prevent negative stock
+      if (newStock < 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot reduce stock below zero'
+        });
+      }
+
+      await product.update({ currentStock: newStock });
+
+      // Create a usage record for tracking
+      await ProductUsage.create({
+        productId: product.id,
+        userId,
+        type: type === 'add' ? 'in' : 'out',
+        quantity,
+        notes: notes || `Stock ${type === 'add' ? 'added' : 'removed'} manually`,
+        date: new Date()
+      });
+
+      // Check for low stock alert
+      if (product.minStockAlert && newStock <= parseFloat(product.minStockAlert)) {
+        await notificationService.notifyManagers({
+          type: 'stock',
+          title: 'Low Stock Alert',
+          message: `${product.name} is running low. Current stock: ${newStock} ${product.unit}`,
+          priority: 'high',
+          referenceType: 'Product',
+          referenceId: product.id,
+          createdById: userId
+        });
+      }
+
+      res.json({
+        success: true,
+        data: await Product.findByPk(product.id)
       });
     } catch (error) {
       next(error);

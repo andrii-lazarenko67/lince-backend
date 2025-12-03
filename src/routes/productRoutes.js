@@ -11,6 +11,7 @@ router.get('/:id', productController.getById);
 router.get('/:id/usages', productController.getUsages);
 router.post('/', roleMiddleware('manager', 'admin'), productController.create);
 router.put('/:id', roleMiddleware('manager', 'admin'), productController.update);
+router.put('/:id/stock', productController.updateStock);
 router.post('/:id/usage', productController.addUsage);
 router.delete('/:id', roleMiddleware('manager', 'admin'), productController.delete);
 
