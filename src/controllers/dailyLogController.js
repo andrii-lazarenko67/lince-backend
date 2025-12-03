@@ -107,7 +107,7 @@ const dailyLogController = {
 
   async create(req, res, next) {
     try {
-      const { systemId, date, notes, entries } = req.body;
+      const { systemId, date, notes, entries, sendNotification } = req.body;
       const userId = req.user.id;
 
       // Check if daily log already exists for this user, system, and date
@@ -162,8 +162,8 @@ const dailyLogController = {
           });
         }
 
-        // Create notifications for out of range values
-        if (outOfRangeAlerts.length > 0) {
+        // Create notifications for out of range values (only if checkbox is checked)
+        if (sendNotification && outOfRangeAlerts.length > 0) {
           const system = await System.findByPk(systemId);
 
           for (const alert of outOfRangeAlerts) {

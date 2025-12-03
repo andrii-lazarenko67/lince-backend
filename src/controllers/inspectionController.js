@@ -1,6 +1,7 @@
 const { Inspection, InspectionItem, InspectionPhoto, ChecklistItem, System, User } = require('../../db/models');
 const { Op } = require('sequelize');
 const uploadService = require('../services/uploadService');
+const notificationService = require('../services/notificationService');
 
 const inspectionController = {
   async getAll(req, res, next) {
@@ -73,7 +74,7 @@ const inspectionController = {
 
   async create(req, res, next) {
     try {
-      const { systemId, date, conclusion, items } = req.body;
+      const { systemId, date, conclusion, items, sendNotification } = req.body;
       const userId = req.user.id;
 
       const inspection = await Inspection.create({
@@ -122,6 +123,22 @@ const inspectionController = {
           { model: InspectionPhoto, as: 'photos' }
         ]
       });
+
+      // Send notification to managers if requested
+      if (sendNotification === 'true' || sendNotification === true) {
+        const systemName = createdInspection.system?.name || 'Unknown System';
+        const userName = createdInspection.user?.name || 'A user';
+
+        await notificationService.notifyManagers({
+          type: 'inspection_submitted',
+          title: 'New Inspection Submitted',
+          message: `${userName} has submitted an inspection for ${systemName}`,
+          priority: 'medium',
+          referenceType: 'inspection',
+          referenceId: inspection.id,
+          createdById: userId
+        });
+      }
 
       res.status(201).json({
         success: true,
