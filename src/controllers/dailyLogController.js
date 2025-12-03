@@ -1,4 +1,4 @@
-const { DailyLog, DailyLogEntry, MonitoringPoint, System, User } = require('../../db/models');
+const { DailyLog, DailyLogEntry, MonitoringPoint, System, User, Parameter, Unit } = require('../../db/models');
 const { Op } = require('sequelize');
 const notificationService = require('../services/notificationService');
 
@@ -27,7 +27,14 @@ const dailyLogController = {
           {
             model: DailyLogEntry,
             as: 'entries',
-            include: [{ model: MonitoringPoint, as: 'monitoringPoint' }]
+            include: [{
+              model: MonitoringPoint,
+              as: 'monitoringPoint',
+              include: [
+                { model: Parameter, as: 'parameterObj' },
+                { model: Unit, as: 'unitObj' }
+              ]
+            }]
           }
         ],
         order: [['date', 'DESC'], ['createdAt', 'DESC']]
@@ -60,7 +67,14 @@ const dailyLogController = {
           {
             model: DailyLogEntry,
             as: 'entries',
-            include: [{ model: MonitoringPoint, as: 'monitoringPoint' }]
+            include: [{
+              model: MonitoringPoint,
+              as: 'monitoringPoint',
+              include: [
+                { model: Parameter, as: 'parameterObj' },
+                { model: Unit, as: 'unitObj' }
+              ]
+            }]
           }
         ],
         order: [['date', 'DESC']]
@@ -84,7 +98,14 @@ const dailyLogController = {
           {
             model: DailyLogEntry,
             as: 'entries',
-            include: [{ model: MonitoringPoint, as: 'monitoringPoint' }]
+            include: [{
+              model: MonitoringPoint,
+              as: 'monitoringPoint',
+              include: [
+                { model: Parameter, as: 'parameterObj' },
+                { model: Unit, as: 'unitObj' }
+              ]
+            }]
           }
         ]
       });
@@ -187,7 +208,14 @@ const dailyLogController = {
           {
             model: DailyLogEntry,
             as: 'entries',
-            include: [{ model: MonitoringPoint, as: 'monitoringPoint' }]
+            include: [{
+              model: MonitoringPoint,
+              as: 'monitoringPoint',
+              include: [
+                { model: Parameter, as: 'parameterObj' },
+                { model: Unit, as: 'unitObj' }
+              ]
+            }]
           }
         ]
       });
@@ -252,7 +280,14 @@ const dailyLogController = {
           {
             model: DailyLogEntry,
             as: 'entries',
-            include: [{ model: MonitoringPoint, as: 'monitoringPoint' }]
+            include: [{
+              model: MonitoringPoint,
+              as: 'monitoringPoint',
+              include: [
+                { model: Parameter, as: 'parameterObj' },
+                { model: Unit, as: 'unitObj' }
+              ]
+            }]
           }
         ]
       });
