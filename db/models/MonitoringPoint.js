@@ -15,12 +15,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(100),
       allowNull: false
     },
-    parameter: {
-      type: DataTypes.STRING(50),
+    parameterId: {
+      type: DataTypes.INTEGER,
       allowNull: false
     },
-    unit: {
-      type: DataTypes.STRING(20),
+    unitId: {
+      type: DataTypes.INTEGER,
       allowNull: false
     },
     minValue: {
@@ -43,6 +43,8 @@ module.exports = (sequelize, DataTypes) => {
   MonitoringPoint.associate = function(models) {
     MonitoringPoint.belongsTo(models.System, { foreignKey: 'systemId', as: 'system' });
     MonitoringPoint.hasMany(models.DailyLogEntry, { foreignKey: 'monitoringPointId', as: 'entries' });
+    MonitoringPoint.belongsTo(models.Parameter, { foreignKey: 'parameterId', as: 'parameterObj' });
+    MonitoringPoint.belongsTo(models.Unit, { foreignKey: 'unitId', as: 'unitObj' });
   };
 
   return MonitoringPoint;

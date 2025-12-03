@@ -14,6 +14,10 @@ const productRoutes = require('./productRoutes');
 const libraryRoutes = require('./libraryRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
+const parameterRoutes = require('./parameterRoutes');
+const unitRoutes = require('./unitRoutes');
+const productDosageRoutes = require('./productDosageRoutes');
+const systemPhotoRoutes = require('./systemPhotoRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
@@ -28,5 +32,9 @@ router.use('/products', productRoutes);
 router.use('/library', libraryRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/parameters', parameterRoutes);
+router.use('/units', unitRoutes);
+router.use('/product-dosages', productDosageRoutes);
+router.use('/system-photos', systemPhotoRoutes);
 
 module.exports = router;

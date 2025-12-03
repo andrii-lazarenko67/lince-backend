@@ -9,6 +9,16 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+      parentId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Systems',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
       name: {
         type: Sequelize.STRING(100),
         allowNull: false
@@ -37,6 +47,11 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE
       }
+    });
+
+    // Add index for better query performance on hierarchical queries
+    await queryInterface.addIndex('Systems', ['parentId'], {
+      name: 'systems_parent_id_index'
     });
   },
 

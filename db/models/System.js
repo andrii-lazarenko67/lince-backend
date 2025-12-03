@@ -52,6 +52,7 @@ module.exports = (sequelize, DataTypes) => {
     System.hasMany(models.Incident, { foreignKey: 'systemId', as: 'incidents' });
     System.hasMany(models.Document, { foreignKey: 'systemId', as: 'documents' });
     System.hasMany(models.ProductUsage, { foreignKey: 'systemId', as: 'productUsages' });
+    System.hasMany(models.SystemPhoto, { foreignKey: 'systemId', as: 'photos' });
 
     // Hierarchical associations (parent-child)
     System.belongsTo(models.System, { foreignKey: 'parentId', as: 'parent' });

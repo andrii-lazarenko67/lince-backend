@@ -23,13 +23,25 @@ module.exports = {
         type: Sequelize.STRING(100),
         allowNull: false
       },
-      parameter: {
-        type: Sequelize.STRING(50),
-        allowNull: false
+      parameterId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Parameters',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT'
       },
-      unit: {
-        type: Sequelize.STRING(20),
-        allowNull: false
+      unitId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Units',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT'
       },
       minValue: {
         type: Sequelize.DECIMAL(10, 2),
