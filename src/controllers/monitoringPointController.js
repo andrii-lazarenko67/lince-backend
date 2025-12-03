@@ -1,4 +1,4 @@
-const { MonitoringPoint, System } = require('../../db/models');
+const { MonitoringPoint, System, Parameter, Unit } = require('../../db/models');
 
 const monitoringPointController = {
   async getAll(req, res, next) {
@@ -11,7 +11,11 @@ const monitoringPointController = {
 
       const monitoringPoints = await MonitoringPoint.findAll({
         where,
-        include: [{ model: System, as: 'system' }],
+        include: [
+          { model: System, as: 'system' },
+          { model: Parameter, as: 'parameterObj' },
+          { model: Unit, as: 'unitObj' }
+        ],
         order: [['name', 'ASC']]
       });
 
@@ -30,6 +34,10 @@ const monitoringPointController = {
 
       const monitoringPoints = await MonitoringPoint.findAll({
         where: { systemId },
+        include: [
+          { model: Parameter, as: 'parameterObj' },
+          { model: Unit, as: 'unitObj' }
+        ],
         order: [['name', 'ASC']]
       });
 
@@ -45,7 +53,11 @@ const monitoringPointController = {
   async getById(req, res, next) {
     try {
       const monitoringPoint = await MonitoringPoint.findByPk(req.params.id, {
-        include: [{ model: System, as: 'system' }]
+        include: [
+          { model: System, as: 'system' },
+          { model: Parameter, as: 'parameterObj' },
+          { model: Unit, as: 'unitObj' }
+        ]
       });
 
       if (!monitoringPoint) {
@@ -66,8 +78,9 @@ const monitoringPointController = {
 
   async create(req, res, next) {
     try {
-      const { systemId, name, parameter, unit, minValue, maxValue, alertEnabled } = req.body;
+      const { systemId, name, parameterId, unitId, minValue, maxValue, alertEnabled } = req.body;
 
+      // Validate system exists
       const system = await System.findByPk(systemId);
       if (!system) {
         return res.status(404).json({
@@ -76,19 +89,45 @@ const monitoringPointController = {
         });
       }
 
+      // Validate parameter exists
+      const parameter = await Parameter.findByPk(parameterId);
+      if (!parameter) {
+        return res.status(400).json({
+          success: false,
+          message: 'Parameter not found'
+        });
+      }
+
+      // Validate unit exists
+      const unit = await Unit.findByPk(unitId);
+      if (!unit) {
+        return res.status(400).json({
+          success: false,
+          message: 'Unit not found'
+        });
+      }
+
       const monitoringPoint = await MonitoringPoint.create({
         systemId,
         name,
-        parameter,
-        unit,
+        parameterId,
+        unitId,
         minValue,
         maxValue,
         alertEnabled: alertEnabled !== undefined ? alertEnabled : true
       });
 
+      // Fetch with associations for response
+      const fullMonitoringPoint = await MonitoringPoint.findByPk(monitoringPoint.id, {
+        include: [
+          { model: Parameter, as: 'parameterObj' },
+          { model: Unit, as: 'unitObj' }
+        ]
+      });
+
       res.status(201).json({
         success: true,
-        data: monitoringPoint
+        data: fullMonitoringPoint
       });
     } catch (error) {
       next(error);
@@ -97,7 +136,7 @@ const monitoringPointController = {
 
   async update(req, res, next) {
     try {
-      const { name, parameter, unit, minValue, maxValue, alertEnabled } = req.body;
+      const { name, parameterId, unitId, minValue, maxValue, alertEnabled } = req.body;
 
       const monitoringPoint = await MonitoringPoint.findByPk(req.params.id);
 
@@ -108,18 +147,48 @@ const monitoringPointController = {
         });
       }
 
+      // Validate parameter if provided
+      if (parameterId) {
+        const parameter = await Parameter.findByPk(parameterId);
+        if (!parameter) {
+          return res.status(400).json({
+            success: false,
+            message: 'Parameter not found'
+          });
+        }
+      }
+
+      // Validate unit if provided
+      if (unitId) {
+        const unit = await Unit.findByPk(unitId);
+        if (!unit) {
+          return res.status(400).json({
+            success: false,
+            message: 'Unit not found'
+          });
+        }
+      }
+
       await monitoringPoint.update({
         name: name || monitoringPoint.name,
-        parameter: parameter || monitoringPoint.parameter,
-        unit: unit || monitoringPoint.unit,
+        parameterId: parameterId || monitoringPoint.parameterId,
+        unitId: unitId || monitoringPoint.unitId,
         minValue: minValue !== undefined ? minValue : monitoringPoint.minValue,
         maxValue: maxValue !== undefined ? maxValue : monitoringPoint.maxValue,
         alertEnabled: alertEnabled !== undefined ? alertEnabled : monitoringPoint.alertEnabled
       });
 
+      // Fetch with associations for response
+      const fullMonitoringPoint = await MonitoringPoint.findByPk(monitoringPoint.id, {
+        include: [
+          { model: Parameter, as: 'parameterObj' },
+          { model: Unit, as: 'unitObj' }
+        ]
+      });
+
       res.json({
         success: true,
-        data: monitoringPoint
+        data: fullMonitoringPoint
       });
     } catch (error) {
       next(error);
