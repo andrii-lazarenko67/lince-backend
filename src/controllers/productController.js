@@ -1,5 +1,6 @@
-const { Product, ProductUsage, System, User, Notification } = require('../../db/models');
+const { Product, ProductUsage, System, User } = require('../../db/models');
 const { Op } = require('sequelize');
+const notificationService = require('../services/notificationService');
 
 const productController = {
   async getAll(req, res, next) {
@@ -178,19 +179,15 @@ const productController = {
 
       // Check for low stock alert
       if (product.minStockAlert && newStock <= parseFloat(product.minStockAlert)) {
-        const managers = await User.findAll({ where: { role: 'manager', isActive: true } });
-
-        for (const manager of managers) {
-          await Notification.create({
-            userId: manager.id,
-            type: 'stock',
-            title: 'Low Stock Alert',
-            message: `${product.name} is running low. Current stock: ${newStock} ${product.unit}`,
-            priority: 'high',
-            referenceType: 'product',
-            referenceId: product.id
-          });
-        }
+        await notificationService.notifyManagers({
+          type: 'stock',
+          title: 'Low Stock Alert',
+          message: `${product.name} is running low. Current stock: ${newStock} ${product.unit}`,
+          priority: 'high',
+          referenceType: 'Product',
+          referenceId: product.id,
+          createdById: userId
+        });
       }
 
       res.status(201).json({

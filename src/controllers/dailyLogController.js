@@ -1,5 +1,6 @@
-const { DailyLog, DailyLogEntry, MonitoringPoint, System, User, Notification } = require('../../db/models');
+const { DailyLog, DailyLogEntry, MonitoringPoint, System, User } = require('../../db/models');
 const { Op } = require('sequelize');
+const notificationService = require('../services/notificationService');
 
 const dailyLogController = {
   async getAll(req, res, next) {
@@ -163,21 +164,18 @@ const dailyLogController = {
 
         // Create notifications for out of range values
         if (outOfRangeAlerts.length > 0) {
-          const managers = await User.findAll({ where: { role: 'manager', isActive: true } });
           const system = await System.findByPk(systemId);
 
           for (const alert of outOfRangeAlerts) {
-            for (const manager of managers) {
-              await Notification.create({
-                userId: manager.id,
-                type: 'alert',
-                title: 'Out of Range Value Detected',
-                message: `${alert.monitoringPoint.name} in ${system.name} recorded value ${alert.value} ${alert.monitoringPoint.unit} (Expected: ${alert.monitoringPoint.minValue}-${alert.monitoringPoint.maxValue})`,
-                priority: 'high',
-                referenceType: 'dailyLog',
-                referenceId: dailyLog.id
-              });
-            }
+            await notificationService.notifyManagers({
+              type: 'alert',
+              title: 'Out of Range Value Detected',
+              message: `${alert.monitoringPoint.name} in ${system.name} recorded value ${alert.value} (Expected: ${alert.monitoringPoint.minValue}-${alert.monitoringPoint.maxValue})`,
+              priority: 'high',
+              referenceType: 'DailyLog',
+              referenceId: dailyLog.id,
+              createdById: userId
+            });
           }
         }
       }

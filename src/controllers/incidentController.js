@@ -1,6 +1,7 @@
-const { Incident, IncidentPhoto, IncidentComment, System, User, Notification } = require('../../db/models');
+const { Incident, IncidentPhoto, IncidentComment, System, User } = require('../../db/models');
 const { Op } = require('sequelize');
 const uploadService = require('../services/uploadService');
+const notificationService = require('../services/notificationService');
 
 const incidentController = {
   async getAll(req, res, next) {
@@ -102,20 +103,17 @@ const incidentController = {
 
       // Send notification to managers
       if (sendNotification === 'true' || sendNotification === true) {
-        const managers = await User.findAll({ where: { role: 'manager', isActive: true } });
         const system = await System.findByPk(systemId);
 
-        for (const manager of managers) {
-          await Notification.create({
-            userId: manager.id,
-            type: 'incident',
-            title: 'New Incident Reported',
-            message: `${title} - ${system.name}`,
-            priority: priority || 'medium',
-            referenceType: 'incident',
-            referenceId: incident.id
-          });
-        }
+        await notificationService.notifyManagers({
+          type: 'incident',
+          title: 'New Incident Reported',
+          message: `${title} - ${system.name}`,
+          priority: priority || 'medium',
+          referenceType: 'Incident',
+          referenceId: incident.id,
+          createdById: userId
+        });
       }
 
       const createdIncident = await Incident.findByPk(incident.id, {
@@ -184,15 +182,15 @@ const incidentController = {
 
       // Notify assigned user
       if (assignedTo) {
-        await Notification.create({
-          userId: assignedTo,
+        await notificationService.notifyUser({
           type: 'incident',
           title: 'Incident Assigned to You',
           message: incident.title,
           priority: incident.priority,
-          referenceType: 'incident',
-          referenceId: incident.id
-        });
+          referenceType: 'Incident',
+          referenceId: incident.id,
+          createdById: req.user.id
+        }, assignedTo);
       }
 
       res.json({
