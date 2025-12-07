@@ -21,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     unitId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: true
     },
     minValue: {
       type: DataTypes.DECIMAL(10, 2),
