@@ -35,7 +35,7 @@ module.exports = {
       },
       unitId: {
         type: Sequelize.INTEGER,
-        allowNull: false,
+        allowNull: true,
         references: {
           model: 'Units',
           key: 'id'
