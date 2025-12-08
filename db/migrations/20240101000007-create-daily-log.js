@@ -33,6 +33,51 @@ module.exports = {
         type: Sequelize.DATEONLY,
         allowNull: false
       },
+      recordType: {
+        type: Sequelize.ENUM('field', 'laboratory'),
+        allowNull: false,
+        defaultValue: 'field'
+      },
+      stageId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Systems',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
+      period: {
+        type: Sequelize.STRING(50),
+        allowNull: true
+      },
+      time: {
+        type: Sequelize.TIME,
+        allowNull: true
+      },
+      timeMode: {
+        type: Sequelize.ENUM('auto', 'manual'),
+        allowNull: true,
+        defaultValue: 'manual'
+      },
+      laboratory: {
+        type: Sequelize.STRING(200),
+        allowNull: true
+      },
+      collectionDate: {
+        type: Sequelize.DATEONLY,
+        allowNull: true
+      },
+      collectionTime: {
+        type: Sequelize.TIME,
+        allowNull: true
+      },
+      collectionTimeMode: {
+        type: Sequelize.ENUM('auto', 'manual'),
+        allowNull: true,
+        defaultValue: 'manual'
+      },
       notes: {
         type: Sequelize.TEXT,
         allowNull: true

@@ -10,7 +10,12 @@ const productController = {
       const where = {};
 
       if (type) where.type = type;
-      if (isActive !== undefined) where.isActive = isActive === 'true';
+      // By default, only show active products unless explicitly requested otherwise
+      if (isActive !== undefined) {
+        where.isActive = isActive === 'true';
+      } else {
+        where.isActive = true; // Default to showing only active products
+      }
       if (search) {
         where[Op.or] = [
           { name: { [Op.iLike]: `%${search}%` } },

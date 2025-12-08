@@ -9,12 +9,41 @@ module.exports = {
       return date;
     };
 
+    // Fetch actual inserted user and system IDs
+    const users = await queryInterface.sequelize.query(
+      'SELECT id, email FROM "Users" ORDER BY id',
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
+    const systems = await queryInterface.sequelize.query(
+      'SELECT id, name FROM "Systems" WHERE "parentId" IS NULL ORDER BY id',
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
+    // Create user lookup by email
+    const userMap = {};
+    users.forEach(user => {
+      if (user.email === 'technician@lince.com') userMap.pedro = user.id; // Pedro - userId 3
+      else if (user.email === 'maria.costa@lince.com') userMap.maria = user.id; // Maria - userId 4
+      else if (user.email === 'joao.ferreira@lince.com') userMap.joao = user.id; // João - userId 5
+    });
+
+    // Create system lookup by name
+    const systemMap = {};
+    systems.forEach(system => {
+      if (system.name === 'Piscina Principal - Hotel Sunset') systemMap.piscina = system.id; // systemId 1
+      else if (system.name === 'Torre de Resfriamento - Unidade 1') systemMap.torre = system.id; // systemId 3
+      else if (system.name === 'Caldeira a Vapor - Principal') systemMap.caldeira = system.id; // systemId 5
+      else if (system.name === 'ETA - Estação de Tratamento') systemMap.eta = system.id; // systemId 6
+      else if (system.name === 'ETE - Tratamento de Efluentes') systemMap.ete = system.id; // systemId 7
+    });
+
     // Create inspections
     const inspections = [
       // System 1: Piscina Principal - weekly inspections
       {
-        systemId: 1,
-        userId: 3,
+        systemId: systemMap.piscina,
+        userId: userMap.pedro,
         date: getDate(56),
         status: 'completed',
         conclusion: 'Inspeção semanal realizada. Sistema em perfeitas condições. Filtros limpos.',
@@ -23,8 +52,8 @@ module.exports = {
         updatedAt: getDate(56)
       },
       {
-        systemId: 1,
-        userId: 4,
+        systemId: systemMap.piscina,
+        userId: userMap.maria,
         date: getDate(49),
         status: 'completed',
         conclusion: 'Verificados todos os equipamentos. Bomba dosadora de cloro necessita ajuste de calibração.',
@@ -33,8 +62,8 @@ module.exports = {
         updatedAt: getDate(49)
       },
       {
-        systemId: 1,
-        userId: 5,
+        systemId: systemMap.piscina,
+        userId: userMap.joao,
         date: getDate(42),
         status: 'completed',
         conclusion: 'Inspeção completa. Realizada limpeza preventiva dos pré-filtros.',
@@ -43,8 +72,8 @@ module.exports = {
         updatedAt: getDate(42)
       },
       {
-        systemId: 1,
-        userId: 3,
+        systemId: systemMap.piscina,
+        userId: userMap.pedro,
         date: getDate(35),
         status: 'approved',
         conclusion: 'Inspeção de segurança mensal. Todos os equipamentos de emergência verificados.',
@@ -53,8 +82,8 @@ module.exports = {
         updatedAt: getDate(35)
       },
       {
-        systemId: 1,
-        userId: 4,
+        systemId: systemMap.piscina,
+        userId: userMap.maria,
         date: getDate(28),
         status: 'completed',
         conclusion: 'Inspeção semanal. Sistema operando normalmente.',
@@ -63,8 +92,8 @@ module.exports = {
         updatedAt: getDate(28)
       },
       {
-        systemId: 1,
-        userId: 5,
+        systemId: systemMap.piscina,
+        userId: userMap.joao,
         date: getDate(21),
         status: 'completed',
         conclusion: 'Verificação completa. Substituído o-ring da bomba de recirculação.',
@@ -73,8 +102,8 @@ module.exports = {
         updatedAt: getDate(21)
       },
       {
-        systemId: 1,
-        userId: 3,
+        systemId: systemMap.piscina,
+        userId: userMap.pedro,
         date: getDate(14),
         status: 'completed',
         conclusion: 'Sistema em excelentes condições. Água cristalina.',
@@ -83,8 +112,8 @@ module.exports = {
         updatedAt: getDate(14)
       },
       {
-        systemId: 1,
-        userId: 4,
+        systemId: systemMap.piscina,
+        userId: userMap.maria,
         date: getDate(7),
         status: 'completed',
         conclusion: 'Última inspeção semanal. Todos os parâmetros conformes.',
@@ -95,8 +124,8 @@ module.exports = {
 
       // System 3: Torre de Resfriamento 1 - inspections with issues
       {
-        systemId: 3,
-        userId: 3,
+        systemId: systemMap.torre,
+        userId: userMap.pedro,
         date: getDate(45),
         status: 'completed',
         conclusion: 'Inspeção de rotina. Detectada leve incrustação nas placas de troca térmica.',
@@ -105,8 +134,8 @@ module.exports = {
         updatedAt: getDate(45)
       },
       {
-        systemId: 3,
-        userId: 5,
+        systemId: systemMap.torre,
+        userId: userMap.joao,
         date: getDate(38),
         status: 'completed',
         conclusion: 'Inspeção corretiva após detecção de problema. Realizada limpeza química das placas.',
@@ -115,8 +144,8 @@ module.exports = {
         updatedAt: getDate(38)
       },
       {
-        systemId: 3,
-        userId: 3,
+        systemId: systemMap.torre,
+        userId: userMap.pedro,
         date: getDate(30),
         status: 'approved',
         conclusion: 'Verificação pós-limpeza. Eficiência de troca térmica restaurada.',
@@ -125,8 +154,8 @@ module.exports = {
         updatedAt: getDate(30)
       },
       {
-        systemId: 3,
-        userId: 4,
+        systemId: systemMap.torre,
+        userId: userMap.maria,
         date: getDate(15),
         status: 'completed',
         conclusion: 'Inspeção quinzenal. Sistema operando em condições ótimas.',
@@ -135,8 +164,8 @@ module.exports = {
         updatedAt: getDate(15)
       },
       {
-        systemId: 3,
-        userId: 5,
+        systemId: systemMap.torre,
+        userId: userMap.joao,
         date: getDate(5),
         status: 'completed',
         conclusion: 'Inspeção de emergência após alarme de contagem bacteriana. Biocida de choque aplicado.',
@@ -147,8 +176,8 @@ module.exports = {
 
       // System 5: Caldeira
       {
-        systemId: 5,
-        userId: 5,
+        systemId: systemMap.caldeira,
+        userId: userMap.joao,
         date: getDate(50),
         status: 'approved',
         conclusion: 'Inspeção mensal de caldeira. Verificados válvulas de segurança e instrumentação.',
@@ -157,8 +186,8 @@ module.exports = {
         updatedAt: getDate(50)
       },
       {
-        systemId: 5,
-        userId: 3,
+        systemId: systemMap.caldeira,
+        userId: userMap.pedro,
         date: getDate(20),
         status: 'approved',
         conclusion: 'Inspeção de segurança. Testadas todas as válvulas de alívio. Conformes.',
@@ -169,8 +198,8 @@ module.exports = {
 
       // System 6: ETA
       {
-        systemId: 6,
-        userId: 3,
+        systemId: systemMap.eta,
+        userId: userMap.pedro,
         date: getDate(40),
         status: 'completed',
         conclusion: 'Inspeção semanal da ETA. Floculadores operando bem. Decantadores limpos.',
@@ -179,8 +208,8 @@ module.exports = {
         updatedAt: getDate(40)
       },
       {
-        systemId: 6,
-        userId: 4,
+        systemId: systemMap.eta,
+        userId: userMap.maria,
         date: getDate(25),
         status: 'completed',
         conclusion: 'Verificação dos filtros. Realizada retrolavagem programada.',
@@ -189,8 +218,8 @@ module.exports = {
         updatedAt: getDate(25)
       },
       {
-        systemId: 6,
-        userId: 5,
+        systemId: systemMap.eta,
+        userId: userMap.joao,
         date: getDate(10),
         status: 'approved',
         conclusion: 'Inspeção regulatória mensal. Todos os parâmetros dentro dos limites da Portaria.',
@@ -201,8 +230,8 @@ module.exports = {
 
       // System 7: ETE
       {
-        systemId: 7,
-        userId: 4,
+        systemId: systemMap.ete,
+        userId: userMap.maria,
         date: getDate(35),
         status: 'completed',
         conclusion: 'Inspeção do sistema biológico. Lodo ativado com boa sedimentabilidade.',
@@ -211,8 +240,8 @@ module.exports = {
         updatedAt: getDate(35)
       },
       {
-        systemId: 7,
-        userId: 3,
+        systemId: systemMap.ete,
+        userId: userMap.pedro,
         date: getDate(18),
         status: 'completed',
         conclusion: 'Verificação dos aeradores. Sistema de aeração funcionando corretamente.',
@@ -221,8 +250,8 @@ module.exports = {
         updatedAt: getDate(18)
       },
       {
-        systemId: 7,
-        userId: 5,
+        systemId: systemMap.ete,
+        userId: userMap.joao,
         date: getDate(3),
         status: 'pending',
         conclusion: null,
@@ -233,8 +262,8 @@ module.exports = {
 
       // Pending/Scheduled inspections
       {
-        systemId: 1,
-        userId: 3,
+        systemId: systemMap.piscina,
+        userId: userMap.pedro,
         date: getDate(-2),
         status: 'pending',
         conclusion: null,
@@ -243,8 +272,8 @@ module.exports = {
         updatedAt: new Date()
       },
       {
-        systemId: 3,
-        userId: 4,
+        systemId: systemMap.torre,
+        userId: userMap.maria,
         date: getDate(-5),
         status: 'pending',
         conclusion: null,
@@ -253,8 +282,8 @@ module.exports = {
         updatedAt: new Date()
       },
       {
-        systemId: 5,
-        userId: 5,
+        systemId: systemMap.caldeira,
+        userId: userMap.joao,
         date: getDate(-10),
         status: 'pending',
         conclusion: null,
@@ -287,19 +316,21 @@ module.exports = {
         for (const item of systemChecklistItems) {
           const random = Math.random();
           let status;
-          if (random > 0.15) {
-            status = 'pass';
+          if (random > 0.2) {
+            status = 'C'; // Conforme (was 'pass')
+          } else if (random > 0.1) {
+            status = 'NC'; // Non-Conforme (was 'fail')
           } else if (random > 0.05) {
-            status = 'fail';
+            status = 'NA'; // Not Applicable (was 'na')
           } else {
-            status = 'na';
+            status = 'NV'; // Not Verified (new status)
           }
 
           inspectionItems.push({
             inspectionId: inspection.id,
             checklistItemId: item.id,
             status: status,
-            comment: status === 'fail' ? 'Item requer atenção. Ação corretiva programada.' : null,
+            comment: status === 'NC' ? 'Item requer atenção. Ação corretiva programada.' : null,
             createdAt: new Date(),
             updatedAt: new Date()
           });

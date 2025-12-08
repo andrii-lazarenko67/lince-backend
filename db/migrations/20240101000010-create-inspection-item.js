@@ -30,7 +30,7 @@ module.exports = {
         onDelete: 'RESTRICT'
       },
       status: {
-        type: Sequelize.ENUM('pass', 'fail', 'na'),
+        type: Sequelize.ENUM('C', 'NC', 'NA', 'NV'),
         allowNull: false
       },
       comment: {
