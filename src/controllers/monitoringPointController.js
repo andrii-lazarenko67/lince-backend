@@ -98,13 +98,15 @@ const monitoringPointController = {
         });
       }
 
-      // Validate unit exists
-      const unit = await Unit.findByPk(unitId);
-      if (!unit) {
-        return res.status(400).json({
-          success: false,
-          message: 'Unit not found'
-        });
+      // Validate unit exists (if provided - unit is optional)
+      if (unitId !== null && unitId !== undefined) {
+        const unit = await Unit.findByPk(unitId);
+        if (!unit) {
+          return res.status(400).json({
+            success: false,
+            message: 'Unit not found'
+          });
+        }
       }
 
       const monitoringPoint = await MonitoringPoint.create({
@@ -158,8 +160,8 @@ const monitoringPointController = {
         }
       }
 
-      // Validate unit if provided
-      if (unitId) {
+      // Validate unit if provided (unit is optional - can be null)
+      if (unitId !== null && unitId !== undefined) {
         const unit = await Unit.findByPk(unitId);
         if (!unit) {
           return res.status(400).json({
@@ -172,7 +174,7 @@ const monitoringPointController = {
       await monitoringPoint.update({
         name: name || monitoringPoint.name,
         parameterId: parameterId || monitoringPoint.parameterId,
-        unitId: unitId || monitoringPoint.unitId,
+        unitId: unitId !== undefined ? unitId : monitoringPoint.unitId,
         minValue: minValue !== undefined ? minValue : monitoringPoint.minValue,
         maxValue: maxValue !== undefined ? maxValue : monitoringPoint.maxValue,
         alertEnabled: alertEnabled !== undefined ? alertEnabled : monitoringPoint.alertEnabled
