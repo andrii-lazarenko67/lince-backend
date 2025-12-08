@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     type: {
       type: DataTypes.STRING(50),
-      allowNull: false
+      allowNull: true
     },
     unit: {
       type: DataTypes.STRING(20),

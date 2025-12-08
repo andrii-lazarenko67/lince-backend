@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     status: {
-      type: DataTypes.ENUM('pass', 'fail', 'na'),
+      type: DataTypes.ENUM('C', 'NC', 'NA', 'NV'),
       allowNull: false
     },
     comment: {

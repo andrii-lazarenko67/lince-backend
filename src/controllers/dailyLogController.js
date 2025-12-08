@@ -5,12 +5,14 @@ const notificationService = require('../services/notificationService');
 const dailyLogController = {
   async getAll(req, res, next) {
     try {
-      const { systemId, userId, startDate, endDate } = req.query;
+      const { systemId, stageId, userId, recordType, startDate, endDate } = req.query;
 
       const where = {};
 
       if (systemId) where.systemId = systemId;
+      if (stageId) where.stageId = stageId;
       if (userId) where.userId = userId;
+      if (recordType) where.recordType = recordType;
       if (startDate && endDate) {
         where.date = { [Op.between]: [startDate, endDate] };
       } else if (startDate) {
@@ -24,6 +26,7 @@ const dailyLogController = {
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           {
             model: DailyLogEntry,
             as: 'entries',
@@ -52,10 +55,12 @@ const dailyLogController = {
   async getBySystem(req, res, next) {
     try {
       const { systemId } = req.params;
-      const { startDate, endDate } = req.query;
+      const { startDate, endDate, recordType, stageId } = req.query;
 
       const where = { systemId };
 
+      if (stageId) where.stageId = stageId;
+      if (recordType) where.recordType = recordType;
       if (startDate && endDate) {
         where.date = { [Op.between]: [startDate, endDate] };
       }
@@ -64,6 +69,8 @@ const dailyLogController = {
         where,
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
+          { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           {
             model: DailyLogEntry,
             as: 'entries',
@@ -95,6 +102,7 @@ const dailyLogController = {
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           {
             model: DailyLogEntry,
             as: 'entries',
@@ -128,26 +136,64 @@ const dailyLogController = {
 
   async create(req, res, next) {
     try {
-      const { systemId, date, notes, entries, sendNotification } = req.body;
+      const {
+        systemId,
+        stageId,
+        recordType,
+        date,
+        period,
+        time,
+        timeMode,
+        laboratory,
+        collectionDate,
+        collectionTime,
+        collectionTimeMode,
+        notes,
+        entries,
+        sendNotification
+      } = req.body;
       const userId = req.user.id;
 
-      // Check if daily log already exists for this user, system, and date
+      // Validate record type specific fields
+      if (recordType === 'laboratory' && !laboratory) {
+        return res.status(400).json({
+          success: false,
+          message: 'Laboratory field is required for laboratory records'
+        });
+      }
+
+      // Check if daily log already exists for this user, system, date, and record type
       const existingLog = await DailyLog.findOne({
-        where: { userId, systemId, date }
+        where: {
+          userId,
+          systemId,
+          stageId: stageId || null,
+          date,
+          recordType: recordType || 'field'
+        }
       });
 
       if (existingLog) {
         return res.status(400).json({
           success: false,
-          message: 'Daily log already exists for this date and system'
+          message: 'Daily log already exists for this date, system, stage, and record type'
         });
       }
 
       const dailyLog = await DailyLog.create({
         userId,
         systemId,
+        stageId: stageId || null,
+        recordType: recordType || 'field',
         date,
-        notes
+        period: period || null,
+        time: time || null,
+        timeMode: timeMode || 'manual',
+        laboratory: laboratory || null,
+        collectionDate: collectionDate || null,
+        collectionTime: collectionTime || null,
+        collectionTimeMode: collectionTimeMode || 'manual',
+        notes: notes || null
       });
 
       // Create entries and check for out of range values
@@ -188,10 +234,14 @@ const dailyLogController = {
           const system = await System.findByPk(systemId);
 
           for (const alert of outOfRangeAlerts) {
+            const rangeText = alert.monitoringPoint.minValue !== null && alert.monitoringPoint.maxValue !== null
+              ? `Expected: ${alert.monitoringPoint.minValue}-${alert.monitoringPoint.maxValue}`
+              : 'Expected range: N/A';
+
             await notificationService.notifyManagers({
               type: 'alert',
               title: 'Out of Range Value Detected',
-              message: `${alert.monitoringPoint.name} in ${system.name} recorded value ${alert.value} (Expected: ${alert.monitoringPoint.minValue}-${alert.monitoringPoint.maxValue})`,
+              message: `${alert.monitoringPoint.name} in ${system.name} recorded value ${alert.value} (${rangeText})`,
               priority: 'high',
               referenceType: 'DailyLog',
               referenceId: dailyLog.id,
@@ -205,6 +255,7 @@ const dailyLogController = {
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           {
             model: DailyLogEntry,
             as: 'entries',
@@ -277,6 +328,7 @@ const dailyLogController = {
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           {
             model: DailyLogEntry,
             as: 'entries',
