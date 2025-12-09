@@ -15,6 +15,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false
     },
+    stageId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     date: {
       type: DataTypes.DATE,
       allowNull: false
@@ -39,6 +43,7 @@ module.exports = (sequelize, DataTypes) => {
   Inspection.associate = function(models) {
     Inspection.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
     Inspection.belongsTo(models.System, { foreignKey: 'systemId', as: 'system' });
+    Inspection.belongsTo(models.System, { foreignKey: 'stageId', as: 'stage' });
     Inspection.hasMany(models.InspectionItem, { foreignKey: 'inspectionId', as: 'items' });
     Inspection.hasMany(models.InspectionPhoto, { foreignKey: 'inspectionId', as: 'photos' });
   };

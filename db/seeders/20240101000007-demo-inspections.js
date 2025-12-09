@@ -43,6 +43,7 @@ module.exports = {
       // System 1: Piscina Principal - weekly inspections
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.pedro,
         date: getDate(56),
         status: 'completed',
@@ -53,6 +54,7 @@ module.exports = {
       },
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.maria,
         date: getDate(49),
         status: 'completed',
@@ -63,6 +65,7 @@ module.exports = {
       },
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.joao,
         date: getDate(42),
         status: 'completed',
@@ -73,6 +76,7 @@ module.exports = {
       },
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.pedro,
         date: getDate(35),
         status: 'approved',
@@ -83,6 +87,7 @@ module.exports = {
       },
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.maria,
         date: getDate(28),
         status: 'completed',
@@ -93,6 +98,7 @@ module.exports = {
       },
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.joao,
         date: getDate(21),
         status: 'completed',
@@ -103,6 +109,7 @@ module.exports = {
       },
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.pedro,
         date: getDate(14),
         status: 'completed',
@@ -113,6 +120,7 @@ module.exports = {
       },
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.maria,
         date: getDate(7),
         status: 'completed',
@@ -125,6 +133,7 @@ module.exports = {
       // System 3: Torre de Resfriamento 1 - inspections with issues
       {
         systemId: systemMap.torre,
+        stageId: null,
         userId: userMap.pedro,
         date: getDate(45),
         status: 'completed',
@@ -135,6 +144,7 @@ module.exports = {
       },
       {
         systemId: systemMap.torre,
+        stageId: null,
         userId: userMap.joao,
         date: getDate(38),
         status: 'completed',
@@ -145,6 +155,7 @@ module.exports = {
       },
       {
         systemId: systemMap.torre,
+        stageId: null,
         userId: userMap.pedro,
         date: getDate(30),
         status: 'approved',
@@ -155,6 +166,7 @@ module.exports = {
       },
       {
         systemId: systemMap.torre,
+        stageId: null,
         userId: userMap.maria,
         date: getDate(15),
         status: 'completed',
@@ -165,6 +177,7 @@ module.exports = {
       },
       {
         systemId: systemMap.torre,
+        stageId: null,
         userId: userMap.joao,
         date: getDate(5),
         status: 'completed',
@@ -177,6 +190,7 @@ module.exports = {
       // System 5: Caldeira
       {
         systemId: systemMap.caldeira,
+        stageId: null,
         userId: userMap.joao,
         date: getDate(50),
         status: 'approved',
@@ -187,6 +201,7 @@ module.exports = {
       },
       {
         systemId: systemMap.caldeira,
+        stageId: null,
         userId: userMap.pedro,
         date: getDate(20),
         status: 'approved',
@@ -199,6 +214,7 @@ module.exports = {
       // System 6: ETA
       {
         systemId: systemMap.eta,
+        stageId: null,
         userId: userMap.pedro,
         date: getDate(40),
         status: 'completed',
@@ -209,6 +225,7 @@ module.exports = {
       },
       {
         systemId: systemMap.eta,
+        stageId: null,
         userId: userMap.maria,
         date: getDate(25),
         status: 'completed',
@@ -219,6 +236,7 @@ module.exports = {
       },
       {
         systemId: systemMap.eta,
+        stageId: null,
         userId: userMap.joao,
         date: getDate(10),
         status: 'approved',
@@ -231,6 +249,7 @@ module.exports = {
       // System 7: ETE
       {
         systemId: systemMap.ete,
+        stageId: null,
         userId: userMap.maria,
         date: getDate(35),
         status: 'completed',
@@ -241,6 +260,7 @@ module.exports = {
       },
       {
         systemId: systemMap.ete,
+        stageId: null,
         userId: userMap.pedro,
         date: getDate(18),
         status: 'completed',
@@ -251,6 +271,7 @@ module.exports = {
       },
       {
         systemId: systemMap.ete,
+        stageId: null,
         userId: userMap.joao,
         date: getDate(3),
         status: 'pending',
@@ -263,6 +284,7 @@ module.exports = {
       // Pending/Scheduled inspections
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.pedro,
         date: getDate(-2),
         status: 'pending',
@@ -273,6 +295,7 @@ module.exports = {
       },
       {
         systemId: systemMap.torre,
+        stageId: null,
         userId: userMap.maria,
         date: getDate(-5),
         status: 'pending',
@@ -283,6 +306,7 @@ module.exports = {
       },
       {
         systemId: systemMap.caldeira,
+        stageId: null,
         userId: userMap.joao,
         date: getDate(-10),
         status: 'pending',

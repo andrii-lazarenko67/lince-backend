@@ -86,7 +86,121 @@ module.exports = {
       }
     ], {});
 
-    // Get inserted systems to retrieve their IDs
+    // Get inserted parent systems to retrieve their IDs
+    const [parentSystems] = await queryInterface.sequelize.query(
+      `SELECT id, name FROM "Systems" WHERE "parentId" IS NULL ORDER BY id;`
+    );
+
+    // Create lookup for parent systems by name
+    const parentSystemMap = {};
+    parentSystems.forEach(s => { parentSystemMap[s.name] = s.id; });
+
+    // Insert Stages (child systems) for ETE
+    await queryInterface.bulkInsert('Systems', [
+      {
+        parentId: parentSystemMap['ETE - Tratamento de Efluentes'],
+        name: 'Estação Elevatória',
+        type: 'wwtp',
+        location: 'ETE - Entrada',
+        description: 'Bombeamento de efluentes para o sistema de tratamento.',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        parentId: parentSystemMap['ETE - Tratamento de Efluentes'],
+        name: 'Tanque de Aeração',
+        type: 'wwtp',
+        location: 'ETE - Biológico',
+        description: 'Tanque de aeração para tratamento biológico aeróbio.',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        parentId: parentSystemMap['ETE - Tratamento de Efluentes'],
+        name: 'Decantador Secundário',
+        type: 'wwtp',
+        location: 'ETE - Clarificação',
+        description: 'Decantador para separação do lodo ativado.',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        parentId: parentSystemMap['ETE - Tratamento de Efluentes'],
+        name: 'Filtro de Polimento',
+        type: 'wwtp',
+        location: 'ETE - Final',
+        description: 'Filtração final para polimento do efluente tratado.',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        parentId: parentSystemMap['ETE - Tratamento de Efluentes'],
+        name: 'Tanque de Efluente Tratado',
+        type: 'wwtp',
+        location: 'ETE - Saída',
+        description: 'Reservatório de efluente tratado antes do lançamento.',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      // Stages for ETA
+      {
+        parentId: parentSystemMap['ETA - Estação de Tratamento'],
+        name: 'Captação',
+        type: 'wtp',
+        location: 'ETA - Entrada',
+        description: 'Captação de água bruta.',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        parentId: parentSystemMap['ETA - Estação de Tratamento'],
+        name: 'Floculador',
+        type: 'wtp',
+        location: 'ETA - Coagulação',
+        description: 'Floculação para aglomeração de partículas.',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        parentId: parentSystemMap['ETA - Estação de Tratamento'],
+        name: 'Decantador',
+        type: 'wtp',
+        location: 'ETA - Clarificação',
+        description: 'Decantação de partículas floculadas.',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        parentId: parentSystemMap['ETA - Estação de Tratamento'],
+        name: 'Filtros',
+        type: 'wtp',
+        location: 'ETA - Filtração',
+        description: 'Filtração de água clarificada.',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        parentId: parentSystemMap['ETA - Estação de Tratamento'],
+        name: 'Reservatório de Água Tratada',
+        type: 'wtp',
+        location: 'ETA - Saída',
+        description: 'Armazenamento de água tratada.',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ], {});
+
+    // Get ALL systems (parent + child) for monitoring points and checklist items
     const [systems] = await queryInterface.sequelize.query(
       `SELECT id, name FROM "Systems" ORDER BY id;`
     );
@@ -102,6 +216,10 @@ module.exports = {
     // Create lookup maps
     const systemMap = {};
     systems.forEach((s, index) => { systemMap[index + 1] = s.id; });
+
+    // Create lookup by name for stages
+    const systemByName = {};
+    systems.forEach(s => { systemByName[s.name] = s.id; });
 
     const paramMap = {};
     parameters.forEach(p => { paramMap[p.name] = p.id; });
@@ -227,7 +345,69 @@ module.exports = {
       { systemId: systemMap[8], name: 'Verificar pH do efluente', description: 'Medir pH antes do tratamento', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
       { systemId: systemMap[8], name: 'Checar temperatura', description: 'Verificar temperatura do efluente', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
       { systemId: systemMap[8], name: 'Inspecionar tanque de equalização', description: 'Verificar nível e mistura', isRequired: true, order: 3, createdAt: new Date(), updatedAt: new Date() },
-      { systemId: systemMap[8], name: 'Verificar sistema de dosagem', description: 'Checar bombas dosadoras', isRequired: true, order: 4, createdAt: new Date(), updatedAt: new Date() }
+      { systemId: systemMap[8], name: 'Verificar sistema de dosagem', description: 'Checar bombas dosadoras', isRequired: true, order: 4, createdAt: new Date(), updatedAt: new Date() },
+
+      // ETE Stages - Estação Elevatória
+      { systemId: systemByName['Estação Elevatória'], name: 'Verificar bombas', description: 'Checar funcionamento das bombas submersas', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Estação Elevatória'], name: 'Inspecionar grade', description: 'Verificar limpeza da grade de retenção', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Estação Elevatória'], name: 'Checar nível do poço', description: 'Verificar nível de efluente no poço de sucção', isRequired: true, order: 3, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Estação Elevatória'], name: 'Verificar painel elétrico', description: 'Checar alarmes e funcionamento do painel', isRequired: true, order: 4, createdAt: new Date(), updatedAt: new Date() },
+
+      // ETE Stages - Tanque de Aeração
+      { systemId: systemByName['Tanque de Aeração'], name: 'Verificar aeradores', description: 'Checar funcionamento dos aeradores superficiais', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Tanque de Aeração'], name: 'Medir oxigênio dissolvido', description: 'Verificar nível de OD no tanque', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Tanque de Aeração'], name: 'Observar características do lodo', description: 'Verificar cor, odor e formação de espuma', isRequired: true, order: 3, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Tanque de Aeração'], name: 'Checar nível do tanque', description: 'Verificar nível de operação', isRequired: true, order: 4, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Tanque de Aeração'], name: 'Verificar mistura', description: 'Confirmar homogeneização do lodo ativado', isRequired: false, order: 5, createdAt: new Date(), updatedAt: new Date() },
+
+      // ETE Stages - Decantador Secundário
+      { systemId: systemByName['Decantador Secundário'], name: 'Verificar clarificação', description: 'Observar qualidade do efluente clarificado', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Decantador Secundário'], name: 'Checar manto de lodo', description: 'Verificar altura do manto de lodo', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Decantador Secundário'], name: 'Inspecionar raspador', description: 'Verificar funcionamento do raspador de fundo', isRequired: true, order: 3, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Decantador Secundário'], name: 'Verificar vertedor', description: 'Checar escoamento pelo vertedor', isRequired: true, order: 4, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Decantador Secundário'], name: 'Checar bomba de retorno', description: 'Verificar bomba de recirculação de lodo', isRequired: true, order: 5, createdAt: new Date(), updatedAt: new Date() },
+
+      // ETE Stages - Filtro de Polimento
+      { systemId: systemByName['Filtro de Polimento'], name: 'Verificar pressão diferencial', description: 'Checar perda de carga do filtro', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Filtro de Polimento'], name: 'Inspecionar meio filtrante', description: 'Verificar condição do leito filtrante', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Filtro de Polimento'], name: 'Verificar qualidade do filtrado', description: 'Avaliar turbidez do efluente filtrado', isRequired: true, order: 3, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Filtro de Polimento'], name: 'Checar necessidade de retrolavagem', description: 'Determinar se é necessário retrolavagem', isRequired: false, order: 4, createdAt: new Date(), updatedAt: new Date() },
+
+      // ETE Stages - Tanque de Efluente Tratado
+      { systemId: systemByName['Tanque de Efluente Tratado'], name: 'Verificar nível', description: 'Checar nível do reservatório', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Tanque de Efluente Tratado'], name: 'Inspecionar qualidade visual', description: 'Observar cor e turbidez do efluente', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Tanque de Efluente Tratado'], name: 'Verificar sistema de desinfecção', description: 'Checar dosagem de cloro ou UV', isRequired: true, order: 3, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Tanque de Efluente Tratado'], name: 'Checar ponto de lançamento', description: 'Verificar condições do ponto de descarte', isRequired: true, order: 4, createdAt: new Date(), updatedAt: new Date() },
+
+      // ETA Stages - Captação
+      { systemId: systemByName['Captação'], name: 'Verificar bombas de captação', description: 'Checar funcionamento das bombas', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Captação'], name: 'Inspecionar grades', description: 'Verificar limpeza das grades', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Captação'], name: 'Verificar nível do manancial', description: 'Checar condições do manancial', isRequired: true, order: 3, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Captação'], name: 'Checar vazão de captação', description: 'Registrar vazão captada', isRequired: true, order: 4, createdAt: new Date(), updatedAt: new Date() },
+
+      // ETA Stages - Floculador
+      { systemId: systemByName['Floculador'], name: 'Verificar dosagem de coagulante', description: 'Checar dosagem de sulfato de alumínio', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Floculador'], name: 'Observar formação de flocos', description: 'Avaliar qualidade dos flocos formados', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Floculador'], name: 'Verificar agitadores', description: 'Checar funcionamento dos agitadores', isRequired: true, order: 3, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Floculador'], name: 'Checar pH de coagulação', description: 'Verificar pH ótimo para coagulação', isRequired: true, order: 4, createdAt: new Date(), updatedAt: new Date() },
+
+      // ETA Stages - Decantador
+      { systemId: systemByName['Decantador'], name: 'Verificar clarificação', description: 'Observar qualidade da água clarificada', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Decantador'], name: 'Inspecionar acúmulo de lodo', description: 'Verificar necessidade de descarte de lodo', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Decantador'], name: 'Checar vertedores', description: 'Verificar distribuição uniforme nos vertedores', isRequired: true, order: 3, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Decantador'], name: 'Verificar raspador', description: 'Checar funcionamento do raspador de lodo', isRequired: false, order: 4, createdAt: new Date(), updatedAt: new Date() },
+
+      // ETA Stages - Filtros
+      { systemId: systemByName['Filtros'], name: 'Verificar perda de carga', description: 'Checar pressão diferencial dos filtros', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Filtros'], name: 'Avaliar qualidade do filtrado', description: 'Medir turbidez da água filtrada', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Filtros'], name: 'Checar necessidade de retrolavagem', description: 'Determinar cronograma de retrolavagem', isRequired: true, order: 3, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Filtros'], name: 'Inspecionar meio filtrante', description: 'Verificar condição da areia e antracito', isRequired: false, order: 4, createdAt: new Date(), updatedAt: new Date() },
+
+      // ETA Stages - Reservatório de Água Tratada
+      { systemId: systemByName['Reservatório de Água Tratada'], name: 'Verificar nível', description: 'Checar nível do reservatório', isRequired: true, order: 1, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Reservatório de Água Tratada'], name: 'Checar cloro residual', description: 'Medir cloro residual livre', isRequired: true, order: 2, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Reservatório de Água Tratada'], name: 'Verificar fluoretação', description: 'Checar dosagem de flúor se aplicável', isRequired: false, order: 3, createdAt: new Date(), updatedAt: new Date() },
+      { systemId: systemByName['Reservatório de Água Tratada'], name: 'Inspecionar estrutura', description: 'Verificar condição física do reservatório', isRequired: true, order: 4, createdAt: new Date(), updatedAt: new Date() }
     ], {});
   },
 

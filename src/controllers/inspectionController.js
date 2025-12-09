@@ -6,11 +6,12 @@ const notificationService = require('../services/notificationService');
 const inspectionController = {
   async getAll(req, res, next) {
     try {
-      const { systemId, userId, status, startDate, endDate } = req.query;
+      const { systemId, stageId, userId, status, startDate, endDate } = req.query;
 
       const where = {};
 
       if (systemId) where.systemId = systemId;
+      if (stageId) where.stageId = stageId;
       if (userId) where.userId = userId;
       if (status) where.status = status;
       if (startDate && endDate) {
@@ -22,6 +23,7 @@ const inspectionController = {
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           {
             model: InspectionItem,
             as: 'items',
@@ -47,6 +49,7 @@ const inspectionController = {
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           {
             model: InspectionItem,
             as: 'items',
@@ -74,12 +77,13 @@ const inspectionController = {
 
   async create(req, res, next) {
     try {
-      const { systemId, date, conclusion, items, sendNotification } = req.body;
+      const { systemId, stageId, date, conclusion, items, sendNotification } = req.body;
       const userId = req.user.id;
 
       const inspection = await Inspection.create({
         userId,
         systemId,
+        stageId: stageId || null,
         date: date || new Date(),
         status: 'pending',
         conclusion
@@ -115,6 +119,7 @@ const inspectionController = {
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           {
             model: InspectionItem,
             as: 'items',
@@ -186,6 +191,7 @@ const inspectionController = {
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           {
             model: InspectionItem,
             as: 'items',
