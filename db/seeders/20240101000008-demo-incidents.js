@@ -21,6 +21,12 @@ module.exports = {
       { type: Sequelize.QueryTypes.SELECT }
     );
 
+    // Get stages (child systems) for stageId references
+    const stages = await queryInterface.sequelize.query(
+      'SELECT id, name, "parentId" FROM "Systems" WHERE "parentId" IS NOT NULL ORDER BY id',
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
     // Create user lookup by email
     const userMap = {};
     users.forEach(user => {
@@ -43,10 +49,21 @@ module.exports = {
       else if (system.name === 'ETE - Tratamento de Efluentes') systemMap.ete = system.id;
     });
 
+    // Create stage lookup by name
+    const stageMap = {};
+    stages.forEach(stage => {
+      if (stage.name === 'Tanque de Aeração') stageMap.tanqueAeracao = stage.id;
+      else if (stage.name === 'Decantador Secundário') stageMap.decantadorSecundario = stage.id;
+      else if (stage.name === 'Filtro de Polimento') stageMap.filtroPolimento = stage.id;
+      else if (stage.name === 'Floculador') stageMap.floculador = stage.id;
+      else if (stage.name === 'Filtros') stageMap.filtros = stage.id;
+    });
+
     const incidents = [
       // Incident 1: Resolved - Chlorine pump failure
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.pedro,
         title: 'Falha na bomba dosadora de cloro',
         description: 'Bomba dosadora de cloro parou de funcionar durante operação normal. Detectado pela queda nos níveis de cloro residual. Possível falha no diafragma.',
@@ -61,6 +78,7 @@ module.exports = {
       // Incident 2: Resolved - pH out of range
       {
         systemId: systemMap.piscinaInfantil,
+        stageId: null,
         userId: userMap.maria,
         title: 'pH da piscina infantil fora do padrão',
         description: 'pH medido em 8.2, acima do limite máximo de 7.8. Possível causa: dosagem excessiva de barrilha no dia anterior.',
@@ -75,6 +93,7 @@ module.exports = {
       // Incident 3: Resolved - Legionella alert
       {
         systemId: systemMap.torre1,
+        stageId: null,
         userId: userMap.joao,
         title: 'Alerta de Legionella na torre de resfriamento',
         description: 'Contagem de Legionella pneumophila acima de 1000 UFC/L detectada na análise mensal. Requer tratamento imediato conforme protocolo de segurança.',
@@ -89,6 +108,7 @@ module.exports = {
       // Incident 4: In Progress - Scale buildup
       {
         systemId: systemMap.torre2,
+        stageId: null,
         userId: userMap.pedro,
         title: 'Incrustação detectada nas tubulações',
         description: 'Detectada incrustação de carbonato de cálcio nas tubulações de distribuição da torre 2. Delta de temperatura aumentando.',
@@ -103,6 +123,7 @@ module.exports = {
       // Incident 5: Resolved - Boiler water quality
       {
         systemId: systemMap.caldeira,
+        stageId: null,
         userId: userMap.joao,
         title: 'Dureza elevada na água de alimentação da caldeira',
         description: 'Dureza total medida em 15 mg/L CaCO3 na água de alimentação, acima do limite de 5 mg/L. Abrandador pode estar com problema de regeneração.',
@@ -114,12 +135,13 @@ module.exports = {
         createdAt: getDate(12, 7),
         updatedAt: getDate(11, 15)
       },
-      // Incident 6: Resolved - WTP turbidity
+      // Incident 6: Resolved - WTP turbidity (with stage: Floculador)
       {
         systemId: systemMap.eta,
+        stageId: stageMap.floculador,
         userId: userMap.pedro,
         title: 'Turbidez elevada na água bruta',
-        description: 'Turbidez da água bruta chegou a 150 NTU devido às fortes chuvas na região. Necessário ajuste no processo de tratamento.',
+        description: 'Turbidez da água bruta chegou a 150 NTU devido às fortes chuvas na região. Necessário ajuste no processo de tratamento no floculador.',
         priority: 'medium',
         status: 'resolved',
         assignedTo: userMap.maria,
@@ -128,9 +150,10 @@ module.exports = {
         createdAt: getDate(20, 6),
         updatedAt: getDate(19, 18)
       },
-      // Incident 7: Open - WWTP odor
+      // Incident 7: Open - WWTP odor (with stage: Tanque de Aeração)
       {
         systemId: systemMap.ete,
+        stageId: stageMap.tanqueAeracao,
         userId: userMap.maria,
         title: 'Odor característico no tanque de aeração',
         description: 'Detectado odor de sulfeto no tanque de aeração. Possível problema de oxigenação ou entrada de efluente com alta carga orgânica.',
@@ -145,6 +168,7 @@ module.exports = {
       // Incident 8: Resolved - Pool filter issue
       {
         systemId: systemMap.piscina,
+        stageId: null,
         userId: userMap.joao,
         title: 'Pressão elevada no filtro de areia',
         description: 'Manômetro do filtro indicando 2.5 bar, acima do limite de 2.0 bar. Necessária retrolavagem ou possível obstrução.',
@@ -159,6 +183,7 @@ module.exports = {
       // Incident 9: In Progress - Cooling tower fan
       {
         systemId: systemMap.torre1,
+        stageId: null,
         userId: userMap.pedro,
         title: 'Vibração excessiva no ventilador',
         description: 'Detectada vibração anormal no ventilador da torre de resfriamento 1. Possível desbalanceamento das pás ou problema nos rolamentos.',
@@ -170,12 +195,13 @@ module.exports = {
         createdAt: getDate(3, 8),
         updatedAt: getDate(2, 10)
       },
-      // Incident 10: Resolved - Chemical spill
+      // Incident 10: Resolved - Chemical spill (with stage: Filtros)
       {
         systemId: systemMap.eta,
+        stageId: stageMap.filtros,
         userId: userMap.maria,
         title: 'Vazamento de ácido no sistema de dosagem',
-        description: 'Pequeno vazamento detectado na mangueira de sucção da bomba de ácido. Aproximadamente 2L derramados na bacia de contenção.',
+        description: 'Pequeno vazamento detectado na mangueira de sucção da bomba de ácido próximo aos filtros. Aproximadamente 2L derramados na bacia de contenção.',
         priority: 'high',
         status: 'resolved',
         assignedTo: userMap.pedro,

@@ -22,6 +22,10 @@ module.exports = (sequelize, DataTypes) => {
     isOutOfRange: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      allowNull: true
     }
   }, {
     tableName: 'DailyLogEntries',

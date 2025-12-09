@@ -15,6 +15,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false
     },
+    stageId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     title: {
       type: DataTypes.STRING(200),
       allowNull: false
@@ -52,6 +56,7 @@ module.exports = (sequelize, DataTypes) => {
     Incident.belongsTo(models.User, { foreignKey: 'userId', as: 'reporter' });
     Incident.belongsTo(models.User, { foreignKey: 'assignedTo', as: 'assignee' });
     Incident.belongsTo(models.System, { foreignKey: 'systemId', as: 'system' });
+    Incident.belongsTo(models.System, { foreignKey: 'stageId', as: 'stage' });
     Incident.hasMany(models.IncidentPhoto, { foreignKey: 'incidentId', as: 'photos' });
     Incident.hasMany(models.IncidentComment, { foreignKey: 'incidentId', as: 'comments' });
   };

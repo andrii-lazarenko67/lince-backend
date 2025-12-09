@@ -225,7 +225,8 @@ const dailyLogController = {
             dailyLogId: dailyLog.id,
             monitoringPointId: entry.monitoringPointId,
             value: entry.value,
-            isOutOfRange
+            isOutOfRange,
+            notes: entry.notes || null
           });
         }
 
@@ -319,7 +320,8 @@ const dailyLogController = {
             dailyLogId: dailyLog.id,
             monitoringPointId: entry.monitoringPointId,
             value: entry.value,
-            isOutOfRange
+            isOutOfRange,
+            notes: entry.notes || null
           });
         }
       }

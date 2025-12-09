@@ -212,6 +212,7 @@ module.exports = {
           monitoringPointId: point.id,
           value: parseFloat(value),
           isOutOfRange: isOutOfRange,
+          notes: isOutOfRange ? 'Valor fora da faixa esperada. Verificar condições operacionais.' : null,
           createdAt: new Date(),
           updatedAt: new Date()
         });

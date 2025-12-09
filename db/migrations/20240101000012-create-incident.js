@@ -29,6 +29,16 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'RESTRICT'
       },
+      stageId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Systems',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
       title: {
         type: Sequelize.STRING(200),
         allowNull: false

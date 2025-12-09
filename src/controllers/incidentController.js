@@ -6,11 +6,12 @@ const notificationService = require('../services/notificationService');
 const incidentController = {
   async getAll(req, res, next) {
     try {
-      const { systemId, userId, status, priority, assignedTo } = req.query;
+      const { systemId, stageId, userId, status, priority, assignedTo } = req.query;
 
       const where = {};
 
       if (systemId) where.systemId = systemId;
+      if (stageId) where.stageId = stageId;
       if (userId) where.userId = userId;
       if (status) where.status = status;
       if (priority) where.priority = priority;
@@ -22,6 +23,7 @@ const incidentController = {
           { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
           { model: User, as: 'assignee', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           { model: IncidentPhoto, as: 'photos' },
           {
             model: IncidentComment,
@@ -48,6 +50,7 @@ const incidentController = {
           { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
           { model: User, as: 'assignee', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           { model: IncidentPhoto, as: 'photos' },
           {
             model: IncidentComment,
@@ -76,12 +79,13 @@ const incidentController = {
 
   async create(req, res, next) {
     try {
-      const { systemId, title, description, priority, sendNotification } = req.body;
+      const { systemId, stageId, title, description, priority, sendNotification } = req.body;
       const userId = req.user.id;
 
       const incident = await Incident.create({
         userId,
         systemId,
+        stageId: stageId || null,
         title,
         description,
         priority: priority || 'medium',
@@ -120,6 +124,7 @@ const incidentController = {
         include: [
           { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
+          { model: System, as: 'stage' },
           { model: IncidentPhoto, as: 'photos' }
         ]
       });
