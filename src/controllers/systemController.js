@@ -244,7 +244,12 @@ const systemController = {
 
   async delete(req, res, next) {
     try {
-      const system = await System.findByPk(req.params.id);
+      const system = await System.findByPk(req.params.id, {
+        include: [
+          { model: MonitoringPoint, as: 'monitoringPoints' },
+          { model: ChecklistItem, as: 'checklistItems' }
+        ]
+      });
 
       if (!system) {
         return res.status(404).json({
@@ -260,6 +265,29 @@ const systemController = {
           success: false,
           message: 'Cannot delete system with sub-systems. Please delete sub-systems first.'
         });
+      }
+
+      // Check if system has related records that prevent deletion
+      const { DailyLog, Inspection, Incident } = require('../../db/models');
+
+      const dailyLogCount = await DailyLog.count({ where: { systemId: req.params.id } });
+      const inspectionCount = await Inspection.count({ where: { systemId: req.params.id } });
+      const incidentCount = await Incident.count({ where: { systemId: req.params.id } });
+
+      if (dailyLogCount > 0 || inspectionCount > 0 || incidentCount > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot delete system with existing records (daily logs, inspections, or incidents). Please remove these records first.'
+        });
+      }
+
+      // Delete associated monitoring points and checklist items
+      if (system.monitoringPoints && system.monitoringPoints.length > 0) {
+        await MonitoringPoint.destroy({ where: { systemId: req.params.id } });
+      }
+
+      if (system.checklistItems && system.checklistItems.length > 0) {
+        await ChecklistItem.destroy({ where: { systemId: req.params.id } });
       }
 
       // Delete the system
