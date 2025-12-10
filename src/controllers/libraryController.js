@@ -112,7 +112,7 @@ const libraryController = {
 
   async update(req, res, next) {
     try {
-      const { title, description, category, systemId } = req.body;
+      const { title, description, category, systemId, fileName } = req.body;
 
       const document = await Document.findByPk(req.params.id);
 
@@ -127,12 +127,20 @@ const libraryController = {
         title: title || document.title,
         description: description !== undefined ? description : document.description,
         category: category || document.category,
-        systemId: systemId !== undefined ? systemId : document.systemId
+        systemId: systemId !== undefined ? systemId : document.systemId,
+        fileName: fileName || document.fileName
+      });
+
+      const updatedDocument = await Document.findByPk(document.id, {
+        include: [
+          { model: System, as: 'system' },
+          { model: User, as: 'uploader', attributes: ['id', 'name'] }
+        ]
       });
 
       res.json({
         success: true,
-        data: document
+        data: updatedDocument
       });
     } catch (error) {
       next(error);
