@@ -286,6 +286,14 @@ const inspectionController = {
         });
       }
 
+      // Permission check: Manager OR inspection creator (technician)
+      if (req.user.role !== 'manager' && inspection.userId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'You do not have permission to delete this inspection'
+        });
+      }
+
       // Delete photos from cloudinary
       for (const photo of inspection.photos) {
         if (photo.publicId) {
