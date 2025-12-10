@@ -244,6 +244,9 @@ const systemController = {
 
   async delete(req, res, next) {
     try {
+      const { force } = req.query;
+      const forceDelete = force === 'true';
+
       const system = await System.findByPk(req.params.id, {
         include: [
           { model: MonitoringPoint, as: 'monitoringPoints' },
@@ -275,10 +278,29 @@ const systemController = {
       const incidentCount = await Incident.count({ where: { systemId: req.params.id } });
 
       if (dailyLogCount > 0 || inspectionCount > 0 || incidentCount > 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Cannot delete system with existing records (daily logs, inspections, or incidents). Please remove these records first.'
-        });
+        if (!forceDelete) {
+          // First attempt - warn user about related records
+          return res.status(400).json({
+            success: false,
+            message: 'Cannot delete system with existing records (daily logs, inspections, or incidents). Please remove these records first.',
+            relatedRecords: {
+              dailyLogs: dailyLogCount,
+              inspections: inspectionCount,
+              incidents: incidentCount
+            }
+          });
+        }
+
+        // Force delete - delete all related records
+        if (dailyLogCount > 0) {
+          await DailyLog.destroy({ where: { systemId: req.params.id } });
+        }
+        if (inspectionCount > 0) {
+          await Inspection.destroy({ where: { systemId: req.params.id } });
+        }
+        if (incidentCount > 0) {
+          await Incident.destroy({ where: { systemId: req.params.id } });
+        }
       }
 
       // Delete associated monitoring points and checklist items

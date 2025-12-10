@@ -1,8 +1,14 @@
 const path = require('path');
+require('dotenv').config();
+
+// Select seeders directory based on SEEDER_LANGUAGE environment variable
+// Default to Portuguese ('pt') if not set
+const seederLanguage = process.env.SEEDER_LANGUAGE || 'pt';
+const seedersDir = seederLanguage === 'en' ? 'seeders1' : 'seeders';
 
 module.exports = {
   'config': path.resolve('src/config', 'database.js'),
   'models-path': path.resolve('db', 'models'),
-  'seeders-path': path.resolve('db', 'seeders'),
+  'seeders-path': path.resolve('db', seedersDir),
   'migrations-path': path.resolve('db', 'migrations')
 };

@@ -35,6 +35,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true
     },
+    recommendedDosage: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
