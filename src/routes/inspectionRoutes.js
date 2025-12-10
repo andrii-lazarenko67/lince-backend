@@ -11,7 +11,7 @@ router.get('/', inspectionController.getAll);
 router.get('/:id', inspectionController.getById);
 router.post('/', upload.array('photos', 10), inspectionController.create);
 router.put('/:id', inspectionController.update);
-router.put('/:id/approve', roleMiddleware('manager', 'admin'), inspectionController.approve);
+router.put('/:id/mark-viewed', roleMiddleware('manager', 'admin'), inspectionController.markAsViewed);
 router.post('/:id/photos', upload.array('photos', 10), inspectionController.addPhotos);
 router.delete('/:id', inspectionController.delete);
 

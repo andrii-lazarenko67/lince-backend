@@ -24,6 +24,7 @@ const inspectionController = {
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
           { model: System, as: 'stage' },
+          { model: User, as: 'viewedByUser', attributes: ['id', 'name'] },
           {
             model: InspectionItem,
             as: 'items',
@@ -50,6 +51,7 @@ const inspectionController = {
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
           { model: System, as: 'stage' },
+          { model: User, as: 'viewedByUser', attributes: ['id', 'name'] },
           {
             model: InspectionItem,
             as: 'items',
@@ -120,6 +122,7 @@ const inspectionController = {
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
           { model: System, as: 'stage' },
+          { model: User, as: 'viewedByUser', attributes: ['id', 'name'] },
           {
             model: InspectionItem,
             as: 'items',
@@ -192,6 +195,7 @@ const inspectionController = {
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
           { model: System, as: 'stage' },
+          { model: User, as: 'viewedByUser', attributes: ['id', 'name'] },
           {
             model: InspectionItem,
             as: 'items',
@@ -210,7 +214,7 @@ const inspectionController = {
     }
   },
 
-  async approve(req, res, next) {
+  async markAsViewed(req, res, next) {
     try {
       const { managerNotes } = req.body;
 
@@ -224,13 +228,30 @@ const inspectionController = {
       }
 
       await inspection.update({
-        status: 'approved',
-        managerNotes
+        status: 'viewed',
+        managerNotes,
+        viewedBy: req.user.id,
+        viewedAt: new Date()
+      });
+
+      const updatedInspection = await Inspection.findByPk(inspection.id, {
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
+          { model: System, as: 'system' },
+          { model: System, as: 'stage' },
+          { model: User, as: 'viewedByUser', attributes: ['id', 'name'] },
+          {
+            model: InspectionItem,
+            as: 'items',
+            include: [{ model: ChecklistItem, as: 'checklistItem' }]
+          },
+          { model: InspectionPhoto, as: 'photos' }
+        ]
       });
 
       res.json({
         success: true,
-        data: inspection
+        data: updatedInspection
       });
     } catch (error) {
       next(error);

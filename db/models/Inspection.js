@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     status: {
-      type: DataTypes.ENUM('pending', 'completed', 'approved'),
+      type: DataTypes.ENUM('pending', 'completed', 'viewed'),
       defaultValue: 'pending'
     },
     conclusion: {
@@ -33,6 +33,14 @@ module.exports = (sequelize, DataTypes) => {
     },
     managerNotes: {
       type: DataTypes.TEXT,
+      allowNull: true
+    },
+    viewedBy: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    viewedAt: {
+      type: DataTypes.DATE,
       allowNull: true
     }
   }, {
@@ -44,6 +52,7 @@ module.exports = (sequelize, DataTypes) => {
     Inspection.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
     Inspection.belongsTo(models.System, { foreignKey: 'systemId', as: 'system' });
     Inspection.belongsTo(models.System, { foreignKey: 'stageId', as: 'stage' });
+    Inspection.belongsTo(models.User, { foreignKey: 'viewedBy', as: 'viewedByUser' });
     Inspection.hasMany(models.InspectionItem, { foreignKey: 'inspectionId', as: 'items' });
     Inspection.hasMany(models.InspectionPhoto, { foreignKey: 'inspectionId', as: 'photos' });
   };
