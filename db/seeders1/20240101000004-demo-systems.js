@@ -7,7 +7,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Main Pool - Sunset Hotel',
-        type: 'pool',
+        systemTypeId: 1,
         location: 'Recreation Area - Block A',
         description: 'Main hotel pool with 500,000 liter capacity. Recreational use.',
         status: 'active',
@@ -17,7 +17,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Children\'s Pool - Sunset Hotel',
-        type: 'pool',
+        systemTypeId: 1,
         location: 'Recreation Area - Block A',
         description: 'Children\'s pool with maximum depth of 60cm.',
         status: 'active',
@@ -27,7 +27,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Cooling Tower - Unit 1',
-        type: 'cooling_tower',
+        systemTypeId: 2,
         location: 'Industrial Area - Sector B',
         description: 'Main cooling tower for central air conditioning system.',
         status: 'active',
@@ -37,7 +37,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Cooling Tower - Unit 2',
-        type: 'cooling_tower',
+        systemTypeId: 2,
         location: 'Industrial Area - Sector B',
         description: 'Secondary backup cooling tower.',
         status: 'active',
@@ -47,7 +47,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Steam Boiler - Main',
-        type: 'boiler',
+        systemTypeId: 3,
         location: 'Machine Room',
         description: 'Main boiler for industrial steam generation. Capacity: 10 ton/h.',
         status: 'active',
@@ -57,7 +57,7 @@ module.exports = {
       {
         parentId: null,
         name: 'WTP - Water Treatment Plant',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'Utilities Area',
         description: 'Water treatment plant for industrial water supply.',
         status: 'active',
@@ -67,7 +67,7 @@ module.exports = {
       {
         parentId: null,
         name: 'WWTP - Wastewater Treatment',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'Utilities Area - Rear',
         description: 'Industrial wastewater treatment plant before discharge.',
         status: 'active',
@@ -77,7 +77,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Effluent System - Line 1',
-        type: 'effluent',
+        systemTypeId: 6,
         location: 'Production Area',
         description: 'Collection and treatment system for production line 1 effluent.',
         status: 'active',
@@ -100,7 +100,7 @@ module.exports = {
       {
         parentId: parentSystemMap['WWTP - Wastewater Treatment'],
         name: 'Pump Station',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'WWTP - Inlet',
         description: 'Pumping of wastewater to the treatment system.',
         status: 'active',
@@ -110,7 +110,7 @@ module.exports = {
       {
         parentId: parentSystemMap['WWTP - Wastewater Treatment'],
         name: 'Aeration Tank',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'WWTP - Biological',
         description: 'Aeration tank for aerobic biological treatment.',
         status: 'active',
@@ -120,7 +120,7 @@ module.exports = {
       {
         parentId: parentSystemMap['WWTP - Wastewater Treatment'],
         name: 'Secondary Clarifier',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'WWTP - Clarification',
         description: 'Clarifier for activated sludge separation.',
         status: 'active',
@@ -130,7 +130,7 @@ module.exports = {
       {
         parentId: parentSystemMap['WWTP - Wastewater Treatment'],
         name: 'Polishing Filter',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'WWTP - Final',
         description: 'Final filtration for treated effluent polishing.',
         status: 'active',
@@ -140,7 +140,7 @@ module.exports = {
       {
         parentId: parentSystemMap['WWTP - Wastewater Treatment'],
         name: 'Treated Effluent Tank',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'WWTP - Outlet',
         description: 'Treated effluent reservoir before discharge.',
         status: 'active',
@@ -151,7 +151,7 @@ module.exports = {
       {
         parentId: parentSystemMap['WTP - Water Treatment Plant'],
         name: 'Intake',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'WTP - Inlet',
         description: 'Raw water intake.',
         status: 'active',
@@ -161,7 +161,7 @@ module.exports = {
       {
         parentId: parentSystemMap['WTP - Water Treatment Plant'],
         name: 'Flocculator',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'WTP - Coagulation',
         description: 'Flocculation for particle agglomeration.',
         status: 'active',
@@ -171,7 +171,7 @@ module.exports = {
       {
         parentId: parentSystemMap['WTP - Water Treatment Plant'],
         name: 'Clarifier',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'WTP - Clarification',
         description: 'Sedimentation of flocculated particles.',
         status: 'active',
@@ -181,7 +181,7 @@ module.exports = {
       {
         parentId: parentSystemMap['WTP - Water Treatment Plant'],
         name: 'Filters',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'WTP - Filtration',
         description: 'Clarified water filtration.',
         status: 'active',
@@ -191,7 +191,7 @@ module.exports = {
       {
         parentId: parentSystemMap['WTP - Water Treatment Plant'],
         name: 'Treated Water Reservoir',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'WTP - Outlet',
         description: 'Treated water storage.',
         status: 'active',

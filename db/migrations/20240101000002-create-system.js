@@ -23,9 +23,15 @@ module.exports = {
         type: Sequelize.STRING(100),
         allowNull: false
       },
-      type: {
-        type: Sequelize.STRING(50),
-        allowNull: false
+      systemTypeId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'SystemTypes',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT'
       },
       location: {
         type: Sequelize.STRING(200),
@@ -52,6 +58,11 @@ module.exports = {
     // Add index for better query performance on hierarchical queries
     await queryInterface.addIndex('Systems', ['parentId'], {
       name: 'systems_parent_id_index'
+    });
+
+    // Add index for systemTypeId for better query performance
+    await queryInterface.addIndex('Systems', ['systemTypeId'], {
+      name: 'systems_system_type_id_index'
     });
   },
 

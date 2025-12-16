@@ -14,9 +14,13 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: true
       }
     },
-    type: {
-      type: DataTypes.STRING(50),
-      allowNull: false
+    systemTypeId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'SystemTypes',
+        key: 'id'
+      }
     },
     location: {
       type: DataTypes.STRING(200),
@@ -44,6 +48,12 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   System.associate = function(models) {
+    // System Type association
+    System.belongsTo(models.SystemType, {
+      foreignKey: 'systemTypeId',
+      as: 'systemType'
+    });
+
     // Regular associations
     System.hasMany(models.MonitoringPoint, { foreignKey: 'systemId', as: 'monitoringPoints' });
     System.hasMany(models.ChecklistItem, { foreignKey: 'systemId', as: 'checklistItems' });

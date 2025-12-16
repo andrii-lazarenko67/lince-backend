@@ -1,15 +1,15 @@
-const { System, MonitoringPoint, ChecklistItem } = require('../../db/models');
+const { System, SystemType, MonitoringPoint, ChecklistItem } = require('../../db/models');
 const { Op } = require('sequelize');
 
 const systemController = {
   async getAll(req, res, next) {
     try {
-      const { status, type, search, parentId } = req.query;
+      const { status, systemTypeId, search, parentId } = req.query;
 
       const where = {};
 
       if (status) where.status = status;
-      if (type) where.type = type;
+      if (systemTypeId) where.systemTypeId = systemTypeId;
       if (parentId !== undefined) {
         // Filter by parent: if parentId is 'null' or '', get root systems only
         where.parentId = parentId === 'null' || parentId === '' ? null : parentId;
@@ -25,6 +25,12 @@ const systemController = {
         where,
         include: [
           {
+            model: SystemType,
+            as: 'systemType',
+            attributes: ['id', 'name', 'description'],
+            required: false
+          },
+          {
             model: MonitoringPoint,
             as: 'monitoringPoints',
             required: false
@@ -38,13 +44,25 @@ const systemController = {
           {
             model: System,
             as: 'parent',
-            attributes: ['id', 'name', 'type'],
+            attributes: ['id', 'name', 'systemTypeId'],
+            include: [{
+              model: SystemType,
+              as: 'systemType',
+              attributes: ['id', 'name'],
+              required: false
+            }],
             required: false
           },
           {
             model: System,
             as: 'children',
-            attributes: ['id', 'name', 'type', 'status'],
+            attributes: ['id', 'name', 'systemTypeId', 'status'],
+            include: [{
+              model: SystemType,
+              as: 'systemType',
+              attributes: ['id', 'name'],
+              required: false
+            }],
             required: false
           }
         ],
@@ -65,6 +83,12 @@ const systemController = {
       const system = await System.findByPk(req.params.id, {
         include: [
           {
+            model: SystemType,
+            as: 'systemType',
+            attributes: ['id', 'name', 'description'],
+            required: false
+          },
+          {
             model: MonitoringPoint,
             as: 'monitoringPoints',
             required: false
@@ -79,13 +103,25 @@ const systemController = {
           {
             model: System,
             as: 'parent',
-            attributes: ['id', 'name', 'type'],
+            attributes: ['id', 'name', 'systemTypeId'],
+            include: [{
+              model: SystemType,
+              as: 'systemType',
+              attributes: ['id', 'name'],
+              required: false
+            }],
             required: false
           },
           {
             model: System,
             as: 'children',
-            attributes: ['id', 'name', 'type', 'status', 'location'],
+            attributes: ['id', 'name', 'systemTypeId', 'status', 'location'],
+            include: [{
+              model: SystemType,
+              as: 'systemType',
+              attributes: ['id', 'name'],
+              required: false
+            }],
             required: false
           }
         ]
@@ -109,7 +145,23 @@ const systemController = {
 
   async create(req, res, next) {
     try {
-      const { name, type, location, description, status, parentId } = req.body;
+      const { name, systemTypeId, location, description, status, parentId } = req.body;
+
+      // Validate systemTypeId
+      if (!systemTypeId) {
+        return res.status(400).json({
+          success: false,
+          message: 'System type is required'
+        });
+      }
+
+      const systemType = await SystemType.findByPk(systemTypeId);
+      if (!systemType) {
+        return res.status(404).json({
+          success: false,
+          message: 'System type not found'
+        });
+      }
 
       // Validate parent exists if parentId is provided
       if (parentId) {
@@ -124,7 +176,7 @@ const systemController = {
 
       const system = await System.create({
         name,
-        type,
+        systemTypeId,
         location,
         description,
         status: status || 'active',
@@ -135,15 +187,33 @@ const systemController = {
       const createdSystem = await System.findByPk(system.id, {
         include: [
           {
+            model: SystemType,
+            as: 'systemType',
+            attributes: ['id', 'name', 'description'],
+            required: false
+          },
+          {
             model: System,
             as: 'parent',
-            attributes: ['id', 'name', 'type'],
+            attributes: ['id', 'name', 'systemTypeId'],
+            include: [{
+              model: SystemType,
+              as: 'systemType',
+              attributes: ['id', 'name'],
+              required: false
+            }],
             required: false
           },
           {
             model: System,
             as: 'children',
-            attributes: ['id', 'name', 'type', 'status'],
+            attributes: ['id', 'name', 'systemTypeId', 'status'],
+            include: [{
+              model: SystemType,
+              as: 'systemType',
+              attributes: ['id', 'name'],
+              required: false
+            }],
             required: false
           }
         ]
@@ -160,7 +230,7 @@ const systemController = {
 
   async update(req, res, next) {
     try {
-      const { name, type, location, description, status, parentId } = req.body;
+      const { name, systemTypeId, location, description, status, parentId } = req.body;
 
       const system = await System.findByPk(req.params.id);
 
@@ -169,6 +239,17 @@ const systemController = {
           success: false,
           message: 'System not found'
         });
+      }
+
+      // Validate systemTypeId if provided
+      if (systemTypeId !== undefined) {
+        const systemType = await SystemType.findByPk(systemTypeId);
+        if (!systemType) {
+          return res.status(404).json({
+            success: false,
+            message: 'System type not found'
+          });
+        }
       }
 
       // Validate parent exists if parentId is provided
@@ -208,7 +289,7 @@ const systemController = {
 
       await system.update({
         name: name || system.name,
-        type: type || system.type,
+        systemTypeId: systemTypeId || system.systemTypeId,
         location: location !== undefined ? location : system.location,
         description: description !== undefined ? description : system.description,
         status: status || system.status,
@@ -219,15 +300,33 @@ const systemController = {
       const updatedSystem = await System.findByPk(system.id, {
         include: [
           {
+            model: SystemType,
+            as: 'systemType',
+            attributes: ['id', 'name', 'description'],
+            required: false
+          },
+          {
             model: System,
             as: 'parent',
-            attributes: ['id', 'name', 'type'],
+            attributes: ['id', 'name', 'systemTypeId'],
+            include: [{
+              model: SystemType,
+              as: 'systemType',
+              attributes: ['id', 'name'],
+              required: false
+            }],
             required: false
           },
           {
             model: System,
             as: 'children',
-            attributes: ['id', 'name', 'type', 'status'],
+            attributes: ['id', 'name', 'systemTypeId', 'status'],
+            include: [{
+              model: SystemType,
+              as: 'systemType',
+              attributes: ['id', 'name'],
+              required: false
+            }],
             required: false
           }
         ]

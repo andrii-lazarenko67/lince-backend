@@ -44,7 +44,7 @@ module.exports = {
         allowNull: false
       },
       status: {
-        type: Sequelize.ENUM('pending', 'completed', 'approved'),
+        type: Sequelize.ENUM('pending', 'completed', 'viewed'),
         defaultValue: 'pending'
       },
       conclusion: {
@@ -53,6 +53,20 @@ module.exports = {
       },
       managerNotes: {
         type: Sequelize.TEXT,
+        allowNull: true
+      },
+      viewedBy: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Users',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
+      viewedAt: {
+        type: Sequelize.DATE,
         allowNull: true
       },
       createdAt: {

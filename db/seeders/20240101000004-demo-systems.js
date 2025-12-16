@@ -7,7 +7,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Piscina Principal - Hotel Sunset',
-        type: 'pool',
+        systemTypeId: 1,
         location: 'Área de Lazer - Bloco A',
         description: 'Piscina principal do hotel com capacidade de 500.000 litros. Uso recreativo.',
         status: 'active',
@@ -17,7 +17,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Piscina Infantil - Hotel Sunset',
-        type: 'pool',
+        systemTypeId: 1,
         location: 'Área de Lazer - Bloco A',
         description: 'Piscina infantil com profundidade máxima de 60cm.',
         status: 'active',
@@ -27,7 +27,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Torre de Resfriamento - Unidade 1',
-        type: 'cooling_tower',
+        systemTypeId: 2,
         location: 'Área Industrial - Setor B',
         description: 'Torre de resfriamento principal para sistema de ar condicionado central.',
         status: 'active',
@@ -37,7 +37,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Torre de Resfriamento - Unidade 2',
-        type: 'cooling_tower',
+        systemTypeId: 2,
         location: 'Área Industrial - Setor B',
         description: 'Torre de resfriamento secundária de backup.',
         status: 'active',
@@ -47,7 +47,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Caldeira a Vapor - Principal',
-        type: 'boiler',
+        systemTypeId: 3,
         location: 'Casa de Máquinas',
         description: 'Caldeira principal para geração de vapor industrial. Capacidade: 10 ton/h.',
         status: 'active',
@@ -57,7 +57,7 @@ module.exports = {
       {
         parentId: null,
         name: 'ETA - Estação de Tratamento',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'Área de Utilidades',
         description: 'Estação de tratamento de água para abastecimento industrial.',
         status: 'active',
@@ -67,7 +67,7 @@ module.exports = {
       {
         parentId: null,
         name: 'ETE - Tratamento de Efluentes',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'Área de Utilidades - Fundos',
         description: 'Estação de tratamento de efluentes industriais antes do descarte.',
         status: 'active',
@@ -77,7 +77,7 @@ module.exports = {
       {
         parentId: null,
         name: 'Sistema de Efluentes - Linha 1',
-        type: 'effluent',
+        systemTypeId: 6,
         location: 'Área de Produção',
         description: 'Sistema de coleta e tratamento de efluentes da linha de produção 1.',
         status: 'active',
@@ -100,7 +100,7 @@ module.exports = {
       {
         parentId: parentSystemMap['ETE - Tratamento de Efluentes'],
         name: 'Estação Elevatória',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'ETE - Entrada',
         description: 'Bombeamento de efluentes para o sistema de tratamento.',
         status: 'active',
@@ -110,7 +110,7 @@ module.exports = {
       {
         parentId: parentSystemMap['ETE - Tratamento de Efluentes'],
         name: 'Tanque de Aeração',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'ETE - Biológico',
         description: 'Tanque de aeração para tratamento biológico aeróbio.',
         status: 'active',
@@ -120,7 +120,7 @@ module.exports = {
       {
         parentId: parentSystemMap['ETE - Tratamento de Efluentes'],
         name: 'Decantador Secundário',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'ETE - Clarificação',
         description: 'Decantador para separação do lodo ativado.',
         status: 'active',
@@ -130,7 +130,7 @@ module.exports = {
       {
         parentId: parentSystemMap['ETE - Tratamento de Efluentes'],
         name: 'Filtro de Polimento',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'ETE - Final',
         description: 'Filtração final para polimento do efluente tratado.',
         status: 'active',
@@ -140,7 +140,7 @@ module.exports = {
       {
         parentId: parentSystemMap['ETE - Tratamento de Efluentes'],
         name: 'Tanque de Efluente Tratado',
-        type: 'wwtp',
+        systemTypeId: 5,
         location: 'ETE - Saída',
         description: 'Reservatório de efluente tratado antes do lançamento.',
         status: 'active',
@@ -151,7 +151,7 @@ module.exports = {
       {
         parentId: parentSystemMap['ETA - Estação de Tratamento'],
         name: 'Captação',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'ETA - Entrada',
         description: 'Captação de água bruta.',
         status: 'active',
@@ -161,7 +161,7 @@ module.exports = {
       {
         parentId: parentSystemMap['ETA - Estação de Tratamento'],
         name: 'Floculador',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'ETA - Coagulação',
         description: 'Floculação para aglomeração de partículas.',
         status: 'active',
@@ -171,7 +171,7 @@ module.exports = {
       {
         parentId: parentSystemMap['ETA - Estação de Tratamento'],
         name: 'Decantador',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'ETA - Clarificação',
         description: 'Decantação de partículas floculadas.',
         status: 'active',
@@ -181,7 +181,7 @@ module.exports = {
       {
         parentId: parentSystemMap['ETA - Estação de Tratamento'],
         name: 'Filtros',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'ETA - Filtração',
         description: 'Filtração de água clarificada.',
         status: 'active',
@@ -191,7 +191,7 @@ module.exports = {
       {
         parentId: parentSystemMap['ETA - Estação de Tratamento'],
         name: 'Reservatório de Água Tratada',
-        type: 'wtp',
+        systemTypeId: 4,
         location: 'ETA - Saída',
         description: 'Armazenamento de água tratada.',
         status: 'active',
