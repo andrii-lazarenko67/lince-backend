@@ -33,6 +33,15 @@ module.exports = {
       name: 'system_types_name_index',
       unique: true
     });
+
+    // Reset the sequence to ensure it's in sync with existing data
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"SystemTypes"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "SystemTypes"), 0) + 1,
+        false
+      );
+    `);
   },
 
   async down(queryInterface, Sequelize) {

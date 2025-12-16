@@ -7,10 +7,13 @@ exports.getAllSystemTypes = async (req, res) => {
       order: [['name', 'ASC']]
     });
 
-    res.json(systemTypes);
+    res.json({
+      success: true,
+      data: systemTypes
+    });
   } catch (error) {
     console.error('Error fetching system types:', error);
-    res.status(500).json({ message: 'Error fetching system types', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching system types', error: error.message });
   }
 };
 
@@ -22,13 +25,16 @@ exports.getSystemTypeById = async (req, res) => {
     const systemType = await SystemType.findByPk(id);
 
     if (!systemType) {
-      return res.status(404).json({ message: 'System type not found' });
+      return res.status(404).json({ success: false, message: 'System type not found' });
     }
 
-    res.json(systemType);
+    res.json({
+      success: true,
+      data: systemType
+    });
   } catch (error) {
     console.error('Error fetching system type:', error);
-    res.status(500).json({ message: 'Error fetching system type', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching system type', error: error.message });
   }
 };
 
@@ -39,13 +45,13 @@ exports.createSystemType = async (req, res) => {
 
     // Validate required fields
     if (!name) {
-      return res.status(400).json({ message: 'System type name is required' });
+      return res.status(400).json({ success: false, message: 'System type name is required' });
     }
 
     // Check if system type with same name already exists
     const existingSystemType = await SystemType.findOne({ where: { name } });
     if (existingSystemType) {
-      return res.status(400).json({ message: 'System type with this name already exists' });
+      return res.status(400).json({ success: false, message: 'System type with this name already exists' });
     }
 
     // Create system type
@@ -54,10 +60,13 @@ exports.createSystemType = async (req, res) => {
       description: description || null
     });
 
-    res.status(201).json(systemType);
+    res.status(201).json({
+      success: true,
+      data: systemType
+    });
   } catch (error) {
     console.error('Error creating system type:', error);
-    res.status(500).json({ message: 'Error creating system type', error: error.message });
+    res.status(500).json({ success: false, message: 'Error creating system type', error: error.message });
   }
 };
 
@@ -70,14 +79,14 @@ exports.updateSystemType = async (req, res) => {
     const systemType = await SystemType.findByPk(id);
 
     if (!systemType) {
-      return res.status(404).json({ message: 'System type not found' });
+      return res.status(404).json({ success: false, message: 'System type not found' });
     }
 
     // Check if system type with new name already exists
     if (name && name !== systemType.name) {
       const existingSystemType = await SystemType.findOne({ where: { name } });
       if (existingSystemType) {
-        return res.status(400).json({ message: 'System type with this name already exists' });
+        return res.status(400).json({ success: false, message: 'System type with this name already exists' });
       }
     }
 
@@ -87,10 +96,13 @@ exports.updateSystemType = async (req, res) => {
 
     await systemType.save();
 
-    res.json(systemType);
+    res.json({
+      success: true,
+      data: systemType
+    });
   } catch (error) {
     console.error('Error updating system type:', error);
-    res.status(500).json({ message: 'Error updating system type', error: error.message });
+    res.status(500).json({ success: false, message: 'Error updating system type', error: error.message });
   }
 };
 
@@ -102,7 +114,7 @@ exports.deleteSystemType = async (req, res) => {
     const systemType = await SystemType.findByPk(id);
 
     if (!systemType) {
-      return res.status(404).json({ message: 'System type not found' });
+      return res.status(404).json({ success: false, message: 'System type not found' });
     }
 
     // Check if system type is being used by any systems
@@ -110,15 +122,19 @@ exports.deleteSystemType = async (req, res) => {
 
     if (usageCount > 0) {
       return res.status(400).json({
+        success: false,
         message: `Cannot delete system type. It is currently used by ${usageCount} system(s)`
       });
     }
 
     await systemType.destroy();
 
-    res.json({ message: 'System type deleted successfully' });
+    res.json({
+      success: true,
+      message: 'System type deleted successfully'
+    });
   } catch (error) {
     console.error('Error deleting system type:', error);
-    res.status(500).json({ message: 'Error deleting system type', error: error.message });
+    res.status(500).json({ success: false, message: 'Error deleting system type', error: error.message });
   }
 };
