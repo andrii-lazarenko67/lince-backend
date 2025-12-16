@@ -147,23 +147,10 @@ const systemController = {
     try {
       const { name, systemTypeId, location, description, status, parentId } = req.body;
 
-      // Validate systemTypeId
-      if (!systemTypeId) {
-        return res.status(400).json({
-          success: false,
-          message: 'System type is required'
-        });
-      }
+      let finalSystemTypeId = systemTypeId;
+      let finalLocation = location;
 
-      const systemType = await SystemType.findByPk(systemTypeId);
-      if (!systemType) {
-        return res.status(404).json({
-          success: false,
-          message: 'System type not found'
-        });
-      }
-
-      // Validate parent exists if parentId is provided
+      // If creating a step (has parent), inherit location and systemTypeId from parent
       if (parentId) {
         const parent = await System.findByPk(parentId);
         if (!parent) {
@@ -172,12 +159,32 @@ const systemController = {
             message: 'Parent system not found'
           });
         }
+
+        // Steps inherit location and systemTypeId from parent
+        finalSystemTypeId = parent.systemTypeId;
+        finalLocation = parent.location;
+      } else {
+        // Root systems must have systemTypeId
+        if (!systemTypeId) {
+          return res.status(400).json({
+            success: false,
+            message: 'System type is required'
+          });
+        }
+
+        const systemType = await SystemType.findByPk(systemTypeId);
+        if (!systemType) {
+          return res.status(404).json({
+            success: false,
+            message: 'System type not found'
+          });
+        }
       }
 
       const system = await System.create({
         name,
-        systemTypeId,
-        location,
+        systemTypeId: finalSystemTypeId,
+        location: finalLocation,
         description,
         status: status || 'active',
         parentId: parentId || null
