@@ -48,7 +48,7 @@ module.exports = {
         date: getDate(56),
         status: 'completed',
         conclusion: 'Weekly inspection completed. System in perfect condition. Filters clean.',
-        managerNotes: 'Approved. Continue regular monitoring.',
+        managerNotes: 'viewed. Continue regular monitoring.',
         createdAt: getDate(56),
         updatedAt: getDate(56)
       },
@@ -79,7 +79,7 @@ module.exports = {
         stageId: null,
         userId: userMap.peter,
         date: getDate(35),
-        status: 'approved',
+        status: 'viewed',
         conclusion: 'Monthly safety inspection. All emergency equipment verified.',
         managerNotes: 'Excellent work. Equipment in compliance.',
         createdAt: getDate(35),
@@ -158,7 +158,7 @@ module.exports = {
         stageId: null,
         userId: userMap.peter,
         date: getDate(30),
-        status: 'approved',
+        status: 'viewed',
         conclusion: 'Post-cleaning verification. Heat exchange efficiency restored.',
         managerNotes: 'Excellent system recovery.',
         createdAt: getDate(30),
@@ -193,7 +193,7 @@ module.exports = {
         stageId: null,
         userId: userMap.john,
         date: getDate(50),
-        status: 'approved',
+        status: 'viewed',
         conclusion: 'Monthly boiler inspection. Safety valves and instrumentation verified.',
         managerNotes: 'All safety items in compliance.',
         createdAt: getDate(50),
@@ -204,9 +204,9 @@ module.exports = {
         stageId: null,
         userId: userMap.peter,
         date: getDate(20),
-        status: 'approved',
+        status: 'viewed',
         conclusion: 'Safety inspection. All relief valves tested. Compliant.',
-        managerNotes: 'Approved without reservations.',
+        managerNotes: 'viewed without reservations.',
         createdAt: getDate(20),
         updatedAt: getDate(20)
       },
@@ -239,7 +239,7 @@ module.exports = {
         stageId: null,
         userId: userMap.john,
         date: getDate(10),
-        status: 'approved',
+        status: 'viewed',
         conclusion: 'Monthly regulatory inspection. All parameters within regulation limits.',
         managerNotes: 'Documentation filed for inspection.',
         createdAt: getDate(10),
@@ -334,7 +334,7 @@ module.exports = {
     const inspectionItems = [];
 
     for (const inspection of insertedInspections) {
-      if (inspection.status === 'completed' || inspection.status === 'approved') {
+      if (inspection.status === 'completed' || inspection.status === 'viewed') {
         const systemChecklistItems = checklistItems.filter(ci => ci.systemId === inspection.systemId);
 
         for (const item of systemChecklistItems) {

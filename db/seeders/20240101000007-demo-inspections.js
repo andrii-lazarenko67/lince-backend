@@ -79,7 +79,7 @@ module.exports = {
         stageId: null,
         userId: userMap.pedro,
         date: getDate(35),
-        status: 'approved',
+        status: 'viewed',
         conclusion: 'Inspeção de segurança mensal. Todos os equipamentos de emergência verificados.',
         managerNotes: 'Excelente trabalho. Equipamentos em conformidade.',
         createdAt: getDate(35),
@@ -158,7 +158,7 @@ module.exports = {
         stageId: null,
         userId: userMap.pedro,
         date: getDate(30),
-        status: 'approved',
+        status: 'viewed',
         conclusion: 'Verificação pós-limpeza. Eficiência de troca térmica restaurada.',
         managerNotes: 'Excelente recuperação do sistema.',
         createdAt: getDate(30),
@@ -193,7 +193,7 @@ module.exports = {
         stageId: null,
         userId: userMap.joao,
         date: getDate(50),
-        status: 'approved',
+        status: 'viewed',
         conclusion: 'Inspeção mensal de caldeira. Verificados válvulas de segurança e instrumentação.',
         managerNotes: 'Todos os itens de segurança em conformidade.',
         createdAt: getDate(50),
@@ -204,7 +204,7 @@ module.exports = {
         stageId: null,
         userId: userMap.pedro,
         date: getDate(20),
-        status: 'approved',
+        status: 'viewed',
         conclusion: 'Inspeção de segurança. Testadas todas as válvulas de alívio. Conformes.',
         managerNotes: 'Aprovado sem ressalvas.',
         createdAt: getDate(20),
@@ -239,7 +239,7 @@ module.exports = {
         stageId: null,
         userId: userMap.joao,
         date: getDate(10),
-        status: 'approved',
+        status: 'viewed',
         conclusion: 'Inspeção regulatória mensal. Todos os parâmetros dentro dos limites da Portaria.',
         managerNotes: 'Documentação arquivada para fiscalização.',
         createdAt: getDate(10),
@@ -334,7 +334,7 @@ module.exports = {
     const inspectionItems = [];
 
     for (const inspection of insertedInspections) {
-      if (inspection.status === 'completed' || inspection.status === 'approved') {
+      if (inspection.status === 'completed' || inspection.status === 'viewed') {
         const systemChecklistItems = checklistItems.filter(ci => ci.systemId === inspection.systemId);
 
         for (const item of systemChecklistItems) {

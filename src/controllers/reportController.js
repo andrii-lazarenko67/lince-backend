@@ -4,7 +4,7 @@ const { Op } = require('sequelize');
 const reportController = {
   async generate(req, res, next) {
     try {
-      const { type, systemIds, startDate, endDate } = req.body;
+      const { type, systemIds, stageIds, startDate, endDate } = req.body;
 
       // Calculate date range based on type
       let start, end;
@@ -47,11 +47,17 @@ const reportController = {
         ? { systemId: { [Op.in]: systemIds } }
         : {};
 
+      // Build stage filter
+      const stageFilter = stageIds && stageIds.length > 0
+        ? { stageId: { [Op.in]: stageIds } }
+        : {};
+
       // Fetch daily logs with all associations
       const dailyLogs = await DailyLog.findAll({
         where: {
           date: { [Op.between]: [start.toISOString().split('T')[0], end.toISOString().split('T')[0]] },
-          ...systemFilter
+          ...systemFilter,
+          ...stageFilter
         },
         include: [
           { model: User, as: 'user' },
@@ -69,7 +75,8 @@ const reportController = {
       const inspections = await Inspection.findAll({
         where: {
           date: { [Op.between]: [start, end] },
-          ...systemFilter
+          ...systemFilter,
+          ...stageFilter
         },
         include: [
           { model: User, as: 'user' },
@@ -88,7 +95,8 @@ const reportController = {
       const incidents = await Incident.findAll({
         where: {
           createdAt: { [Op.between]: [start, end] },
-          ...systemFilter
+          ...systemFilter,
+          ...stageFilter
         },
         include: [
           { model: User, as: 'reporter' },
