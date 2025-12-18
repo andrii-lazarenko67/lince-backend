@@ -233,6 +233,22 @@ module.exports = {
     });
 
     await queryInterface.bulkInsert('NotificationRecipients', recipients, {});
+
+    // Reset sequences to sync with inserted data (PostgreSQL specific)
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"Notifications"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "Notifications"), 0),
+        true
+      );
+    `);
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"NotificationRecipients"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "NotificationRecipients"), 0),
+        true
+      );
+    `);
   },
 
   async down(queryInterface, Sequelize) {

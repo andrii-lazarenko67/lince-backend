@@ -385,6 +385,22 @@ module.exports = {
     ];
 
     await queryInterface.bulkInsert('IncidentComments', incidentComments, {});
+
+    // Reset sequences to sync with inserted data (PostgreSQL specific)
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"Incidents"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "Incidents"), 0),
+        true
+      );
+    `);
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"IncidentComments"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "IncidentComments"), 0),
+        true
+      );
+    `);
   },
 
   async down(queryInterface, Sequelize) {

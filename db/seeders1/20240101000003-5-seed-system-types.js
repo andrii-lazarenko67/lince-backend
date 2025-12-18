@@ -60,6 +60,15 @@ module.exports = {
         updatedAt: new Date()
       }
     ], {});
+
+    // Reset sequence to sync with inserted data (PostgreSQL specific)
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"SystemTypes"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "SystemTypes"), 0),
+        true
+      );
+    `);
   },
 
   async down(queryInterface, Sequelize) {

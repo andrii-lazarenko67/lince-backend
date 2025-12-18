@@ -323,6 +323,15 @@ module.exports = {
         updatedAt: new Date()
       }
     ], {});
+
+    // Reset sequence to sync with inserted data (PostgreSQL specific)
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"Products"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "Products"), 0),
+        true
+      );
+    `);
   },
 
   async down(queryInterface, Sequelize) {

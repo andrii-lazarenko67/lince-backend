@@ -409,6 +409,29 @@ module.exports = {
       { systemId: systemByName['Reservatório de Água Tratada'], name: 'Verificar fluoretação', description: 'Checar dosagem de flúor se aplicável', isRequired: false, order: 3, createdAt: new Date(), updatedAt: new Date() },
       { systemId: systemByName['Reservatório de Água Tratada'], name: 'Inspecionar estrutura', description: 'Verificar condição física do reservatório', isRequired: true, order: 4, createdAt: new Date(), updatedAt: new Date() }
     ], {});
+
+    // Reset sequences to sync with inserted data (PostgreSQL specific)
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"Systems"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "Systems"), 0),
+        true
+      );
+    `);
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"MonitoringPoints"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "MonitoringPoints"), 0),
+        true
+      );
+    `);
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"ChecklistItems"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "ChecklistItems"), 0),
+        true
+      );
+    `);
   },
 
   async down(queryInterface, Sequelize) {

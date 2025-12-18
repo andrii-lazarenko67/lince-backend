@@ -50,6 +50,15 @@ module.exports = {
       { name: 'Kilograms per day', abbreviation: 'kg/day', category: 'dosage', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() },
       { name: 'Grams per day', abbreviation: 'g/day', category: 'dosage', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() }
     ], {});
+
+    // Reset sequence to sync with inserted data (PostgreSQL specific)
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"Units"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "Units"), 0),
+        true
+      );
+    `);
   },
 
   async down(queryInterface, Sequelize) {

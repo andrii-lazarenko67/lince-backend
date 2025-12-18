@@ -365,6 +365,22 @@ module.exports = {
     if (inspectionItems.length > 0) {
       await queryInterface.bulkInsert('InspectionItems', inspectionItems, {});
     }
+
+    // Reset sequences to sync with inserted data (PostgreSQL specific)
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"Inspections"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "Inspections"), 0),
+        true
+      );
+    `);
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"InspectionItems"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "InspectionItems"), 0),
+        true
+      );
+    `);
   },
 
   async down(queryInterface, Sequelize) {

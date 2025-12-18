@@ -32,6 +32,15 @@ module.exports = {
       { name: 'Flow Rate', description: 'Flow rate measurement', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() },
       { name: 'Cycles', description: 'Concentration cycles', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() }
     ], {});
+
+    // Reset sequence to sync with inserted data (PostgreSQL specific)
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"Parameters"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "Parameters"), 0),
+        true
+      );
+    `);
   },
 
   async down(queryInterface, Sequelize) {

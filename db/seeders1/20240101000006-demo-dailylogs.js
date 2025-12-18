@@ -220,6 +220,22 @@ module.exports = {
     }
 
     await queryInterface.bulkInsert('DailyLogEntries', dailyLogEntries, {});
+
+    // Reset sequences to sync with inserted data (PostgreSQL specific)
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"DailyLogs"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "DailyLogs"), 0),
+        true
+      );
+    `);
+    await queryInterface.sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"DailyLogEntries"', 'id'),
+        COALESCE((SELECT MAX(id) FROM "DailyLogEntries"), 0),
+        true
+      );
+    `);
   },
 
   async down(queryInterface, Sequelize) {
