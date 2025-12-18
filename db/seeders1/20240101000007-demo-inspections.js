@@ -281,39 +281,39 @@ module.exports = {
         updatedAt: getDate(3)
       },
 
-      // Pending/Scheduled inspections
+      // Pending inspections (created today or in the past, waiting to be completed)
       {
         systemId: systemMap.pool,
         stageId: null,
         userId: userMap.peter,
-        date: getDate(-2),
+        date: getDate(0),
         status: 'pending',
         conclusion: null,
         managerNotes: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: getDate(1),
+        updatedAt: getDate(1)
       },
       {
         systemId: systemMap.tower,
         stageId: null,
         userId: userMap.mary,
-        date: getDate(-5),
+        date: getDate(1),
         status: 'pending',
         conclusion: null,
         managerNotes: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: getDate(2),
+        updatedAt: getDate(2)
       },
       {
         systemId: systemMap.boiler,
         stageId: null,
         userId: userMap.john,
-        date: getDate(-10),
+        date: getDate(2),
         status: 'pending',
         conclusion: null,
         managerNotes: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: getDate(3),
+        updatedAt: getDate(3)
       }
     ];
 
