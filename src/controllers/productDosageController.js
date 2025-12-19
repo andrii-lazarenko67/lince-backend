@@ -26,7 +26,7 @@ exports.getAllProductDosages = async (req, res) => {
         {
           model: System,
           as: 'system',
-          attributes: ['id', 'name', 'type']
+          attributes: ['id', 'name']
         },
         {
           model: Unit,
@@ -64,7 +64,7 @@ exports.getProductDosageById = async (req, res) => {
         {
           model: System,
           as: 'system',
-          attributes: ['id', 'name', 'type']
+          attributes: ['id', 'name']
         },
         {
           model: Unit,
@@ -110,7 +110,7 @@ exports.getDosagesByProduct = async (req, res) => {
         {
           model: System,
           as: 'system',
-          attributes: ['id', 'name', 'type']
+          attributes: ['id', 'name']
         },
         {
           model: Unit,
@@ -197,7 +197,7 @@ exports.createProductDosage = async (req, res) => {
         {
           model: System,
           as: 'system',
-          attributes: ['id', 'name', 'type']
+          attributes: ['id', 'name']
         },
         {
           model: Unit,
@@ -285,7 +285,7 @@ exports.updateProductDosage = async (req, res) => {
         {
           model: System,
           as: 'system',
-          attributes: ['id', 'name', 'type']
+          attributes: ['id', 'name']
         },
         {
           model: Unit,
