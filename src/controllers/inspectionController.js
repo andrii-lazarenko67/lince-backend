@@ -64,7 +64,7 @@ const inspectionController = {
       if (!inspection) {
         return res.status(404).json({
           success: false,
-          message: 'Inspection not found'
+          messageKey: 'inspections.errors.notFound'
         });
       }
 
@@ -139,8 +139,9 @@ const inspectionController = {
 
         await notificationService.notifyManagers({
           type: 'inspection_submitted',
-          title: 'New Inspection Submitted',
-          message: `${userName} has submitted an inspection for ${systemName}`,
+          titleKey: 'notifications.messages.inspection.title',
+          messageKey: 'notifications.messages.inspection.message',
+          messageParams: { user: userName, system: systemName },
           priority: 'medium',
           referenceType: 'inspection',
           referenceId: inspection.id,
@@ -166,7 +167,7 @@ const inspectionController = {
       if (!inspection) {
         return res.status(404).json({
           success: false,
-          message: 'Inspection not found'
+          messageKey: 'inspections.errors.notFound'
         });
       }
 
@@ -223,7 +224,7 @@ const inspectionController = {
       if (!inspection) {
         return res.status(404).json({
           success: false,
-          message: 'Inspection not found'
+          messageKey: 'inspections.errors.notFound'
         });
       }
 
@@ -265,7 +266,7 @@ const inspectionController = {
       if (!inspection) {
         return res.status(404).json({
           success: false,
-          message: 'Inspection not found'
+          messageKey: 'inspections.errors.notFound'
         });
       }
 
@@ -303,7 +304,7 @@ const inspectionController = {
       if (!inspection) {
         return res.status(404).json({
           success: false,
-          message: 'Inspection not found'
+          messageKey: 'inspections.errors.notFound'
         });
       }
 
@@ -311,7 +312,7 @@ const inspectionController = {
       if (req.user.role !== 'manager' && inspection.userId !== req.user.id) {
         return res.status(403).json({
           success: false,
-          message: 'You do not have permission to delete this inspection'
+          messageKey: 'inspections.errors.noPermission'
         });
       }
 
@@ -328,7 +329,7 @@ const inspectionController = {
 
       res.json({
         success: true,
-        message: 'Inspection deleted successfully'
+        messageKey: 'inspections.success.deleted'
       });
     } catch (error) {
       next(error);

@@ -45,7 +45,7 @@ exports.getAllProductDosages = async (req, res) => {
     res.json(dosages);
   } catch (error) {
     console.error('Error fetching product dosages:', error);
-    res.status(500).json({ message: 'Error fetching product dosages', error: error.message });
+    res.status(500).json({ messageKey: 'productDosages.errors.fetchError', error: error.message });
   }
 };
 
@@ -80,13 +80,13 @@ exports.getProductDosageById = async (req, res) => {
     });
 
     if (!dosage) {
-      return res.status(404).json({ message: 'Product dosage not found' });
+      return res.status(404).json({ messageKey: 'productDosages.errors.notFound' });
     }
 
     res.json(dosage);
   } catch (error) {
     console.error('Error fetching product dosage:', error);
-    res.status(500).json({ message: 'Error fetching product dosage', error: error.message });
+    res.status(500).json({ messageKey: 'productDosages.errors.fetchError', error: error.message });
   }
 };
 
@@ -129,7 +129,7 @@ exports.getDosagesByProduct = async (req, res) => {
     res.json(dosages);
   } catch (error) {
     console.error('Error fetching product dosages:', error);
-    res.status(500).json({ message: 'Error fetching product dosages', error: error.message });
+    res.status(500).json({ messageKey: 'productDosages.errors.fetchError', error: error.message });
   }
 };
 
@@ -142,34 +142,34 @@ exports.createProductDosage = async (req, res) => {
     // Validate required fields
     if (!productId || value === undefined || !unitId || !dosageMode) {
       return res.status(400).json({
-        message: 'Product ID, value, unit ID, and dosage mode are required'
+        messageKey: 'productDosages.errors.requiredFields'
       });
     }
 
     // Validate dosageMode enum
     if (!['manual', 'automatic'].includes(dosageMode)) {
       return res.status(400).json({
-        message: 'Dosage mode must be either "manual" or "automatic"'
+        messageKey: 'productDosages.errors.invalidDosageMode'
       });
     }
 
     // Verify product exists
     const product = await Product.findByPk(productId);
     if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(404).json({ messageKey: 'products.errors.notFound' });
     }
 
     // Verify unit exists
     const unit = await Unit.findByPk(unitId);
     if (!unit) {
-      return res.status(404).json({ message: 'Unit not found' });
+      return res.status(404).json({ messageKey: 'units.errors.notFound' });
     }
 
     // Verify system exists if provided
     if (systemId) {
       const system = await System.findByPk(systemId);
       if (!system) {
-        return res.status(404).json({ message: 'System not found' });
+        return res.status(404).json({ messageKey: 'systems.errors.notFound' });
       }
     }
 
@@ -215,7 +215,7 @@ exports.createProductDosage = async (req, res) => {
     res.status(201).json(createdDosage);
   } catch (error) {
     console.error('Error creating product dosage:', error);
-    res.status(500).json({ message: 'Error creating product dosage', error: error.message });
+    res.status(500).json({ messageKey: 'productDosages.errors.createError', error: error.message });
   }
 };
 
@@ -228,13 +228,13 @@ exports.updateProductDosage = async (req, res) => {
     const dosage = await ProductDosage.findByPk(id);
 
     if (!dosage) {
-      return res.status(404).json({ message: 'Product dosage not found' });
+      return res.status(404).json({ messageKey: 'productDosages.errors.notFound' });
     }
 
     // Validate dosageMode enum if provided
     if (dosageMode && !['manual', 'automatic'].includes(dosageMode)) {
       return res.status(400).json({
-        message: 'Dosage mode must be either "manual" or "automatic"'
+        messageKey: 'productDosages.errors.invalidDosageMode'
       });
     }
 
@@ -242,7 +242,7 @@ exports.updateProductDosage = async (req, res) => {
     if (productId && productId !== dosage.productId) {
       const product = await Product.findByPk(productId);
       if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+        return res.status(404).json({ messageKey: 'products.errors.notFound' });
       }
     }
 
@@ -250,7 +250,7 @@ exports.updateProductDosage = async (req, res) => {
     if (unitId && unitId !== dosage.unitId) {
       const unit = await Unit.findByPk(unitId);
       if (!unit) {
-        return res.status(404).json({ message: 'Unit not found' });
+        return res.status(404).json({ messageKey: 'units.errors.notFound' });
       }
     }
 
@@ -258,7 +258,7 @@ exports.updateProductDosage = async (req, res) => {
     if (systemId && systemId !== dosage.systemId) {
       const system = await System.findByPk(systemId);
       if (!system) {
-        return res.status(404).json({ message: 'System not found' });
+        return res.status(404).json({ messageKey: 'systems.errors.notFound' });
       }
     }
 
@@ -303,7 +303,7 @@ exports.updateProductDosage = async (req, res) => {
     res.json(updatedDosage);
   } catch (error) {
     console.error('Error updating product dosage:', error);
-    res.status(500).json({ message: 'Error updating product dosage', error: error.message });
+    res.status(500).json({ messageKey: 'productDosages.errors.updateError', error: error.message });
   }
 };
 
@@ -315,14 +315,14 @@ exports.deleteProductDosage = async (req, res) => {
     const dosage = await ProductDosage.findByPk(id);
 
     if (!dosage) {
-      return res.status(404).json({ message: 'Product dosage not found' });
+      return res.status(404).json({ messageKey: 'productDosages.errors.notFound' });
     }
 
     await dosage.destroy();
 
-    res.json({ message: 'Product dosage deleted successfully' });
+    res.json({ messageKey: 'productDosages.success.deleted' });
   } catch (error) {
     console.error('Error deleting product dosage:', error);
-    res.status(500).json({ message: 'Error deleting product dosage', error: error.message });
+    res.status(500).json({ messageKey: 'productDosages.errors.deleteError', error: error.message });
   }
 };

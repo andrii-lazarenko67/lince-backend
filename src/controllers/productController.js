@@ -74,7 +74,7 @@ const productController = {
       if (!product) {
         return res.status(404).json({
           success: false,
-          message: 'Product not found'
+          messageKey: 'products.errors.notFound'
         });
       }
 
@@ -147,7 +147,7 @@ const productController = {
       if (!product) {
         return res.status(404).json({
           success: false,
-          message: 'Product not found'
+          messageKey: 'products.errors.notFound'
         });
       }
 
@@ -181,7 +181,7 @@ const productController = {
       if (!product) {
         return res.status(404).json({
           success: false,
-          message: 'Product not found'
+          messageKey: 'products.errors.notFound'
         });
       }
 
@@ -209,8 +209,9 @@ const productController = {
       if (product.minStockAlert && newStock <= parseFloat(product.minStockAlert)) {
         await notificationService.notifyManagers({
           type: 'stock',
-          title: 'Low Stock Alert',
-          message: `${product.name} is running low. Current stock: ${newStock} ${product.unit}`,
+          titleKey: 'notifications.messages.lowStock.title',
+          messageKey: 'notifications.messages.lowStock.message',
+          messageParams: { name: product.name, stock: newStock, unit: product.unit },
           priority: 'high',
           referenceType: 'Product',
           referenceId: product.id,
@@ -245,7 +246,7 @@ const productController = {
       if (!product) {
         return res.status(404).json({
           success: false,
-          message: 'Product not found'
+          messageKey: 'products.errors.notFound'
         });
       }
 
@@ -261,7 +262,7 @@ const productController = {
       if (newStock < 0) {
         return res.status(400).json({
           success: false,
-          message: 'Cannot reduce stock below zero'
+          messageKey: 'products.errors.negativeStock'
         });
       }
 
@@ -281,8 +282,9 @@ const productController = {
       if (product.minStockAlert && newStock <= parseFloat(product.minStockAlert)) {
         await notificationService.notifyManagers({
           type: 'stock',
-          title: 'Low Stock Alert',
-          message: `${product.name} is running low. Current stock: ${newStock} ${product.unit}`,
+          titleKey: 'notifications.messages.lowStock.title',
+          messageKey: 'notifications.messages.lowStock.message',
+          messageParams: { name: product.name, stock: newStock, unit: product.unit },
           priority: 'high',
           referenceType: 'Product',
           referenceId: product.id,
@@ -306,7 +308,7 @@ const productController = {
       if (!product) {
         return res.status(404).json({
           success: false,
-          message: 'Product not found'
+          messageKey: 'products.errors.notFound'
         });
       }
 
@@ -314,7 +316,7 @@ const productController = {
 
       res.json({
         success: true,
-        message: 'Product deactivated successfully'
+        messageKey: 'products.success.deactivated'
       });
     } catch (error) {
       next(error);

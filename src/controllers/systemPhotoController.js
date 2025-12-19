@@ -23,7 +23,7 @@ exports.getPhotosBySystem = async (req, res) => {
     res.json(photos);
   } catch (error) {
     console.error('Error fetching system photos:', error);
-    res.status(500).json({ message: 'Failed to fetch system photos' });
+    res.status(500).json({ messageKey: 'systemPhotos.errors.fetchError' });
   }
 };
 
@@ -50,13 +50,13 @@ exports.getPhotoById = async (req, res) => {
     });
 
     if (!photo) {
-      return res.status(404).json({ message: 'Photo not found' });
+      return res.status(404).json({ messageKey: 'systemPhotos.errors.notFound' });
     }
 
     res.json(photo);
   } catch (error) {
     console.error('Error fetching photo:', error);
-    res.status(500).json({ message: 'Failed to fetch photo' });
+    res.status(500).json({ messageKey: 'systemPhotos.errors.fetchError' });
   }
 };
 
@@ -72,12 +72,12 @@ exports.uploadPhoto = async (req, res) => {
     // Validate system exists
     const system = await System.findByPk(systemId);
     if (!system) {
-      return res.status(404).json({ message: 'System not found' });
+      return res.status(404).json({ messageKey: 'systems.errors.notFound' });
     }
 
     // Check if file was uploaded
     if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
+      return res.status(400).json({ messageKey: 'systemPhotos.errors.noFileUploaded' });
     }
 
     // Upload to Cloudinary
@@ -117,7 +117,7 @@ exports.uploadPhoto = async (req, res) => {
     res.status(201).json(photoWithAssociations);
   } catch (error) {
     console.error('Error uploading photo:', error);
-    res.status(500).json({ message: 'Failed to upload photo' });
+    res.status(500).json({ messageKey: 'systemPhotos.errors.uploadError' });
   }
 };
 
@@ -131,7 +131,7 @@ exports.updatePhoto = async (req, res) => {
 
     const photo = await SystemPhoto.findByPk(id);
     if (!photo) {
-      return res.status(404).json({ message: 'Photo not found' });
+      return res.status(404).json({ messageKey: 'systemPhotos.errors.notFound' });
     }
 
     photo.description = description !== undefined ? description : photo.description;
@@ -156,7 +156,7 @@ exports.updatePhoto = async (req, res) => {
     res.json(updatedPhoto);
   } catch (error) {
     console.error('Error updating photo:', error);
-    res.status(500).json({ message: 'Failed to update photo' });
+    res.status(500).json({ messageKey: 'systemPhotos.errors.updateError' });
   }
 };
 
@@ -169,7 +169,7 @@ exports.deletePhoto = async (req, res) => {
 
     const photo = await SystemPhoto.findByPk(id);
     if (!photo) {
-      return res.status(404).json({ message: 'Photo not found' });
+      return res.status(404).json({ messageKey: 'systemPhotos.errors.notFound' });
     }
 
     // Extract public_id from filename to delete from Cloudinary
@@ -187,9 +187,9 @@ exports.deletePhoto = async (req, res) => {
     // Delete from database
     await photo.destroy();
 
-    res.json({ message: 'Photo deleted successfully' });
+    res.json({ messageKey: 'systemPhotos.success.deleted' });
   } catch (error) {
     console.error('Error deleting photo:', error);
-    res.status(500).json({ message: 'Failed to delete photo' });
+    res.status(500).json({ messageKey: 'systemPhotos.errors.deleteError' });
   }
 };

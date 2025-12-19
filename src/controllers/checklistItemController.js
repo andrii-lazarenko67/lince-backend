@@ -52,7 +52,7 @@ const checklistItemController = {
       if (!checklistItem) {
         return res.status(404).json({
           success: false,
-          message: 'Checklist item not found'
+          messageKey: 'checklistItems.errors.notFound'
         });
       }
 
@@ -73,7 +73,7 @@ const checklistItemController = {
       if (!system) {
         return res.status(404).json({
           success: false,
-          message: 'System not found'
+          messageKey: 'systems.errors.notFound'
         });
       }
 
@@ -103,7 +103,7 @@ const checklistItemController = {
       if (!checklistItem) {
         return res.status(404).json({
           success: false,
-          message: 'Checklist item not found'
+          messageKey: 'checklistItems.errors.notFound'
         });
       }
 
@@ -131,7 +131,7 @@ const checklistItemController = {
       if (!checklistItem) {
         return res.status(404).json({
           success: false,
-          message: 'Checklist item not found'
+          messageKey: 'checklistItems.errors.notFound'
         });
       }
 
@@ -139,7 +139,7 @@ const checklistItemController = {
 
       res.json({
         success: true,
-        message: 'Checklist item deactivated successfully'
+        messageKey: 'checklistItems.success.deactivated'
       });
     } catch (error) {
       next(error);

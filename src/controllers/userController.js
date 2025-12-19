@@ -38,7 +38,7 @@ const userController = {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          messageKey: 'users.errors.notFound'
         });
       }
 
@@ -60,7 +60,7 @@ const userController = {
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: 'Email already registered'
+          messageKey: 'users.errors.emailExists'
         });
       }
 
@@ -90,7 +90,7 @@ const userController = {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          messageKey: 'users.errors.notFound'
         });
       }
 
@@ -99,7 +99,7 @@ const userController = {
         if (existingUser) {
           return res.status(400).json({
             success: false,
-            message: 'Email already in use'
+            messageKey: 'users.errors.emailInUse'
           });
         }
       }
@@ -128,7 +128,7 @@ const userController = {
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: 'User not found'
+          messageKey: 'users.errors.notFound'
         });
       }
 
@@ -136,7 +136,7 @@ const userController = {
 
       res.json({
         success: true,
-        message: 'User deactivated successfully'
+        messageKey: 'users.success.deactivated'
       });
     } catch (error) {
       next(error);

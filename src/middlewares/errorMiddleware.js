@@ -8,7 +8,7 @@ const errorMiddleware = (err, req, res, next) => {
     }));
     return res.status(400).json({
       success: false,
-      message: 'Validation error',
+      messageKey: 'common.errors.validationError',
       errors
     });
   }
@@ -16,7 +16,7 @@ const errorMiddleware = (err, req, res, next) => {
   if (err.name === 'SequelizeUniqueConstraintError') {
     return res.status(400).json({
       success: false,
-      message: 'Duplicate entry',
+      messageKey: 'common.errors.duplicateEntry',
       field: err.errors[0]?.path
     });
   }
@@ -24,23 +24,32 @@ const errorMiddleware = (err, req, res, next) => {
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
       success: false,
-      message: 'Invalid token'
+      messageKey: 'common.errors.invalidToken'
     });
   }
 
   if (err.name === 'TokenExpiredError') {
     return res.status(401).json({
       success: false,
-      message: 'Token expired'
+      messageKey: 'common.errors.tokenExpired'
     });
   }
 
   const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal server error';
+
+  // If error has messageKey, pass it through; otherwise use generic error
+  if (err.messageKey) {
+    return res.status(statusCode).json({
+      success: false,
+      messageKey: err.messageKey,
+      messageParams: err.messageParams || {},
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+  }
 
   res.status(statusCode).json({
     success: false,
-    message,
+    messageKey: 'common.errors.internalServerError',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 };

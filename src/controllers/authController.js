@@ -16,7 +16,7 @@ const authController = {
       if (!email || !password) {
         return res.status(400).json({
           success: false,
-          message: 'Email and password are required'
+          messageKey: 'login.errors.emailPasswordRequired'
         });
       }
 
@@ -25,7 +25,7 @@ const authController = {
       if (!user || !user.isActive) {
         return res.status(401).json({
           success: false,
-          message: 'Invalid credentials'
+          messageKey: 'login.errors.invalidCredentials'
         });
       }
 
@@ -34,7 +34,7 @@ const authController = {
       if (!isPasswordValid) {
         return res.status(401).json({
           success: false,
-          message: 'Invalid credentials'
+          messageKey: 'login.errors.invalidCredentials'
         });
       }
 
@@ -61,7 +61,7 @@ const authController = {
       if (!name || !email || !password) {
         return res.status(400).json({
           success: false,
-          message: 'Name, email, and password are required'
+          messageKey: 'login.errors.requiredFields'
         });
       }
 
@@ -70,7 +70,7 @@ const authController = {
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: 'Email already registered'
+          messageKey: 'login.errors.emailExists'
         });
       }
 
@@ -114,7 +114,7 @@ const authController = {
       if (!currentPassword || !newPassword) {
         return res.status(400).json({
           success: false,
-          message: 'Current password and new password are required'
+          messageKey: 'profile.errors.passwordRequired'
         });
       }
 
@@ -124,7 +124,7 @@ const authController = {
       if (!isPasswordValid) {
         return res.status(400).json({
           success: false,
-          message: 'Current password is incorrect'
+          messageKey: 'profile.errors.currentPasswordIncorrect'
         });
       }
 
@@ -132,7 +132,7 @@ const authController = {
 
       res.json({
         success: true,
-        message: 'Password changed successfully'
+        messageKey: 'profile.success.passwordChanged'
       });
     } catch (error) {
       next(error);
@@ -150,7 +150,7 @@ const authController = {
         if (existingUser) {
           return res.status(400).json({
             success: false,
-            message: 'Email is already in use'
+            messageKey: 'profile.errors.emailInUse'
           });
         }
       }
@@ -180,7 +180,7 @@ const authController = {
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: 'Avatar image is required'
+          messageKey: 'profile.errors.avatarRequired'
         });
       }
 

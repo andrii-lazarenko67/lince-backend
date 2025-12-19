@@ -63,7 +63,7 @@ const monitoringPointController = {
       if (!monitoringPoint) {
         return res.status(404).json({
           success: false,
-          message: 'Monitoring point not found'
+          messageKey: 'monitoringPoints.errors.notFound'
         });
       }
 
@@ -85,7 +85,7 @@ const monitoringPointController = {
       if (!system) {
         return res.status(404).json({
           success: false,
-          message: 'System not found'
+          messageKey: 'systems.errors.notFound'
         });
       }
 
@@ -94,7 +94,7 @@ const monitoringPointController = {
       if (!parameter) {
         return res.status(400).json({
           success: false,
-          message: 'Parameter not found'
+          messageKey: 'monitoringPoints.errors.parameterNotFound'
         });
       }
 
@@ -104,7 +104,7 @@ const monitoringPointController = {
         if (!unit) {
           return res.status(400).json({
             success: false,
-            message: 'Unit not found'
+            messageKey: 'monitoringPoints.errors.unitNotFound'
           });
         }
       }
@@ -145,7 +145,7 @@ const monitoringPointController = {
       if (!monitoringPoint) {
         return res.status(404).json({
           success: false,
-          message: 'Monitoring point not found'
+          messageKey: 'monitoringPoints.errors.notFound'
         });
       }
 
@@ -155,7 +155,7 @@ const monitoringPointController = {
         if (!parameter) {
           return res.status(400).json({
             success: false,
-            message: 'Parameter not found'
+            messageKey: 'monitoringPoints.errors.parameterNotFound'
           });
         }
       }
@@ -166,7 +166,7 @@ const monitoringPointController = {
         if (!unit) {
           return res.status(400).json({
             success: false,
-            message: 'Unit not found'
+            messageKey: 'monitoringPoints.errors.unitNotFound'
           });
         }
       }
@@ -204,7 +204,7 @@ const monitoringPointController = {
       if (!monitoringPoint) {
         return res.status(404).json({
           success: false,
-          message: 'Monitoring point not found'
+          messageKey: 'monitoringPoints.errors.notFound'
         });
       }
 
@@ -212,7 +212,7 @@ const monitoringPointController = {
 
       res.json({
         success: true,
-        message: 'Monitoring point deleted successfully'
+        messageKey: 'monitoringPoints.success.deleted'
       });
     } catch (error) {
       next(error);

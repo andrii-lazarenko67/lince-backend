@@ -130,7 +130,7 @@ const systemController = {
       if (!system) {
         return res.status(404).json({
           success: false,
-          message: 'System not found'
+          messageKey: 'systems.errors.notFound'
         });
       }
 
@@ -156,7 +156,7 @@ const systemController = {
         if (!parent) {
           return res.status(404).json({
             success: false,
-            message: 'Parent system not found'
+            messageKey: 'systems.errors.parentNotFound'
           });
         }
 
@@ -168,7 +168,7 @@ const systemController = {
         if (!systemTypeId) {
           return res.status(400).json({
             success: false,
-            message: 'System type is required'
+            messageKey: 'systems.errors.typeRequired'
           });
         }
 
@@ -176,7 +176,7 @@ const systemController = {
         if (!systemType) {
           return res.status(404).json({
             success: false,
-            message: 'System type not found'
+            messageKey: 'systems.errors.typeNotFound'
           });
         }
       }
@@ -244,7 +244,7 @@ const systemController = {
       if (!system) {
         return res.status(404).json({
           success: false,
-          message: 'System not found'
+          messageKey: 'systems.errors.notFound'
         });
       }
 
@@ -254,7 +254,7 @@ const systemController = {
         if (!systemType) {
           return res.status(404).json({
             success: false,
-            message: 'System type not found'
+            messageKey: 'systems.errors.typeNotFound'
           });
         }
       }
@@ -265,7 +265,7 @@ const systemController = {
         if (parseInt(parentId) === parseInt(req.params.id)) {
           return res.status(400).json({
             success: false,
-            message: 'System cannot be its own parent'
+            messageKey: 'systems.errors.cannotBeOwnParent'
           });
         }
 
@@ -273,7 +273,7 @@ const systemController = {
         if (!parent) {
           return res.status(404).json({
             success: false,
-            message: 'Parent system not found'
+            messageKey: 'systems.errors.parentNotFound'
           });
         }
 
@@ -289,7 +289,7 @@ const systemController = {
         if (isCircular) {
           return res.status(400).json({
             success: false,
-            message: 'Cannot create circular reference in system hierarchy'
+            messageKey: 'systems.errors.circularReference'
           });
         }
       }
@@ -363,7 +363,7 @@ const systemController = {
       if (!system) {
         return res.status(404).json({
           success: false,
-          message: 'System not found'
+          messageKey: 'systems.errors.notFound'
         });
       }
 
@@ -372,7 +372,7 @@ const systemController = {
       if (childrenCount > 0) {
         return res.status(400).json({
           success: false,
-          message: 'Cannot delete system with sub-systems. Please delete sub-systems first.'
+          messageKey: 'systems.errors.hasSubSystems'
         });
       }
 
@@ -388,7 +388,7 @@ const systemController = {
           // First attempt - warn user about related records
           return res.status(400).json({
             success: false,
-            message: 'Cannot delete system with existing records (daily logs, inspections, or incidents). Please remove these records first.',
+            messageKey: 'systems.errors.hasRelatedRecords',
             relatedRecords: {
               dailyLogs: dailyLogCount,
               inspections: inspectionCount,
@@ -423,7 +423,7 @@ const systemController = {
 
       res.json({
         success: true,
-        message: 'System deleted successfully'
+        messageKey: 'systems.success.deleted'
       });
     } catch (error) {
       next(error);

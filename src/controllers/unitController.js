@@ -17,7 +17,7 @@ exports.getAllUnits = async (req, res) => {
     res.json(units);
   } catch (error) {
     console.error('Error fetching units:', error);
-    res.status(500).json({ message: 'Error fetching units', error: error.message });
+    res.status(500).json({ messageKey: 'units.errors.fetchError', error: error.message });
   }
 };
 
@@ -37,13 +37,13 @@ exports.getUnitById = async (req, res) => {
     });
 
     if (!unit) {
-      return res.status(404).json({ message: 'Unit not found' });
+      return res.status(404).json({ messageKey: 'units.errors.notFound' });
     }
 
     res.json(unit);
   } catch (error) {
     console.error('Error fetching unit:', error);
-    res.status(500).json({ message: 'Error fetching unit', error: error.message });
+    res.status(500).json({ messageKey: 'units.errors.fetchError', error: error.message });
   }
 };
 
@@ -67,7 +67,7 @@ exports.getUnitsByCategory = async (req, res) => {
     res.json(units);
   } catch (error) {
     console.error('Error fetching units by category:', error);
-    res.status(500).json({ message: 'Error fetching units by category', error: error.message });
+    res.status(500).json({ messageKey: 'units.errors.fetchError', error: error.message });
   }
 };
 
@@ -79,13 +79,13 @@ exports.createUnit = async (req, res) => {
 
     // Validate required fields
     if (!name || !abbreviation) {
-      return res.status(400).json({ message: 'Unit name and abbreviation are required' });
+      return res.status(400).json({ messageKey: 'units.errors.nameAndAbbrevRequired' });
     }
 
     // Check if unit with same abbreviation already exists
     const existingUnit = await Unit.findOne({ where: { abbreviation } });
     if (existingUnit) {
-      return res.status(400).json({ message: 'Unit with this abbreviation already exists' });
+      return res.status(400).json({ messageKey: 'units.errors.abbreviationExists' });
     }
 
     // Create unit
@@ -111,7 +111,7 @@ exports.createUnit = async (req, res) => {
     res.status(201).json(createdUnit);
   } catch (error) {
     console.error('Error creating unit:', error);
-    res.status(500).json({ message: 'Error creating unit', error: error.message });
+    res.status(500).json({ messageKey: 'units.errors.createError', error: error.message });
   }
 };
 
@@ -124,19 +124,19 @@ exports.updateUnit = async (req, res) => {
     const unit = await Unit.findByPk(id);
 
     if (!unit) {
-      return res.status(404).json({ message: 'Unit not found' });
+      return res.status(404).json({ messageKey: 'units.errors.notFound' });
     }
 
     // Check if trying to update system default
     if (unit.isSystemDefault) {
-      return res.status(403).json({ message: 'Cannot modify system default units' });
+      return res.status(403).json({ messageKey: 'units.errors.cannotModifyDefault' });
     }
 
     // Check if unit with new abbreviation already exists
     if (abbreviation && abbreviation !== unit.abbreviation) {
       const existingUnit = await Unit.findOne({ where: { abbreviation } });
       if (existingUnit) {
-        return res.status(400).json({ message: 'Unit with this abbreviation already exists' });
+        return res.status(400).json({ messageKey: 'units.errors.abbreviationExists' });
       }
     }
 
@@ -161,7 +161,7 @@ exports.updateUnit = async (req, res) => {
     res.json(updatedUnit);
   } catch (error) {
     console.error('Error updating unit:', error);
-    res.status(500).json({ message: 'Error updating unit', error: error.message });
+    res.status(500).json({ messageKey: 'units.errors.updateError', error: error.message });
   }
 };
 
@@ -173,12 +173,12 @@ exports.deleteUnit = async (req, res) => {
     const unit = await Unit.findByPk(id);
 
     if (!unit) {
-      return res.status(404).json({ message: 'Unit not found' });
+      return res.status(404).json({ messageKey: 'units.errors.notFound' });
     }
 
     // Check if trying to delete system default
     if (unit.isSystemDefault) {
-      return res.status(403).json({ message: 'Cannot delete system default units' });
+      return res.status(403).json({ messageKey: 'units.errors.cannotDeleteDefault' });
     }
 
     // Check if unit is being used by any monitoring points
@@ -187,15 +187,16 @@ exports.deleteUnit = async (req, res) => {
 
     if (usageCount > 0) {
       return res.status(400).json({
-        message: `Cannot delete unit. It is currently used by ${usageCount} monitoring point(s)`
+        messageKey: 'units.errors.inUse',
+        messageParams: { count: usageCount }
       });
     }
 
     await unit.destroy();
 
-    res.json({ message: 'Unit deleted successfully' });
+    res.json({ messageKey: 'units.success.deleted' });
   } catch (error) {
     console.error('Error deleting unit:', error);
-    res.status(500).json({ message: 'Error deleting unit', error: error.message });
+    res.status(500).json({ messageKey: 'units.errors.deleteError', error: error.message });
   }
 };

@@ -84,7 +84,7 @@ const notificationController = {
       if (!recipient) {
         return res.status(404).json({
           success: false,
-          message: 'Notification not found'
+          messageKey: 'notifications.errors.notFound'
         });
       }
 
@@ -122,7 +122,7 @@ const notificationController = {
 
       res.json({
         success: true,
-        message: 'All notifications marked as read'
+        messageKey: 'notifications.success.allMarkedAsRead'
       });
     } catch (error) {
       next(error);
@@ -137,7 +137,7 @@ const notificationController = {
       if (role !== 'admin' && role !== 'manager') {
         return res.status(403).json({
           success: false,
-          message: 'Only managers and admins can view recipient details'
+          messageKey: 'notifications.errors.adminOnly'
         });
       }
 
@@ -163,7 +163,7 @@ const notificationController = {
       if (!notification) {
         return res.status(404).json({
           success: false,
-          message: 'Notification not found'
+          messageKey: 'notifications.errors.notFound'
         });
       }
 
@@ -217,7 +217,7 @@ const notificationController = {
       if (role !== 'admin' && role !== 'manager') {
         return res.status(403).json({
           success: false,
-          message: 'Only managers and admins can view all notifications'
+          messageKey: 'notifications.errors.adminOnly'
         });
       }
 
@@ -277,7 +277,7 @@ const notificationController = {
       if (role !== 'admin' && role !== 'manager') {
         return res.status(403).json({
           success: false,
-          message: 'Only managers and admins can create notifications'
+          messageKey: 'notifications.errors.adminOnly'
         });
       }
 
@@ -286,7 +286,7 @@ const notificationController = {
       if (!type || !title || !message) {
         return res.status(400).json({
           success: false,
-          message: 'Type, title, and message are required'
+          messageKey: 'notifications.errors.requiredFields'
         });
       }
 
@@ -346,7 +346,7 @@ const notificationController = {
       if (role !== 'admin' && role !== 'manager') {
         return res.status(403).json({
           success: false,
-          message: 'Only managers and admins can update notifications'
+          messageKey: 'notifications.errors.adminOnly'
         });
       }
 
@@ -355,7 +355,7 @@ const notificationController = {
       if (!notification) {
         return res.status(404).json({
           success: false,
-          message: 'Notification not found'
+          messageKey: 'notifications.errors.notFound'
         });
       }
 
@@ -384,7 +384,7 @@ const notificationController = {
       if (role !== 'admin' && role !== 'manager') {
         return res.status(403).json({
           success: false,
-          message: 'Only managers and admins can delete notifications'
+          messageKey: 'notifications.errors.adminOnly'
         });
       }
 
@@ -393,7 +393,7 @@ const notificationController = {
       if (!notification) {
         return res.status(404).json({
           success: false,
-          message: 'Notification not found'
+          messageKey: 'notifications.errors.notFound'
         });
       }
 
@@ -401,7 +401,7 @@ const notificationController = {
 
       res.json({
         success: true,
-        message: 'Notification deleted successfully'
+        messageKey: 'notifications.success.deleted'
       });
     } catch (error) {
       next(error);
@@ -419,7 +419,7 @@ const notificationController = {
 
       res.json({
         success: true,
-        message: 'All your notifications cleared successfully'
+        messageKey: 'notifications.success.cleared'
       });
     } catch (error) {
       next(error);

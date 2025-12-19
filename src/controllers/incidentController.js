@@ -64,7 +64,7 @@ const incidentController = {
       if (!incident) {
         return res.status(404).json({
           success: false,
-          message: 'Incident not found'
+          messageKey: 'incidents.errors.notFound'
         });
       }
 
@@ -111,8 +111,9 @@ const incidentController = {
 
         await notificationService.notifyManagers({
           type: 'incident',
-          title: 'New Incident Reported',
-          message: `${title} - ${system.name}`,
+          titleKey: 'notifications.messages.incident.title',
+          messageKey: 'notifications.messages.incident.message',
+          messageParams: { title: title, system: system.name },
           priority: priority || 'medium',
           referenceType: 'Incident',
           referenceId: incident.id,
@@ -147,7 +148,7 @@ const incidentController = {
       if (!incident) {
         return res.status(404).json({
           success: false,
-          message: 'Incident not found'
+          messageKey: 'incidents.errors.notFound'
         });
       }
 
@@ -176,7 +177,7 @@ const incidentController = {
       if (!incident) {
         return res.status(404).json({
           success: false,
-          message: 'Incident not found'
+          messageKey: 'incidents.errors.notFound'
         });
       }
 
@@ -216,7 +217,7 @@ const incidentController = {
       if (!incident) {
         return res.status(404).json({
           success: false,
-          message: 'Incident not found'
+          messageKey: 'incidents.errors.notFound'
         });
       }
 
@@ -245,7 +246,7 @@ const incidentController = {
       if (!incident) {
         return res.status(404).json({
           success: false,
-          message: 'Incident not found'
+          messageKey: 'incidents.errors.notFound'
         });
       }
 
@@ -275,7 +276,7 @@ const incidentController = {
       if (!incident) {
         return res.status(404).json({
           success: false,
-          message: 'Incident not found'
+          messageKey: 'incidents.errors.notFound'
         });
       }
 
@@ -313,7 +314,7 @@ const incidentController = {
       if (!incident) {
         return res.status(404).json({
           success: false,
-          message: 'Incident not found'
+          messageKey: 'incidents.errors.notFound'
         });
       }
 
@@ -330,7 +331,7 @@ const incidentController = {
 
       res.json({
         success: true,
-        message: 'Incident deleted successfully'
+        messageKey: 'incidents.success.deleted'
       });
     } catch (error) {
       next(error);

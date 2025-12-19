@@ -49,7 +49,7 @@ const libraryController = {
       if (!document) {
         return res.status(404).json({
           success: false,
-          message: 'Document not found'
+          messageKey: 'library.errors.notFound'
         });
       }
 
@@ -70,7 +70,7 @@ const libraryController = {
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: 'File is required'
+          messageKey: 'library.errors.fileRequired'
         });
       }
 
@@ -119,7 +119,7 @@ const libraryController = {
       if (!document) {
         return res.status(404).json({
           success: false,
-          message: 'Document not found'
+          messageKey: 'library.errors.notFound'
         });
       }
 
@@ -154,7 +154,7 @@ const libraryController = {
       if (!document) {
         return res.status(404).json({
           success: false,
-          message: 'Document not found'
+          messageKey: 'library.errors.notFound'
         });
       }
 
@@ -167,7 +167,7 @@ const libraryController = {
 
       res.json({
         success: true,
-        message: 'Document deleted successfully'
+        messageKey: 'library.success.deleted'
       });
     } catch (error) {
       next(error);

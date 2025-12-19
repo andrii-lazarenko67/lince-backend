@@ -29,7 +29,7 @@ const reportController = {
           if (!startDate || !endDate) {
             return res.status(400).json({
               success: false,
-              message: 'Start date and end date are required for custom reports'
+              messageKey: 'reports.errors.datesRequired'
             });
           }
           start = new Date(startDate);
@@ -38,7 +38,7 @@ const reportController = {
         default:
           return res.status(400).json({
             success: false,
-            message: 'Invalid report type'
+            messageKey: 'reports.errors.invalidType'
           });
       }
 
@@ -636,7 +636,7 @@ const reportController = {
       if (!system) {
         return res.status(404).json({
           success: false,
-          message: 'System not found'
+          messageKey: 'systems.errors.notFound'
         });
       }
 

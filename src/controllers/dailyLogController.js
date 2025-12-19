@@ -121,7 +121,7 @@ const dailyLogController = {
       if (!dailyLog) {
         return res.status(404).json({
           success: false,
-          message: 'Daily log not found'
+          messageKey: 'dailyLogs.errors.notFound'
         });
       }
 
@@ -158,7 +158,7 @@ const dailyLogController = {
       if (recordType === 'laboratory' && !laboratory) {
         return res.status(400).json({
           success: false,
-          message: 'Laboratory field is required for laboratory records'
+          messageKey: 'dailyLogs.errors.laboratoryRequired'
         });
       }
 
@@ -176,7 +176,7 @@ const dailyLogController = {
       if (existingLog) {
         return res.status(400).json({
           success: false,
-          message: 'Daily log already exists for this date, system, stage, and record type'
+          messageKey: 'dailyLogs.errors.alreadyExists'
         });
       }
 
@@ -241,8 +241,9 @@ const dailyLogController = {
 
             await notificationService.notifyManagers({
               type: 'alert',
-              title: 'Out of Range Value Detected',
-              message: `${alert.monitoringPoint.name} in ${system.name} recorded value ${alert.value} (${rangeText})`,
+              titleKey: 'notifications.messages.outOfRange.title',
+              messageKey: 'notifications.messages.outOfRange.message',
+              messageParams: { point: alert.monitoringPoint.name, system: system.name, value: alert.value, range: rangeText },
               priority: 'high',
               referenceType: 'DailyLog',
               referenceId: dailyLog.id,
@@ -290,7 +291,7 @@ const dailyLogController = {
       if (!dailyLog) {
         return res.status(404).json({
           success: false,
-          message: 'Daily log not found'
+          messageKey: 'dailyLogs.errors.notFound'
         });
       }
 
@@ -362,7 +363,7 @@ const dailyLogController = {
       if (!dailyLog) {
         return res.status(404).json({
           success: false,
-          message: 'Daily log not found'
+          messageKey: 'dailyLogs.errors.notFound'
         });
       }
 
@@ -371,7 +372,7 @@ const dailyLogController = {
 
       res.json({
         success: true,
-        message: 'Daily log deleted successfully'
+        messageKey: 'dailyLogs.success.deleted'
       });
     } catch (error) {
       next(error);

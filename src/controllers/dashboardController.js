@@ -119,7 +119,8 @@ const dashboardController = {
         ...recentLogs.map(l => ({
           type: 'dailyLog',
           id: l.id,
-          title: `Daily log recorded for ${l.system.name}`,
+          titleKey: 'dashboard.activity.dailyLogRecorded',
+          titleParams: { system: l.system.name },
           user: l.user.name,
           date: l.createdAt,
           system: l.system.name
@@ -127,7 +128,8 @@ const dashboardController = {
         ...recentInspections.map(i => ({
           type: 'inspection',
           id: i.id,
-          title: `Inspection ${i.status} for ${i.system.name}`,
+          titleKey: 'dashboard.activity.inspectionStatus',
+          titleParams: { status: i.status, system: i.system.name },
           user: i.user.name,
           date: i.createdAt,
           system: i.system.name,
@@ -174,7 +176,8 @@ const dashboardController = {
           type: 'incident',
           priority: incident.priority,
           title: incident.title,
-          message: `Open incident in ${incident.system.name}`,
+          titleKey: 'dashboard.alerts.openIncident',
+          titleParams: { system: incident.system.name },
           referenceId: incident.id,
           createdAt: incident.createdAt
         });
@@ -190,8 +193,9 @@ const dashboardController = {
         alerts.push({
           type: 'stock',
           priority: 'high',
-          title: 'Low Stock Alert',
-          message: `${product.name}: ${product.currentStock} ${product.unit} remaining`,
+          titleKey: 'dashboard.alerts.lowStock',
+          messageKey: 'dashboard.alerts.lowStockMessage',
+          messageParams: { name: product.name, stock: product.currentStock, unit: product.unit },
           referenceId: product.id,
           createdAt: new Date()
         });
@@ -218,8 +222,9 @@ const dashboardController = {
           alerts.push({
             type: 'alert',
             priority: 'high',
-            title: 'Out of Range Value',
-            message: `${entry.monitoringPoint.name} in ${log.system.name}: ${entry.value} ${entry.monitoringPoint.unit}`,
+            titleKey: 'dashboard.alerts.outOfRange',
+            messageKey: 'dashboard.alerts.outOfRangeMessage',
+            messageParams: { point: entry.monitoringPoint.name, system: log.system.name, value: entry.value, unit: entry.monitoringPoint.unit },
             referenceId: log.id,
             createdAt: entry.createdAt
           });
