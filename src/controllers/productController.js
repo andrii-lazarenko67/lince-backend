@@ -5,7 +5,7 @@ const notificationService = require('../services/notificationService');
 const productController = {
   async getAll(req, res, next) {
     try {
-      const { type, isActive, search, lowStock } = req.query;
+      const { type, isActive, search, lowStock, systemId } = req.query;
 
       const where = {};
 
@@ -23,10 +23,33 @@ const productController = {
         ];
       }
 
-      let products = await Product.findAll({
-        where,
-        order: [['name', 'ASC']]
-      });
+      let products;
+
+      // If systemId is provided, filter products that have been used in that system
+      if (systemId) {
+        // Find all product IDs that have usages in the specified system
+        const usages = await ProductUsage.findAll({
+          where: { systemId: parseInt(systemId) },
+          attributes: ['productId'],
+          group: ['productId']
+        });
+        const productIds = usages.map(u => u.productId);
+
+        if (productIds.length > 0) {
+          where.id = { [Op.in]: productIds };
+          products = await Product.findAll({
+            where,
+            order: [['name', 'ASC']]
+          });
+        } else {
+          products = [];
+        }
+      } else {
+        products = await Product.findAll({
+          where,
+          order: [['name', 'ASC']]
+        });
+      }
 
       // Filter low stock products
       if (lowStock === 'true') {
