@@ -18,11 +18,11 @@ const notificationService = {
    * @param {number[]} recipientIds - Array of user IDs to send notification to
    * @returns {Promise<Notification>} Created notification
    */
-  async createForUsers({ type, title, message, priority = 'medium', referenceType, referenceId, createdById }, recipientIds) {
+  async createForUsers({ type, title, titleKey, message, messageKey, priority = 'medium', referenceType, referenceId, createdById }, recipientIds) {
     const notification = await Notification.create({
       type,
-      title,
-      message,
+      title: titleKey || title,
+      message: messageKey || message,
       priority,
       referenceType,
       referenceId,

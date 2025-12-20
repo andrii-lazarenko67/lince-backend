@@ -17,7 +17,7 @@ exports.getAllParameters = async (req, res) => {
     res.json(parameters);
   } catch (error) {
     console.error('Error fetching parameters:', error);
-    res.status(500).json({ messageKey: 'parameters.errors.fetchError', error: error.message });
+    res.status(500).json({ messageKey: 'settings.parameters.errors.fetchError', error: error.message });
   }
 };
 
@@ -37,13 +37,13 @@ exports.getParameterById = async (req, res) => {
     });
 
     if (!parameter) {
-      return res.status(404).json({ messageKey: 'parameters.errors.notFound' });
+      return res.status(404).json({ messageKey: 'settings.parameters.errors.notFound' });
     }
 
     res.json(parameter);
   } catch (error) {
     console.error('Error fetching parameter:', error);
-    res.status(500).json({ messageKey: 'parameters.errors.fetchError', error: error.message });
+    res.status(500).json({ messageKey: 'settings.parameters.errors.fetchError', error: error.message });
   }
 };
 
@@ -55,13 +55,13 @@ exports.createParameter = async (req, res) => {
 
     // Validate required fields
     if (!name) {
-      return res.status(400).json({ messageKey: 'parameters.errors.nameRequired' });
+      return res.status(400).json({ messageKey: 'settings.parameters.errors.nameRequired' });
     }
 
     // Check if parameter with same name already exists
     const existingParameter = await Parameter.findOne({ where: { name } });
     if (existingParameter) {
-      return res.status(400).json({ messageKey: 'parameters.errors.nameExists' });
+      return res.status(400).json({ messageKey: 'settings.parameters.errors.nameExists' });
     }
 
     // Create parameter
@@ -86,7 +86,7 @@ exports.createParameter = async (req, res) => {
     res.status(201).json(createdParameter);
   } catch (error) {
     console.error('Error creating parameter:', error);
-    res.status(500).json({ messageKey: 'parameters.errors.createError', error: error.message });
+    res.status(500).json({ messageKey: 'settings.parameters.errors.createError', error: error.message });
   }
 };
 
@@ -99,19 +99,19 @@ exports.updateParameter = async (req, res) => {
     const parameter = await Parameter.findByPk(id);
 
     if (!parameter) {
-      return res.status(404).json({ messageKey: 'parameters.errors.notFound' });
+      return res.status(404).json({ messageKey: 'settings.parameters.errors.notFound' });
     }
 
     // Check if trying to update system default
     if (parameter.isSystemDefault) {
-      return res.status(403).json({ messageKey: 'parameters.errors.cannotModifyDefault' });
+      return res.status(403).json({ messageKey: 'settings.parameters.errors.cannotModifyDefault' });
     }
 
     // Check if parameter with new name already exists
     if (name && name !== parameter.name) {
       const existingParameter = await Parameter.findOne({ where: { name } });
       if (existingParameter) {
-        return res.status(400).json({ messageKey: 'parameters.errors.nameExists' });
+        return res.status(400).json({ messageKey: 'settings.parameters.errors.nameExists' });
       }
     }
 
@@ -135,7 +135,7 @@ exports.updateParameter = async (req, res) => {
     res.json(updatedParameter);
   } catch (error) {
     console.error('Error updating parameter:', error);
-    res.status(500).json({ messageKey: 'parameters.errors.updateError', error: error.message });
+    res.status(500).json({ messageKey: 'settings.parameters.errors.updateError', error: error.message });
   }
 };
 
@@ -147,12 +147,12 @@ exports.deleteParameter = async (req, res) => {
     const parameter = await Parameter.findByPk(id);
 
     if (!parameter) {
-      return res.status(404).json({ messageKey: 'parameters.errors.notFound' });
+      return res.status(404).json({ messageKey: 'settings.parameters.errors.notFound' });
     }
 
     // Check if trying to delete system default
     if (parameter.isSystemDefault) {
-      return res.status(403).json({ messageKey: 'parameters.errors.cannotDeleteDefault' });
+      return res.status(403).json({ messageKey: 'settings.parameters.errors.cannotDeleteDefault' });
     }
 
     // Check if parameter is being used by any monitoring points
@@ -161,16 +161,16 @@ exports.deleteParameter = async (req, res) => {
 
     if (usageCount > 0) {
       return res.status(400).json({
-        messageKey: 'parameters.errors.inUse',
+        messageKey: 'settings.parameters.errors.inUse',
         messageParams: { count: usageCount }
       });
     }
 
     await parameter.destroy();
 
-    res.json({ messageKey: 'parameters.success.deleted' });
+    res.json({ messageKey: 'settings.parameters.success.deleted' });
   } catch (error) {
     console.error('Error deleting parameter:', error);
-    res.status(500).json({ messageKey: 'parameters.errors.deleteError', error: error.message });
+    res.status(500).json({ messageKey: 'settings.parameters.errors.deleteError', error: error.message });
   }
 };

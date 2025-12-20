@@ -76,12 +76,12 @@ module.exports = {
       productMap[idx + 1] = product.id;
     });
 
-    // Create notifications (shared content)
+    // Create notifications using translation keys
     const notifications = [
       {
         type: 'incident',
-        title: 'CRÍTICO: Alerta de Legionella',
-        message: 'Contagem de Legionella acima do limite na Torre de Resfriamento 1. Ação imediata necessária.',
+        title: 'notifications.seed.legionellaAlert.title',
+        message: 'notifications.seed.legionellaAlert.message',
         priority: 'critical',
         referenceType: 'Incident',
         referenceId: incidentMap[3] || null,
@@ -90,8 +90,8 @@ module.exports = {
       },
       {
         type: 'incident',
-        title: 'Ocorrência Resolvida',
-        message: 'A ocorrência "Alerta de Legionella na torre de resfriamento" foi resolvida com sucesso.',
+        title: 'notifications.seed.incidentResolved.title',
+        message: 'notifications.seed.incidentResolved.message',
         priority: 'medium',
         referenceType: 'Incident',
         referenceId: incidentMap[3] || null,
@@ -100,8 +100,8 @@ module.exports = {
       },
       {
         type: 'inspection',
-        title: 'Inspeção Agendada',
-        message: 'Inspeção de segurança da Caldeira a Vapor agendada para os próximos 10 dias.',
+        title: 'notifications.seed.inspectionScheduled.title',
+        message: 'notifications.seed.inspectionScheduled.message',
         priority: 'medium',
         referenceType: 'Inspection',
         referenceId: inspectionMap[25] || inspectionMap[1] || null,
@@ -110,8 +110,8 @@ module.exports = {
       },
       {
         type: 'stock',
-        title: 'Alerta de Estoque Baixo',
-        message: 'Estoque de Hipoclorito de Sódio 12% está abaixo do nível mínimo (100L restantes).',
+        title: 'notifications.messages.lowStock.title',
+        message: 'notifications.seed.lowStockHypochlorite.message',
         priority: 'high',
         referenceType: 'Product',
         referenceId: productMap[1] || null,
@@ -120,8 +120,8 @@ module.exports = {
       },
       {
         type: 'alert',
-        title: 'Parâmetro Fora do Limite',
-        message: 'pH da Piscina Olímpica medido em 7,9, acima do limite máximo de 7,8.',
+        title: 'notifications.seed.parameterOutOfRange.title',
+        message: 'notifications.seed.parameterOutOfRange.message',
         priority: 'high',
         referenceType: 'System',
         referenceId: systemMap.piscina,
@@ -130,8 +130,8 @@ module.exports = {
       },
       {
         type: 'incident',
-        title: 'Nova Ocorrência Reportada',
-        message: 'Vibração excessiva detectada no ventilador da Torre de Resfriamento 1.',
+        title: 'notifications.messages.incident.title',
+        message: 'notifications.seed.vibrationDetected.message',
         priority: 'medium',
         referenceType: 'Incident',
         referenceId: incidentMap[9] || null,
@@ -140,8 +140,8 @@ module.exports = {
       },
       {
         type: 'inspection',
-        title: 'Inspeção Concluída',
-        message: 'Inspeção regulatória da ETA Principal concluída com sucesso.',
+        title: 'notifications.seed.inspectionCompleted.title',
+        message: 'notifications.seed.inspectionCompleted.message',
         priority: 'low',
         referenceType: 'Inspection',
         referenceId: inspectionMap[18] || inspectionMap[1] || null,
@@ -150,8 +150,8 @@ module.exports = {
       },
       {
         type: 'stock',
-        title: 'Alerta de Estoque Baixo',
-        message: 'Estoque de Bactericida THPS Industrial está abaixo do nível mínimo.',
+        title: 'notifications.messages.lowStock.title',
+        message: 'notifications.seed.lowStockBactericide.message',
         priority: 'high',
         referenceType: 'Product',
         referenceId: productMap[10] || productMap[1] || null,
@@ -160,8 +160,8 @@ module.exports = {
       },
       {
         type: 'system',
-        title: 'Relatório Mensal Disponível',
-        message: 'O relatório mensal de qualidade da água de Novembro está disponível para download.',
+        title: 'notifications.seed.monthlyReport.title',
+        message: 'notifications.seed.monthlyReport.message',
         priority: 'low',
         referenceType: null,
         referenceId: null,
@@ -170,8 +170,8 @@ module.exports = {
       },
       {
         type: 'system',
-        title: 'Manutenção Programada',
-        message: 'Manutenção preventiva da ETA Principal agendada para o dia 15.',
+        title: 'notifications.seed.scheduledMaintenance.title',
+        message: 'notifications.seed.scheduledMaintenance.message',
         priority: 'medium',
         referenceType: 'System',
         referenceId: systemMap.eta,
@@ -180,8 +180,8 @@ module.exports = {
       },
       {
         type: 'alert',
-        title: 'Turbidez Elevada Detectada',
-        message: 'Turbidez da água bruta na ETA Principal acima de 100 NTU.',
+        title: 'notifications.seed.highTurbidity.title',
+        message: 'notifications.seed.highTurbidity.message',
         priority: 'high',
         referenceType: 'System',
         referenceId: systemMap.eta,
@@ -190,8 +190,8 @@ module.exports = {
       },
       {
         type: 'system',
-        title: 'Lembrete de Registro',
-        message: 'Não esqueça de registrar os dados diários da Piscina Olímpica.',
+        title: 'notifications.seed.recordReminder.title',
+        message: 'notifications.seed.recordReminder.message',
         priority: 'low',
         referenceType: 'System',
         referenceId: systemMap.piscina,

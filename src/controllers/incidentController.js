@@ -190,8 +190,8 @@ const incidentController = {
       if (assignedTo) {
         await notificationService.notifyUser({
           type: 'incident',
-          title: 'Incident Assigned to You',
-          message: incident.title,
+          titleKey: 'notifications.messages.incidentAssigned.title',
+          messageKey: 'notifications.messages.incidentAssigned.message',
           priority: incident.priority,
           referenceType: 'Incident',
           referenceId: incident.id,
