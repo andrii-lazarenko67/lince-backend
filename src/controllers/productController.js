@@ -1,15 +1,30 @@
-const { Product, ProductUsage, System, User } = require('../../db/models');
+const { Product, ProductType, ProductUsage, System, User, Unit } = require('../../db/models');
 const { Op } = require('sequelize');
 const notificationService = require('../services/notificationService');
 
 const productController = {
+  async getTypes(req, res, next) {
+    try {
+      const types = await ProductType.findAll({
+        order: [['name', 'ASC']]
+      });
+
+      res.json({
+        success: true,
+        data: types
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getAll(req, res, next) {
     try {
-      const { type, isActive, search, lowStock, systemId } = req.query;
+      const { typeId, isActive, search, lowStock, systemId } = req.query;
 
       const where = {};
 
-      if (type) where.type = type;
+      if (typeId) where.typeId = typeId;
       // By default, only show active products unless explicitly requested otherwise
       if (isActive !== undefined) {
         where.isActive = isActive === 'true';
@@ -39,6 +54,10 @@ const productController = {
           where.id = { [Op.in]: productIds };
           products = await Product.findAll({
             where,
+            include: [
+              { model: ProductType, as: 'type' },
+              { model: Unit, as: 'unit' }
+            ],
             order: [['name', 'ASC']]
           });
         } else {
@@ -47,6 +66,10 @@ const productController = {
       } else {
         products = await Product.findAll({
           where,
+          include: [
+            { model: ProductType, as: 'type' },
+            { model: Unit, as: 'unit' }
+          ],
           order: [['name', 'ASC']]
         });
       }
@@ -69,7 +92,12 @@ const productController = {
 
   async getById(req, res, next) {
     try {
-      const product = await Product.findByPk(req.params.id);
+      const product = await Product.findByPk(req.params.id, {
+        include: [
+          { model: ProductType, as: 'type' },
+          { model: Unit, as: 'unit' }
+        ]
+      });
 
       if (!product) {
         return res.status(404).json({
@@ -117,21 +145,30 @@ const productController = {
 
   async create(req, res, next) {
     try {
-      const { name, type, unit, supplier, currentStock, minStockAlert, description } = req.body;
+      const { name, typeId, unitId, supplier, currentStock, minStockAlert, description, recommendedDosage } = req.body;
 
       const product = await Product.create({
         name,
-        type,
-        unit,
+        typeId,
+        unitId,
         supplier,
         currentStock: currentStock || 0,
         minStockAlert,
-        description
+        description,
+        recommendedDosage
+      });
+
+      // Fetch with associations
+      const productWithAssociations = await Product.findByPk(product.id, {
+        include: [
+          { model: ProductType, as: 'type' },
+          { model: Unit, as: 'unit' }
+        ]
       });
 
       res.status(201).json({
         success: true,
-        data: product
+        data: productWithAssociations
       });
     } catch (error) {
       next(error);
@@ -140,7 +177,7 @@ const productController = {
 
   async update(req, res, next) {
     try {
-      const { name, type, unit, supplier, currentStock, minStockAlert, description, isActive } = req.body;
+      const { name, typeId, unitId, supplier, currentStock, minStockAlert, description, recommendedDosage, isActive } = req.body;
 
       const product = await Product.findByPk(req.params.id);
 
@@ -153,18 +190,27 @@ const productController = {
 
       await product.update({
         name: name || product.name,
-        type: type || product.type,
-        unit: unit || product.unit,
+        typeId: typeId !== undefined ? typeId : product.typeId,
+        unitId: unitId !== undefined ? unitId : product.unitId,
         supplier: supplier !== undefined ? supplier : product.supplier,
         currentStock: currentStock !== undefined ? currentStock : product.currentStock,
         minStockAlert: minStockAlert !== undefined ? minStockAlert : product.minStockAlert,
         description: description !== undefined ? description : product.description,
+        recommendedDosage: recommendedDosage !== undefined ? recommendedDosage : product.recommendedDosage,
         isActive: isActive !== undefined ? isActive : product.isActive
+      });
+
+      // Fetch with associations
+      const productWithAssociations = await Product.findByPk(product.id, {
+        include: [
+          { model: ProductType, as: 'type' },
+          { model: Unit, as: 'unit' }
+        ]
       });
 
       res.json({
         success: true,
-        data: product
+        data: productWithAssociations
       });
     } catch (error) {
       next(error);
@@ -207,11 +253,16 @@ const productController = {
 
       // Check for low stock alert
       if (product.minStockAlert && newStock <= parseFloat(product.minStockAlert)) {
+        // Fetch product with unit to get unit abbreviation
+        const productWithUnit = await Product.findByPk(product.id, {
+          include: [{ model: Unit, as: 'unit' }]
+        });
+
         await notificationService.notifyManagers({
           type: 'stock',
           titleKey: 'notifications.messages.lowStock.title',
           messageKey: 'notifications.messages.lowStock.message',
-          messageParams: { name: product.name, stock: newStock, unit: product.unit },
+          messageParams: { name: product.name, stock: newStock, unit: productWithUnit.unit?.abbreviation || '' },
           priority: 'high',
           referenceType: 'Product',
           referenceId: product.id,
@@ -280,11 +331,16 @@ const productController = {
 
       // Check for low stock alert
       if (product.minStockAlert && newStock <= parseFloat(product.minStockAlert)) {
+        // Fetch product with unit to get unit abbreviation
+        const productWithUnit = await Product.findByPk(product.id, {
+          include: [{ model: Unit, as: 'unit' }]
+        });
+
         await notificationService.notifyManagers({
           type: 'stock',
           titleKey: 'notifications.messages.lowStock.title',
           messageKey: 'notifications.messages.lowStock.message',
-          messageParams: { name: product.name, stock: newStock, unit: product.unit },
+          messageParams: { name: product.name, stock: newStock, unit: productWithUnit.unit?.abbreviation || '' },
           priority: 'high',
           referenceType: 'Product',
           referenceId: product.id,
@@ -294,7 +350,12 @@ const productController = {
 
       res.json({
         success: true,
-        data: await Product.findByPk(product.id)
+        data: await Product.findByPk(product.id, {
+          include: [
+            { model: ProductType, as: 'type' },
+            { model: Unit, as: 'unit' }
+          ]
+        })
       });
     } catch (error) {
       next(error);

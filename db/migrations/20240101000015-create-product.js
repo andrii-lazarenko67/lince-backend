@@ -13,13 +13,25 @@ module.exports = {
         type: Sequelize.STRING(100),
         allowNull: false
       },
-      type: {
-        type: Sequelize.STRING(50),
-        allowNull: true
+      typeId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'ProductTypes',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
       },
-      unit: {
-        type: Sequelize.STRING(20),
-        allowNull: false
+      unitId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Units',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT'
       },
       supplier: {
         type: Sequelize.STRING(100),

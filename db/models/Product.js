@@ -11,13 +11,13 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(100),
       allowNull: false
     },
-    type: {
-      type: DataTypes.STRING(50),
+    typeId: {
+      type: DataTypes.INTEGER,
       allowNull: true
     },
-    unit: {
-      type: DataTypes.STRING(20),
-      allowNull: false
+    unitId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
     supplier: {
       type: DataTypes.STRING(100),
@@ -49,6 +49,8 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Product.associate = function(models) {
+    Product.belongsTo(models.ProductType, { foreignKey: 'typeId', as: 'type' });
+    Product.belongsTo(models.Unit, { foreignKey: 'unitId', as: 'unit' });
     Product.hasMany(models.ProductUsage, { foreignKey: 'productId', as: 'usages' });
   };
 

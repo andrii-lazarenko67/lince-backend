@@ -2,12 +2,36 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Fetch ProductTypes to get their IDs
+    const productTypes = await queryInterface.sequelize.query(
+      'SELECT id, name FROM "ProductTypes"',
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
+    // Fetch Units to get their IDs
+    const units = await queryInterface.sequelize.query(
+      'SELECT id, abbreviation FROM "Units"',
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+
+    // Create a lookup map for type names to IDs
+    const typeMap = {};
+    productTypes.forEach(pt => {
+      typeMap[pt.name] = pt.id;
+    });
+
+    // Create a lookup map for unit abbreviations to IDs
+    const unitMap = {};
+    units.forEach(u => {
+      unitMap[u.abbreviation] = u.id;
+    });
+
     await queryInterface.bulkInsert('Products', [
       // Desinfetantes e Oxidantes
       {
         name: 'Hipoclorito de Sódio 12%',
-        type: 'Desinfetante',
-        unit: 'L',
+        typeId: typeMap['Desinfetante'],
+        unitId: unitMap['L'],
         supplier: 'Química Brasil Ltda',
         currentStock: 500.00,
         minStockAlert: 100.00,
@@ -19,8 +43,8 @@ module.exports = {
       },
       {
         name: 'Cloro Granulado 65%',
-        type: 'Desinfetante',
-        unit: 'kg',
+        typeId: typeMap['Desinfetante'],
+        unitId: unitMap['kg'],
         supplier: 'Pool Tech Brasil',
         currentStock: 150.00,
         minStockAlert: 30.00,
@@ -32,8 +56,8 @@ module.exports = {
       },
       {
         name: 'Dióxido de Cloro',
-        type: 'Desinfetante',
-        unit: 'L',
+        typeId: typeMap['Desinfetante'],
+        unitId: unitMap['L'],
         supplier: 'BioQuímica Industrial',
         currentStock: 80.00,
         minStockAlert: 20.00,
@@ -46,8 +70,8 @@ module.exports = {
       // Reguladores de pH
       {
         name: 'Ácido Clorídrico 33%',
-        type: 'Redutor de pH',
-        unit: 'L',
+        typeId: typeMap['Redutor de pH'],
+        unitId: unitMap['L'],
         supplier: 'Química Brasil Ltda',
         currentStock: 200.00,
         minStockAlert: 50.00,
@@ -59,8 +83,8 @@ module.exports = {
       },
       {
         name: 'Ácido Sulfúrico 98%',
-        type: 'Redutor de pH',
-        unit: 'L',
+        typeId: typeMap['Redutor de pH'],
+        unitId: unitMap['L'],
         supplier: 'IndQuímica S.A.',
         currentStock: 100.00,
         minStockAlert: 25.00,
@@ -72,8 +96,8 @@ module.exports = {
       },
       {
         name: 'Barrilha Leve (Carbonato de Sódio)',
-        type: 'Elevador de pH',
-        unit: 'kg',
+        typeId: typeMap['Elevador de pH'],
+        unitId: unitMap['kg'],
         supplier: 'Mineração Alcalis',
         currentStock: 300.00,
         minStockAlert: 50.00,
@@ -85,8 +109,8 @@ module.exports = {
       },
       {
         name: 'Soda Cáustica (Hidróxido de Sódio)',
-        type: 'Elevador de pH',
-        unit: 'kg',
+        typeId: typeMap['Elevador de pH'],
+        unitId: unitMap['kg'],
         supplier: 'Química Brasil Ltda',
         currentStock: 150.00,
         minStockAlert: 30.00,
@@ -99,8 +123,8 @@ module.exports = {
       // Algicidas e Bactericidas
       {
         name: 'Algicida Quaternário',
-        type: 'Algicida',
-        unit: 'L',
+        typeId: typeMap['Algicida'],
+        unitId: unitMap['L'],
         supplier: 'Pool Tech Brasil',
         currentStock: 75.00,
         minStockAlert: 15.00,
@@ -112,8 +136,8 @@ module.exports = {
       },
       {
         name: 'Algicida Cobre',
-        type: 'Algicida',
-        unit: 'L',
+        typeId: typeMap['Algicida'],
+        unitId: unitMap['L'],
         supplier: 'AquaTrat Produtos',
         currentStock: 40.00,
         minStockAlert: 10.00,
@@ -125,8 +149,8 @@ module.exports = {
       },
       {
         name: 'Bactericida Industrial THPS',
-        type: 'Bactericida',
-        unit: 'L',
+        typeId: typeMap['Bactericida'],
+        unitId: unitMap['L'],
         supplier: 'BioQuímica Industrial',
         currentStock: 60.00,
         minStockAlert: 15.00,
@@ -139,8 +163,8 @@ module.exports = {
       // Inibidores e Dispersantes
       {
         name: 'Inibidor de Corrosão',
-        type: 'Inibidor',
-        unit: 'L',
+        typeId: typeMap['Inibidor'],
+        unitId: unitMap['L'],
         supplier: 'IndQuímica S.A.',
         currentStock: 120.00,
         minStockAlert: 25.00,
@@ -152,8 +176,8 @@ module.exports = {
       },
       {
         name: 'Inibidor de Incrustação',
-        type: 'Anti-incrustante',
-        unit: 'L',
+        typeId: typeMap['Anti-incrustante'],
+        unitId: unitMap['L'],
         supplier: 'AquaTrat Produtos',
         currentStock: 90.00,
         minStockAlert: 20.00,
@@ -165,8 +189,8 @@ module.exports = {
       },
       {
         name: 'Dispersante Polimérico',
-        type: 'Dispersante',
-        unit: 'L',
+        typeId: typeMap['Dispersante'],
+        unitId: unitMap['L'],
         supplier: 'BioQuímica Industrial',
         currentStock: 55.00,
         minStockAlert: 10.00,
@@ -179,8 +203,8 @@ module.exports = {
       // Coagulantes e Floculantes
       {
         name: 'Sulfato de Alumínio',
-        type: 'Coagulante',
-        unit: 'kg',
+        typeId: typeMap['Coagulante'],
+        unitId: unitMap['kg'],
         supplier: 'Mineração Alcalis',
         currentStock: 500.00,
         minStockAlert: 100.00,
@@ -192,8 +216,8 @@ module.exports = {
       },
       {
         name: 'PAC (Policloreto de Alumínio)',
-        type: 'Coagulante',
-        unit: 'L',
+        typeId: typeMap['Coagulante'],
+        unitId: unitMap['L'],
         supplier: 'IndQuímica S.A.',
         currentStock: 300.00,
         minStockAlert: 60.00,
@@ -205,8 +229,8 @@ module.exports = {
       },
       {
         name: 'Polímero Aniônico',
-        type: 'Floculante',
-        unit: 'kg',
+        typeId: typeMap['Floculante'],
+        unitId: unitMap['kg'],
         supplier: 'AquaTrat Produtos',
         currentStock: 50.00,
         minStockAlert: 10.00,
@@ -218,8 +242,8 @@ module.exports = {
       },
       {
         name: 'Polímero Catiônico',
-        type: 'Floculante',
-        unit: 'kg',
+        typeId: typeMap['Floculante'],
+        unitId: unitMap['kg'],
         supplier: 'AquaTrat Produtos',
         currentStock: 45.00,
         minStockAlert: 10.00,
@@ -232,8 +256,8 @@ module.exports = {
       // Produtos para Caldeira
       {
         name: 'Sequestrante de Oxigênio',
-        type: 'Tratamento Caldeira',
-        unit: 'L',
+        typeId: typeMap['Tratamento Caldeira'],
+        unitId: unitMap['L'],
         supplier: 'IndQuímica S.A.',
         currentStock: 80.00,
         minStockAlert: 20.00,
@@ -245,8 +269,8 @@ module.exports = {
       },
       {
         name: 'Alcalinizante para Caldeira',
-        type: 'Tratamento Caldeira',
-        unit: 'kg',
+        typeId: typeMap['Tratamento Caldeira'],
+        unitId: unitMap['kg'],
         supplier: 'BioQuímica Industrial',
         currentStock: 100.00,
         minStockAlert: 25.00,
@@ -259,8 +283,8 @@ module.exports = {
       // Produtos Auxiliares
       {
         name: 'Clarificante Líquido',
-        type: 'Clarificante',
-        unit: 'L',
+        typeId: typeMap['Clarificante'],
+        unitId: unitMap['L'],
         supplier: 'Pool Tech Brasil',
         currentStock: 60.00,
         minStockAlert: 15.00,
@@ -272,8 +296,8 @@ module.exports = {
       },
       {
         name: 'Estabilizador de Cloro (Ácido Cianúrico)',
-        type: 'Estabilizante',
-        unit: 'kg',
+        typeId: typeMap['Estabilizante'],
+        unitId: unitMap['kg'],
         supplier: 'Pool Tech Brasil',
         currentStock: 40.00,
         minStockAlert: 10.00,
@@ -285,8 +309,8 @@ module.exports = {
       },
       {
         name: 'Declorante (Tiossulfato de Sódio)',
-        type: 'Neutralizante',
-        unit: 'kg',
+        typeId: typeMap['Neutralizante'],
+        unitId: unitMap['kg'],
         supplier: 'Química Brasil Ltda',
         currentStock: 30.00,
         minStockAlert: 5.00,
@@ -298,8 +322,8 @@ module.exports = {
       },
       {
         name: 'Anti-espumante',
-        type: 'Auxiliar',
-        unit: 'L',
+        typeId: typeMap['Auxiliar'],
+        unitId: unitMap['L'],
         supplier: 'AquaTrat Produtos',
         currentStock: 25.00,
         minStockAlert: 5.00,
@@ -311,8 +335,8 @@ module.exports = {
       },
       {
         name: 'Carvão Ativado Granulado',
-        type: 'Adsorvente',
-        unit: 'kg',
+        typeId: typeMap['Adsorvente'],
+        unitId: unitMap['kg'],
         supplier: 'Mineração Alcalis',
         currentStock: 200.00,
         minStockAlert: 40.00,
