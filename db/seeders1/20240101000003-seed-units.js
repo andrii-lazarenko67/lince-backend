@@ -37,7 +37,13 @@ module.exports = {
       { name: 'Hazen Units', abbreviation: 'uH', category: 'color', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() },
 
       // Volume units
+      { name: 'Liters', abbreviation: 'L', category: 'volume', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() },
+      { name: 'Milliliters', abbreviation: 'mL', category: 'volume', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() },
       { name: 'Milliliters per liter', abbreviation: 'mL/L', category: 'volume', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() },
+
+      // Mass units
+      { name: 'Kilograms', abbreviation: 'kg', category: 'mass', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() },
+      { name: 'Grams', abbreviation: 'g', category: 'mass', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() },
 
       // Flow rate units
       { name: 'Cubic meters per hour', abbreviation: 'm³/h', category: 'flow_rate', createdBy: creatorId, isSystemDefault: true, createdAt: new Date(), updatedAt: new Date() },
