@@ -18,6 +18,85 @@ const productController = {
     }
   },
 
+  async createType(req, res, next) {
+    try {
+      const { name, description } = req.body;
+
+      if (!name) {
+        return res.status(400).json({
+          success: false,
+          message: 'Product type name is required'
+        });
+      }
+
+      const type = await ProductType.create({ name, description });
+
+      res.status(201).json({
+        success: true,
+        data: type
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateType(req, res, next) {
+    try {
+      const { name, description } = req.body;
+      const type = await ProductType.findByPk(req.params.typeId);
+
+      if (!type) {
+        return res.status(404).json({
+          success: false,
+          message: 'Product type not found'
+        });
+      }
+
+      if (name !== undefined) type.name = name;
+      if (description !== undefined) type.description = description;
+
+      await type.save();
+
+      res.json({
+        success: true,
+        data: type
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async deleteType(req, res, next) {
+    try {
+      const type = await ProductType.findByPk(req.params.typeId);
+
+      if (!type) {
+        return res.status(404).json({
+          success: false,
+          message: 'Product type not found'
+        });
+      }
+
+      // Check if any products are using this type
+      const productCount = await Product.count({ where: { typeId: req.params.typeId } });
+      if (productCount > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot delete product type. ${productCount} product(s) are using this type.`
+        });
+      }
+
+      await type.destroy();
+
+      res.json({
+        success: true,
+        message: 'Product type deleted successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getAll(req, res, next) {
     try {
       const { typeId, isActive, search, lowStock, systemId } = req.query;

@@ -7,6 +7,9 @@ const roleMiddleware = require('../middlewares/roleMiddleware');
 router.use(authMiddleware);
 
 router.get('/types', productController.getTypes);
+router.post('/types', roleMiddleware('manager', 'admin'), productController.createType);
+router.put('/types/:typeId', roleMiddleware('manager', 'admin'), productController.updateType);
+router.delete('/types/:typeId', roleMiddleware('manager', 'admin'), productController.deleteType);
 router.get('/', productController.getAll);
 router.get('/:id', productController.getById);
 router.get('/:id/usages', productController.getUsages);
