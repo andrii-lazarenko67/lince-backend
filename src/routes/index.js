@@ -20,14 +20,13 @@ const parameterRoutes = require('./parameterRoutes');
 const unitRoutes = require('./unitRoutes');
 const productDosageRoutes = require('./productDosageRoutes');
 const systemPhotoRoutes = require('./systemPhotoRoutes');
-const organizationRoutes = require('./organizationRoutes');
 const clientRoutes = require('./clientRoutes');
 const reportTemplateRoutes = require('./reportTemplateRoutes');
+const generatedReportRoutes = require('./generatedReportRoutes');
 
 // Auth routes (no client context needed)
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
-router.use('/organizations', organizationRoutes);
 router.use('/clients', clientRoutes);
 
 // Apply client context middleware for data routes
@@ -47,6 +46,7 @@ router.use('/parameters', parameterRoutes);
 router.use('/units', unitRoutes);
 router.use('/product-dosages', productDosageRoutes);
 router.use('/system-photos', systemPhotoRoutes);
-router.use('/report-templates', reportTemplateRoutes);
+router.use('/report-templates', clientContextMiddleware, reportTemplateRoutes);
+router.use('/generated-reports', clientContextMiddleware, generatedReportRoutes);
 
 module.exports = router;

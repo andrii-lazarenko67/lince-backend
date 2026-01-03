@@ -1,11 +1,60 @@
-const { ReportTemplate, User } = require('../../db/models');
+const { ReportTemplate, User, Client } = require('../../db/models');
+const { Op } = require('sequelize');
+
+// Default template configuration based on CLIENT_REQUIREMENTS_FINAL.md
+const DEFAULT_TEMPLATE_CONFIG = {
+  blocks: [
+    { type: 'identification', enabled: true, order: 1 },
+    { type: 'scope', enabled: true, order: 2 },
+    { type: 'systems', enabled: true, order: 3, includePhotos: true },
+    { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: true },
+    { type: 'inspections', enabled: true, order: 5, includePhotos: true },
+    { type: 'occurrences', enabled: true, order: 6, includeTimeline: true },
+    { type: 'conclusion', enabled: true, order: 7 },
+    { type: 'signature', enabled: true, order: 8 },
+    { type: 'attachments', enabled: false, order: 9 }
+  ],
+  branding: {
+    showLogo: true,
+    logoPosition: 'left',
+    primaryColor: '#1976d2',
+    showHeader: true,
+    headerText: 'Technical Report',
+    showFooter: true,
+    footerText: 'Page {page} of {pages}'
+  }
+};
 
 const reportTemplateController = {
   async getAll(req, res, next) {
     try {
+      const clientId = req.clientId || req.query.clientId;
+
+      // Build where clause: user's templates + global templates
+      const whereClause = {
+        isActive: true,
+        [Op.or]: [
+          { userId: req.user.id },
+          { isGlobal: true }
+        ]
+      };
+
+      // If clientId is provided, also filter by specific client templates
+      if (clientId) {
+        whereClause[Op.or] = [
+          { userId: req.user.id, clientId: parseInt(clientId) },
+          { userId: req.user.id, clientId: null },
+          { isGlobal: true }
+        ];
+      }
+
       const templates = await ReportTemplate.findAll({
-        where: { userId: req.user.id, isActive: true },
-        order: [['isDefault', 'DESC'], ['name', 'ASC']]
+        where: whereClause,
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: Client, as: 'client', attributes: ['id', 'name'] }
+        ],
+        order: [['isDefault', 'DESC'], ['isGlobal', 'DESC'], ['name', 'ASC']]
       });
 
       res.json({
@@ -20,7 +69,18 @@ const reportTemplateController = {
   async getById(req, res, next) {
     try {
       const template = await ReportTemplate.findOne({
-        where: { id: req.params.id, userId: req.user.id, isActive: true }
+        where: {
+          id: req.params.id,
+          isActive: true,
+          [Op.or]: [
+            { userId: req.user.id },
+            { isGlobal: true }
+          ]
+        },
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: Client, as: 'client', attributes: ['id', 'name'] }
+        ]
       });
 
       if (!template) {
@@ -41,7 +101,7 @@ const reportTemplateController = {
 
   async create(req, res, next) {
     try {
-      const { name, description, config, isDefault } = req.body;
+      const { name, description, type, config, isDefault, clientId } = req.body;
 
       if (!name || !name.trim()) {
         return res.status(400).json({
@@ -50,7 +110,7 @@ const reportTemplateController = {
         });
       }
 
-      // If setting as default, unset other defaults
+      // If setting as default, unset other defaults for this user
       if (isDefault) {
         await ReportTemplate.update(
           { isDefault: false },
@@ -58,17 +118,31 @@ const reportTemplateController = {
         );
       }
 
+      // Use default config if not provided
+      const templateConfig = config || DEFAULT_TEMPLATE_CONFIG;
+
       const template = await ReportTemplate.create({
         userId: req.user.id,
+        clientId: clientId || req.clientId || null,
         name: name.trim(),
         description: description?.trim() || null,
-        config: config || { modules: [], settings: {} },
-        isDefault: isDefault || false
+        type: type || 'both',
+        config: templateConfig,
+        isDefault: isDefault || false,
+        isGlobal: false
+      });
+
+      // Fetch with associations
+      const createdTemplate = await ReportTemplate.findByPk(template.id, {
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: Client, as: 'client', attributes: ['id', 'name'] }
+        ]
       });
 
       res.status(201).json({
         success: true,
-        data: template,
+        data: createdTemplate,
         messageKey: 'reports.templates.created'
       });
     } catch (error) {
@@ -89,7 +163,15 @@ const reportTemplateController = {
         });
       }
 
-      const { name, description, config, isDefault } = req.body;
+      // Cannot edit global templates unless you're the creator
+      if (template.isGlobal && template.userId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          messageKey: 'reports.templates.errors.cannotEditGlobal'
+        });
+      }
+
+      const { name, description, type, config, isDefault } = req.body;
 
       // If setting as default, unset other defaults
       if (isDefault && !template.isDefault) {
@@ -102,13 +184,22 @@ const reportTemplateController = {
       await template.update({
         name: name !== undefined ? name.trim() : template.name,
         description: description !== undefined ? (description?.trim() || null) : template.description,
+        type: type !== undefined ? type : template.type,
         config: config !== undefined ? config : template.config,
         isDefault: isDefault !== undefined ? isDefault : template.isDefault
       });
 
+      // Fetch with associations
+      const updatedTemplate = await ReportTemplate.findByPk(template.id, {
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: Client, as: 'client', attributes: ['id', 'name'] }
+        ]
+      });
+
       res.json({
         success: true,
-        data: template,
+        data: updatedTemplate,
         messageKey: 'reports.templates.updated'
       });
     } catch (error) {
@@ -129,6 +220,14 @@ const reportTemplateController = {
         });
       }
 
+      // Cannot delete global templates unless you're the creator
+      if (template.isGlobal && template.userId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          messageKey: 'reports.templates.errors.cannotDeleteGlobal'
+        });
+      }
+
       // Soft delete
       await template.update({ isActive: false });
 
@@ -141,10 +240,69 @@ const reportTemplateController = {
     }
   },
 
+  async duplicate(req, res, next) {
+    try {
+      const originalTemplate = await ReportTemplate.findOne({
+        where: {
+          id: req.params.id,
+          isActive: true,
+          [Op.or]: [
+            { userId: req.user.id },
+            { isGlobal: true }
+          ]
+        }
+      });
+
+      if (!originalTemplate) {
+        return res.status(404).json({
+          success: false,
+          messageKey: 'reports.templates.errors.notFound'
+        });
+      }
+
+      const { name } = req.body;
+      const newName = name?.trim() || `${originalTemplate.name} (Copy)`;
+
+      const duplicatedTemplate = await ReportTemplate.create({
+        userId: req.user.id,
+        clientId: req.clientId || originalTemplate.clientId,
+        name: newName,
+        description: originalTemplate.description,
+        type: originalTemplate.type,
+        config: originalTemplate.config,
+        isDefault: false,
+        isGlobal: false
+      });
+
+      // Fetch with associations
+      const createdTemplate = await ReportTemplate.findByPk(duplicatedTemplate.id, {
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: Client, as: 'client', attributes: ['id', 'name'] }
+        ]
+      });
+
+      res.status(201).json({
+        success: true,
+        data: createdTemplate,
+        messageKey: 'reports.templates.duplicated'
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async setDefault(req, res, next) {
     try {
       const template = await ReportTemplate.findOne({
-        where: { id: req.params.id, userId: req.user.id, isActive: true }
+        where: {
+          id: req.params.id,
+          isActive: true,
+          [Op.or]: [
+            { userId: req.user.id },
+            { isGlobal: true }
+          ]
+        }
       });
 
       if (!template) {
@@ -154,7 +312,7 @@ const reportTemplateController = {
         });
       }
 
-      // Unset all other defaults
+      // Unset all other defaults for this user
       await ReportTemplate.update(
         { isDefault: false },
         { where: { userId: req.user.id } }
@@ -163,9 +321,17 @@ const reportTemplateController = {
       // Set this one as default
       await template.update({ isDefault: true });
 
+      // Fetch with associations
+      const updatedTemplate = await ReportTemplate.findByPk(template.id, {
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: Client, as: 'client', attributes: ['id', 'name'] }
+        ]
+      });
+
       res.json({
         success: true,
-        data: template,
+        data: updatedTemplate,
         messageKey: 'reports.templates.setAsDefault'
       });
     } catch (error) {
@@ -175,13 +341,40 @@ const reportTemplateController = {
 
   async getDefault(req, res, next) {
     try {
-      const template = await ReportTemplate.findOne({
-        where: { userId: req.user.id, isDefault: true, isActive: true }
+      let template = await ReportTemplate.findOne({
+        where: { userId: req.user.id, isDefault: true, isActive: true },
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: Client, as: 'client', attributes: ['id', 'name'] }
+        ]
       });
+
+      // If no default, try to find a global default
+      if (!template) {
+        template = await ReportTemplate.findOne({
+          where: { isGlobal: true, isDefault: true, isActive: true },
+          include: [
+            { model: User, as: 'user', attributes: ['id', 'name'] },
+            { model: Client, as: 'client', attributes: ['id', 'name'] }
+          ]
+        });
+      }
 
       res.json({
         success: true,
         data: template || null
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Get the default template config for creating new templates
+  async getDefaultConfig(req, res, next) {
+    try {
+      res.json({
+        success: true,
+        data: DEFAULT_TEMPLATE_CONFIG
       });
     } catch (error) {
       next(error);

@@ -85,7 +85,15 @@ const systemController = {
 
   async getById(req, res, next) {
     try {
-      const system = await System.findByPk(req.params.id, {
+      const where = { id: req.params.id };
+
+      // Filter by clientId if provided
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const system = await System.findOne({
+        where,
         include: [
           {
             model: SystemType,
@@ -152,10 +160,19 @@ const systemController = {
     try {
       const { name, systemTypeId, location, description, status, parentId } = req.body;
 
+      // Require clientId for creating systems
+      if (!req.clientId) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'errors.clientIdRequired'
+        });
+      }
+
       let finalSystemTypeId = systemTypeId;
       let finalLocation = location;
+      let finalClientId = req.clientId;
 
-      // If creating a step (has parent), inherit location and systemTypeId from parent
+      // If creating a step (has parent), inherit location, systemTypeId, and clientId from parent
       if (parentId) {
         const parent = await System.findByPk(parentId);
         if (!parent) {
@@ -165,9 +182,18 @@ const systemController = {
           });
         }
 
+        // Verify parent belongs to the same client
+        if (parent.clientId !== req.clientId) {
+          return res.status(403).json({
+            success: false,
+            messageKey: 'errors.noClientAccess'
+          });
+        }
+
         // Steps inherit location and systemTypeId from parent
         finalSystemTypeId = parent.systemTypeId;
         finalLocation = parent.location;
+        finalClientId = parent.clientId;
       } else {
         // Root systems must have systemTypeId
         if (!systemTypeId) {
@@ -192,7 +218,8 @@ const systemController = {
         location: finalLocation,
         description,
         status: status || 'active',
-        parentId: parentId || null
+        parentId: parentId || null,
+        clientId: finalClientId
       });
 
       // Fetch with associations for response
@@ -244,7 +271,14 @@ const systemController = {
     try {
       const { name, systemTypeId, location, description, status, parentId } = req.body;
 
-      const system = await System.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Filter by clientId if provided
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const system = await System.findOne({ where });
 
       if (!system) {
         return res.status(404).json({
@@ -358,7 +392,15 @@ const systemController = {
       const { force } = req.query;
       const forceDelete = force === 'true';
 
-      const system = await System.findByPk(req.params.id, {
+      const where = { id: req.params.id };
+
+      // Filter by clientId if provided
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const system = await System.findOne({
+        where,
         include: [
           { model: MonitoringPoint, as: 'monitoringPoints' },
           { model: ChecklistItem, as: 'checklistItems' }

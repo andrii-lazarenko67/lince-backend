@@ -9,6 +9,11 @@ const libraryController = {
 
       const where = { isActive: true };
 
+      // Client filtering - required for data isolation
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
       if (category) where.category = category;
       if (systemId) where.systemId = systemId;
       if (search) {
@@ -39,7 +44,15 @@ const libraryController = {
 
   async getById(req, res, next) {
     try {
-      const document = await Document.findByPk(req.params.id, {
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const document = await Document.findOne({
+        where,
         include: [
           { model: System, as: 'system' },
           { model: User, as: 'uploader', attributes: ['id', 'name'] }
@@ -64,6 +77,14 @@ const libraryController = {
 
   async create(req, res, next) {
     try {
+      // Require clientId for creating documents
+      if (!req.clientId) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'errors.clientIdRequired'
+        });
+      }
+
       const { title, description, category, systemId } = req.body;
       const uploadedBy = req.user.id;
 
@@ -91,7 +112,8 @@ const libraryController = {
         fileType: req.file.mimetype,
         fileSize: req.file.size,
         publicId: result.public_id,
-        uploadedBy
+        uploadedBy,
+        clientId: req.clientId
       });
 
       const createdDocument = await Document.findByPk(document.id, {
@@ -114,7 +136,14 @@ const libraryController = {
     try {
       const { title, description, category, systemId, fileName } = req.body;
 
-      const document = await Document.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const document = await Document.findOne({ where });
 
       if (!document) {
         return res.status(404).json({
@@ -149,7 +178,14 @@ const libraryController = {
 
   async delete(req, res, next) {
     try {
-      const document = await Document.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const document = await Document.findOne({ where });
 
       if (!document) {
         return res.status(404).json({

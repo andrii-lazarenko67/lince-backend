@@ -50,7 +50,15 @@ const incidentController = {
 
   async getById(req, res, next) {
     try {
-      const incident = await Incident.findByPk(req.params.id, {
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const incident = await Incident.findOne({
+        where,
         include: [
           { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
           { model: User, as: 'assignee', attributes: ['id', 'name', 'email'] },
@@ -87,6 +95,14 @@ const incidentController = {
       const { systemId, stageId, title, description, priority, sendNotification } = req.body;
       const userId = req.user.id;
 
+      // Require clientId
+      if (!req.clientId) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'errors.clientIdRequired'
+        });
+      }
+
       const incident = await Incident.create({
         userId,
         systemId,
@@ -94,7 +110,8 @@ const incidentController = {
         title,
         description,
         priority: priority || 'medium',
-        status: 'open'
+        status: 'open',
+        clientId: req.clientId
       });
 
       // Upload photos if provided
@@ -122,7 +139,8 @@ const incidentController = {
           priority: priority || 'medium',
           referenceType: 'Incident',
           referenceId: incident.id,
-          createdById: userId
+          createdById: userId,
+          clientId: req.clientId
         });
       }
 
@@ -148,7 +166,14 @@ const incidentController = {
     try {
       const { title, description, priority, status } = req.body;
 
-      const incident = await Incident.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const incident = await Incident.findOne({ where });
 
       if (!incident) {
         return res.status(404).json({
@@ -177,7 +202,14 @@ const incidentController = {
     try {
       const { assignedTo } = req.body;
 
-      const incident = await Incident.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const incident = await Incident.findOne({ where });
 
       if (!incident) {
         return res.status(404).json({
@@ -200,7 +232,8 @@ const incidentController = {
           priority: incident.priority,
           referenceType: 'Incident',
           referenceId: incident.id,
-          createdById: req.user.id
+          createdById: req.user.id,
+          clientId: req.clientId
         }, assignedTo);
       }
 
@@ -217,7 +250,14 @@ const incidentController = {
     try {
       const { resolution } = req.body;
 
-      const incident = await Incident.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const incident = await Incident.findOne({ where });
 
       if (!incident) {
         return res.status(404).json({
@@ -246,7 +286,14 @@ const incidentController = {
       const { content } = req.body;
       const userId = req.user.id;
 
-      const incident = await Incident.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const incident = await Incident.findOne({ where });
 
       if (!incident) {
         return res.status(404).json({
@@ -276,7 +323,14 @@ const incidentController = {
 
   async addPhotos(req, res, next) {
     try {
-      const incident = await Incident.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const incident = await Incident.findOne({ where });
 
       if (!incident) {
         return res.status(404).json({
@@ -312,7 +366,15 @@ const incidentController = {
 
   async delete(req, res, next) {
     try {
-      const incident = await Incident.findByPk(req.params.id, {
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const incident = await Incident.findOne({
+        where,
         include: [{ model: IncidentPhoto, as: 'photos' }]
       });
 

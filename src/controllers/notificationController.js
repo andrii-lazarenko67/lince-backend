@@ -13,6 +13,11 @@ const notificationController = {
       const whereNotification = {};
       if (type) whereNotification.type = type;
 
+      // Client filtering - show notifications for the selected client
+      if (req.clientId) {
+        whereNotification.clientId = req.clientId;
+      }
+
       const recipients = await NotificationRecipient.findAll({
         where: whereRecipient,
         include: [{
@@ -57,8 +62,19 @@ const notificationController = {
     try {
       const userId = req.user.id;
 
+      // Build where clause for notifications
+      const whereNotification = {};
+      if (req.clientId) {
+        whereNotification.clientId = req.clientId;
+      }
+
       const count = await NotificationRecipient.count({
-        where: { userId, isRead: false }
+        where: { userId, isRead: false },
+        include: [{
+          model: Notification,
+          as: 'notification',
+          where: whereNotification
+        }]
       });
 
       res.json({
@@ -141,7 +157,15 @@ const notificationController = {
         });
       }
 
-      const notification = await Notification.findByPk(req.params.id, {
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const notification = await Notification.findOne({
+        where,
         include: [
           {
             model: User,
@@ -227,6 +251,11 @@ const notificationController = {
       if (type) where.type = type;
       if (priority) where.priority = priority;
 
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
       const notifications = await Notification.findAll({
         where,
         include: [
@@ -281,6 +310,14 @@ const notificationController = {
         });
       }
 
+      // Require clientId for creating notifications
+      if (!req.clientId) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'errors.clientIdRequired'
+        });
+      }
+
       const { type, title, message, priority, referenceType, referenceId, recipientIds, sendToAll } = req.body;
 
       if (!type || !title || !message) {
@@ -297,7 +334,8 @@ const notificationController = {
         priority: priority || 'medium',
         referenceType,
         referenceId,
-        createdById: req.user.id
+        createdById: req.user.id,
+        clientId: req.clientId
       });
 
       let userIds = [];
@@ -350,7 +388,14 @@ const notificationController = {
         });
       }
 
-      const notification = await Notification.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const notification = await Notification.findOne({ where });
 
       if (!notification) {
         return res.status(404).json({
@@ -388,7 +433,14 @@ const notificationController = {
         });
       }
 
-      const notification = await Notification.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const notification = await Notification.findOne({ where });
 
       if (!notification) {
         return res.status(404).json({

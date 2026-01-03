@@ -51,7 +51,15 @@ const inspectionController = {
 
   async getById(req, res, next) {
     try {
-      const inspection = await Inspection.findByPk(req.params.id, {
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const inspection = await Inspection.findOne({
+        where,
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
@@ -87,13 +95,22 @@ const inspectionController = {
       const { systemId, stageId, date, conclusion, items, sendNotification } = req.body;
       const userId = req.user.id;
 
+      // Require clientId
+      if (!req.clientId) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'errors.clientIdRequired'
+        });
+      }
+
       const inspection = await Inspection.create({
         userId,
         systemId,
         stageId: stageId || null,
         date: date || new Date(),
         status: 'pending',
-        conclusion
+        conclusion,
+        clientId: req.clientId
       });
 
       // Create inspection items
@@ -150,7 +167,8 @@ const inspectionController = {
           priority: 'medium',
           referenceType: 'inspection',
           referenceId: inspection.id,
-          createdById: userId
+          createdById: userId,
+          clientId: req.clientId
         });
       }
 
@@ -167,7 +185,14 @@ const inspectionController = {
     try {
       const { conclusion, status, items } = req.body;
 
-      const inspection = await Inspection.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const inspection = await Inspection.findOne({ where });
 
       if (!inspection) {
         return res.status(404).json({
@@ -224,7 +249,14 @@ const inspectionController = {
     try {
       const { managerNotes } = req.body;
 
-      const inspection = await Inspection.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const inspection = await Inspection.findOne({ where });
 
       if (!inspection) {
         return res.status(404).json({
@@ -266,7 +298,14 @@ const inspectionController = {
 
   async addPhotos(req, res, next) {
     try {
-      const inspection = await Inspection.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const inspection = await Inspection.findOne({ where });
 
       if (!inspection) {
         return res.status(404).json({
@@ -302,7 +341,15 @@ const inspectionController = {
 
   async delete(req, res, next) {
     try {
-      const inspection = await Inspection.findByPk(req.params.id, {
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const inspection = await Inspection.findOne({
+        where,
         include: [{ model: InspectionPhoto, as: 'photos' }]
       });
 

@@ -103,7 +103,7 @@ const productController = {
 
       const where = {};
 
-      // Client filtering for service provider mode
+      // Client filtering - required for data isolation
       if (req.clientId) {
         where.clientId = req.clientId;
       }
@@ -176,7 +176,15 @@ const productController = {
 
   async getById(req, res, next) {
     try {
-      const product = await Product.findByPk(req.params.id, {
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const product = await Product.findOne({
+        where,
         include: [
           { model: ProductType, as: 'type' },
           { model: Unit, as: 'unit' }
@@ -229,6 +237,14 @@ const productController = {
 
   async create(req, res, next) {
     try {
+      // Require clientId for creating products
+      if (!req.clientId) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'errors.clientIdRequired'
+        });
+      }
+
       const { name, typeId, unitId, supplier, currentStock, minStockAlert, description, recommendedDosage } = req.body;
 
       const product = await Product.create({
@@ -239,7 +255,8 @@ const productController = {
         currentStock: currentStock || 0,
         minStockAlert,
         description,
-        recommendedDosage
+        recommendedDosage,
+        clientId: req.clientId
       });
 
       // Fetch with associations
@@ -263,7 +280,14 @@ const productController = {
     try {
       const { name, typeId, unitId, supplier, currentStock, minStockAlert, description, recommendedDosage, isActive } = req.body;
 
-      const product = await Product.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const product = await Product.findOne({ where });
 
       if (!product) {
         return res.status(404).json({
@@ -306,7 +330,14 @@ const productController = {
       const { type, quantity, systemId, notes, date } = req.body;
       const userId = req.user.id;
 
-      const product = await Product.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const product = await Product.findOne({ where });
 
       if (!product) {
         return res.status(404).json({
@@ -350,7 +381,8 @@ const productController = {
           priority: 'high',
           referenceType: 'Product',
           referenceId: product.id,
-          createdById: userId
+          createdById: userId,
+          clientId: req.clientId
         });
       }
 
@@ -376,7 +408,14 @@ const productController = {
       const { quantity, type, notes } = req.body;
       const userId = req.user.id;
 
-      const product = await Product.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const product = await Product.findOne({ where });
 
       if (!product) {
         return res.status(404).json({
@@ -428,7 +467,8 @@ const productController = {
           priority: 'high',
           referenceType: 'Product',
           referenceId: product.id,
-          createdById: userId
+          createdById: userId,
+          clientId: req.clientId
         });
       }
 
@@ -448,7 +488,14 @@ const productController = {
 
   async delete(req, res, next) {
     try {
-      const product = await Product.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const product = await Product.findOne({ where });
 
       if (!product) {
         return res.status(404).json({

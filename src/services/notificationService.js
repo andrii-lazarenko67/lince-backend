@@ -15,10 +15,11 @@ const notificationService = {
    * @param {string} params.referenceType - Reference type (e.g., 'incident', 'dailyLog')
    * @param {number} params.referenceId - Reference ID
    * @param {number} params.createdById - ID of user creating the notification (optional)
+   * @param {number} params.clientId - Client ID for the notification (required for multi-tenant)
    * @param {number[]} recipientIds - Array of user IDs to send notification to
    * @returns {Promise<Notification>} Created notification
    */
-  async createForUsers({ type, title, titleKey, message, messageKey, priority = 'medium', referenceType, referenceId, createdById }, recipientIds) {
+  async createForUsers({ type, title, titleKey, message, messageKey, priority = 'medium', referenceType, referenceId, createdById, clientId }, recipientIds) {
     const notification = await Notification.create({
       type,
       title: titleKey || title,
@@ -26,7 +27,8 @@ const notificationService = {
       priority,
       referenceType,
       referenceId,
-      createdById
+      createdById,
+      clientId
     });
 
     if (recipientIds && recipientIds.length > 0) {
@@ -47,9 +49,10 @@ const notificationService = {
    * Create a notification and send to all managers
    * @param {Object} params - Notification parameters
    * @param {number} createdById - ID of user creating the notification (optional)
+   * @param {number} clientId - Client ID for the notification (required for multi-tenant)
    * @returns {Promise<Notification>} Created notification
    */
-  async notifyManagers({ type, title, message, priority = 'medium', referenceType, referenceId, createdById }) {
+  async notifyManagers({ type, title, titleKey, message, messageKey, priority = 'medium', referenceType, referenceId, createdById, clientId }) {
     const managers = await User.findAll({
       where: { role: 'manager', isActive: true },
       attributes: ['id']
@@ -62,7 +65,7 @@ const notificationService = {
     }
 
     return this.createForUsers(
-      { type, title, message, priority, referenceType, referenceId, createdById },
+      { type, title, titleKey, message, messageKey, priority, referenceType, referenceId, createdById, clientId },
       managerIds
     );
   },
@@ -71,9 +74,10 @@ const notificationService = {
    * Create a notification and send to all admins and managers
    * @param {Object} params - Notification parameters
    * @param {number} createdById - ID of user creating the notification (optional)
+   * @param {number} clientId - Client ID for the notification (required for multi-tenant)
    * @returns {Promise<Notification>} Created notification
    */
-  async notifyAdminsAndManagers({ type, title, message, priority = 'medium', referenceType, referenceId, createdById }) {
+  async notifyAdminsAndManagers({ type, title, titleKey, message, messageKey, priority = 'medium', referenceType, referenceId, createdById, clientId }) {
     const users = await User.findAll({
       where: {
         role: ['admin', 'manager'],
@@ -89,7 +93,7 @@ const notificationService = {
     }
 
     return this.createForUsers(
-      { type, title, message, priority, referenceType, referenceId, createdById },
+      { type, title, titleKey, message, messageKey, priority, referenceType, referenceId, createdById, clientId },
       userIds
     );
   },
@@ -98,9 +102,10 @@ const notificationService = {
    * Create a notification and send to all active users
    * @param {Object} params - Notification parameters
    * @param {number} createdById - ID of user creating the notification (optional)
+   * @param {number} clientId - Client ID for the notification (required for multi-tenant)
    * @returns {Promise<Notification>} Created notification
    */
-  async notifyAllUsers({ type, title, message, priority = 'medium', referenceType, referenceId, createdById }) {
+  async notifyAllUsers({ type, title, titleKey, message, messageKey, priority = 'medium', referenceType, referenceId, createdById, clientId }) {
     const users = await User.findAll({
       where: { isActive: true },
       attributes: ['id']
@@ -113,7 +118,7 @@ const notificationService = {
     }
 
     return this.createForUsers(
-      { type, title, message, priority, referenceType, referenceId, createdById },
+      { type, title, titleKey, message, messageKey, priority, referenceType, referenceId, createdById, clientId },
       userIds
     );
   },
@@ -122,11 +127,12 @@ const notificationService = {
    * Create a notification and send to a single user
    * @param {Object} params - Notification parameters
    * @param {number} userId - User ID to send notification to
+   * @param {number} clientId - Client ID for the notification (required for multi-tenant)
    * @returns {Promise<Notification>} Created notification
    */
-  async notifyUser({ type, title, message, priority = 'medium', referenceType, referenceId, createdById }, userId) {
+  async notifyUser({ type, title, titleKey, message, messageKey, priority = 'medium', referenceType, referenceId, createdById, clientId }, userId) {
     return this.createForUsers(
-      { type, title, message, priority, referenceType, referenceId, createdById },
+      { type, title, titleKey, message, messageKey, priority, referenceType, referenceId, createdById, clientId },
       [userId]
     );
   }

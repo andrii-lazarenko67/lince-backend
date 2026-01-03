@@ -64,6 +64,11 @@ const dailyLogController = {
 
       const where = { systemId };
 
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
       if (stageId) where.stageId = stageId;
       if (recordType) where.recordType = recordType;
       if (startDate && endDate) {
@@ -103,7 +108,15 @@ const dailyLogController = {
 
   async getById(req, res, next) {
     try {
-      const dailyLog = await DailyLog.findByPk(req.params.id, {
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const dailyLog = await DailyLog.findOne({
+        where,
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
           { model: System, as: 'system' },
@@ -159,6 +172,14 @@ const dailyLogController = {
       } = req.body;
       const userId = req.user.id;
 
+      // Require clientId
+      if (!req.clientId) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'errors.clientIdRequired'
+        });
+      }
+
       // Validate record type specific fields
       if (recordType === 'laboratory' && !laboratory) {
         return res.status(400).json({
@@ -198,7 +219,8 @@ const dailyLogController = {
         collectionDate: collectionDate || null,
         collectionTime: collectionTime || null,
         collectionTimeMode: collectionTimeMode || 'manual',
-        notes: notes || null
+        notes: notes || null,
+        clientId: req.clientId
       });
 
       // Create entries and check for out of range values
@@ -252,7 +274,8 @@ const dailyLogController = {
               priority: 'high',
               referenceType: 'DailyLog',
               referenceId: dailyLog.id,
-              createdById: userId
+              createdById: userId,
+              clientId: req.clientId
             });
           }
         }
@@ -291,7 +314,14 @@ const dailyLogController = {
     try {
       const { notes, entries } = req.body;
 
-      const dailyLog = await DailyLog.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const dailyLog = await DailyLog.findOne({ where });
 
       if (!dailyLog) {
         return res.status(404).json({
@@ -363,7 +393,14 @@ const dailyLogController = {
 
   async delete(req, res, next) {
     try {
-      const dailyLog = await DailyLog.findByPk(req.params.id);
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const dailyLog = await DailyLog.findOne({ where });
 
       if (!dailyLog) {
         return res.status(404).json({

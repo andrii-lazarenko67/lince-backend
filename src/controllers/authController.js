@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User, Organization } = require('../../db/models');
+const { User, Client, UserClient } = require('../../db/models');
 const uploadService = require('../services/uploadService');
 
 const generateToken = (userId) => {
@@ -21,12 +21,7 @@ const authController = {
       }
 
       const user = await User.findOne({
-        where: { email },
-        include: [{
-          model: Organization,
-          as: 'organization',
-          attributes: ['id', 'name', 'isServiceProvider']
-        }]
+        where: { email }
       });
 
       if (!user || !user.isActive) {
@@ -49,11 +44,41 @@ const authController = {
 
       const token = generateToken(user.id);
 
+      // Get user's clients for context
+      const userClients = await UserClient.findAll({
+        where: { userId: user.id },
+        include: [{
+          model: Client,
+          as: 'client',
+          attributes: ['id', 'name']
+        }]
+      });
+
+      // Determine redirect based on user type
+      let redirectTo = 'dashboard';
+      let selectedClient = null;
+
+      if (user.isServiceProvider) {
+        // Service provider: check if they have any clients
+        if (userClients.length === 0) {
+          redirectTo = 'add-client';
+        } else {
+          selectedClient = userClients[0].client;
+        }
+      } else {
+        // End customer: should have exactly one client (their company)
+        if (userClients.length > 0) {
+          selectedClient = userClients[0].client;
+        }
+      }
+
       res.json({
         success: true,
         data: {
           user: user.toJSON(),
-          token
+          token,
+          client: selectedClient,
+          redirectTo
         }
       });
     } catch (error) {
@@ -63,12 +88,20 @@ const authController = {
 
   async register(req, res, next) {
     try {
-      const { name, email, password, role, phone } = req.body;
+      const { name, email, password, isServiceProvider, companyName, phone } = req.body;
 
       if (!name || !email || !password) {
         return res.status(400).json({
           success: false,
-          messageKey: 'login.errors.requiredFields'
+          messageKey: 'signup.errors.requiredFields'
+        });
+      }
+
+      // For end customers, company name is required
+      if (!isServiceProvider && !companyName) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'signup.errors.companyNameRequired'
         });
       }
 
@@ -77,25 +110,52 @@ const authController = {
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          messageKey: 'login.errors.emailExists'
+          messageKey: 'signup.errors.emailExists'
         });
       }
 
+      // Create user with admin role (they're the owner of their account)
       const user = await User.create({
         name,
         email,
         password,
-        role: role || 'technician',
-        phone
+        role: 'admin',
+        phone,
+        isServiceProvider: !!isServiceProvider
       });
 
       const token = generateToken(user.id);
+      let client = null;
+      let redirectTo = 'dashboard';
+
+      if (!isServiceProvider) {
+        // End customer flow: auto-create their company as a client
+        client = await Client.create({
+          ownerId: user.id,
+          name: companyName,
+          contact: name,
+          email: email,
+          phone: phone
+        });
+
+        // Link user to their client with admin access
+        await UserClient.create({
+          userId: user.id,
+          clientId: client.id,
+          accessLevel: 'admin'
+        });
+      } else {
+        // Service provider flow: redirect to add first client
+        redirectTo = 'add-client';
+      }
 
       res.status(201).json({
         success: true,
         data: {
           user: user.toJSON(),
-          token
+          token,
+          client: client ? { id: client.id, name: client.name } : null,
+          redirectTo
         }
       });
     } catch (error) {
@@ -105,17 +165,30 @@ const authController = {
 
   async getMe(req, res, next) {
     try {
-      const user = await User.findByPk(req.user.id, {
+      const user = await User.findByPk(req.user.id);
+
+      // Get user's clients
+      const userClients = await UserClient.findAll({
+        where: { userId: user.id },
         include: [{
-          model: Organization,
-          as: 'organization',
-          attributes: ['id', 'name', 'isServiceProvider']
+          model: Client,
+          as: 'client',
+          attributes: ['id', 'name']
         }]
       });
 
+      const clients = userClients.map(uc => ({
+        id: uc.client.id,
+        name: uc.client.name,
+        accessLevel: uc.accessLevel
+      }));
+
       res.json({
         success: true,
-        data: user.toJSON()
+        data: {
+          ...user.toJSON(),
+          clients
+        }
       });
     } catch (error) {
       next(error);
