@@ -19,6 +19,16 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
+      clientId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Clients',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
       name: {
         type: Sequelize.STRING(100),
         allowNull: false
@@ -27,11 +37,20 @@ module.exports = {
         type: Sequelize.STRING(255),
         allowNull: true
       },
+      type: {
+        type: Sequelize.ENUM('service_provider', 'end_customer', 'both'),
+        allowNull: false,
+        defaultValue: 'both'
+      },
       config: {
         type: Sequelize.JSON,
         allowNull: false
       },
       isDefault: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
+      isGlobal: {
         type: Sequelize.BOOLEAN,
         defaultValue: false
       },
@@ -50,6 +69,8 @@ module.exports = {
     });
 
     await queryInterface.addIndex('ReportTemplates', ['userId']);
+    await queryInterface.addIndex('ReportTemplates', ['clientId']);
+    await queryInterface.addIndex('ReportTemplates', ['userId', 'clientId']);
   },
 
   async down(queryInterface) {

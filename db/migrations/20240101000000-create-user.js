@@ -35,6 +35,10 @@ module.exports = {
         type: Sequelize.STRING(255),
         allowNull: true
       },
+      isServiceProvider: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
       isActive: {
         type: Sequelize.BOOLEAN,
         defaultValue: true
@@ -42,16 +46,6 @@ module.exports = {
       lastLogin: {
         type: Sequelize.DATE,
         allowNull: true
-      },
-      organizationId: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'Organizations',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
       },
       createdAt: {
         allowNull: false,
@@ -63,7 +57,7 @@ module.exports = {
       }
     });
 
-    await queryInterface.addIndex('Users', ['organizationId']);
+    await queryInterface.addIndex('Users', ['isServiceProvider']);
   },
 
   async down(queryInterface, Sequelize) {

@@ -11,6 +11,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false
     },
+    clientId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,
@@ -22,22 +26,43 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(255),
       allowNull: true
     },
+    type: {
+      type: DataTypes.ENUM('service_provider', 'end_customer', 'both'),
+      allowNull: false,
+      defaultValue: 'both'
+    },
     config: {
       type: DataTypes.JSON,
-      allowNull: false,
-      // Config structure:
+      allowNull: false
+      // Config structure based on CLIENT_REQUIREMENTS_FINAL.md:
       // {
-      //   modules: [
-      //     { id: 'systems', enabled: true, order: 1, settings: {} },
-      //     { id: 'dailyLogs', enabled: true, order: 2, settings: { showChart: true } },
-      //     { id: 'inspections', enabled: true, order: 3, settings: {} },
-      //     { id: 'incidents', enabled: false, order: 4, settings: {} },
-      //     { id: 'products', enabled: true, order: 5, settings: {} }
+      //   blocks: [
+      //     { type: 'identification', enabled: true, order: 1 },
+      //     { type: 'scope', enabled: true, order: 2 },
+      //     { type: 'systems', enabled: true, order: 3, includePhotos: true },
+      //     { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: true },
+      //     { type: 'inspections', enabled: true, order: 5, includePhotos: true },
+      //     { type: 'occurrences', enabled: true, order: 6, includeTimeline: true },
+      //     { type: 'conclusion', enabled: true, order: 7 },
+      //     { type: 'signature', enabled: true, order: 8 },
+      //     { type: 'attachments', enabled: false, order: 9 }
       //   ],
-      //   settings: { showSummary: true, showCharts: true }
+      //   branding: {
+      //     showLogo: true,
+      //     logoPosition: 'left',
+      //     primaryColor: '#1976d2',
+      //     showHeader: true,
+      //     headerText: 'Technical Report',
+      //     showFooter: true,
+      //     footerText: 'Page {page} of {pages}'
+      //   }
       // }
     },
     isDefault: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    isGlobal: {
       type: DataTypes.BOOLEAN,
       defaultValue: false
     },
@@ -52,6 +77,8 @@ module.exports = (sequelize, DataTypes) => {
 
   ReportTemplate.associate = function(models) {
     ReportTemplate.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+    ReportTemplate.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
+    ReportTemplate.hasMany(models.GeneratedReport, { foreignKey: 'templateId', as: 'generatedReports' });
   };
 
   return ReportTemplate;

@@ -42,16 +42,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(255),
       allowNull: true
     },
+    isServiceProvider: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
     lastLogin: {
       type: DataTypes.DATE,
-      allowNull: true
-    },
-    organizationId: {
-      type: DataTypes.INTEGER,
       allowNull: true
     }
   }, {
@@ -84,7 +84,9 @@ module.exports = (sequelize, DataTypes) => {
   };
 
   User.associate = function(models) {
-    User.belongsTo(models.Organization, { foreignKey: 'organizationId', as: 'organization' });
+    User.hasMany(models.Client, { foreignKey: 'ownerId', as: 'ownedClients' });
+    User.belongsToMany(models.Client, { through: models.UserClient, foreignKey: 'userId', as: 'clients' });
+    User.hasMany(models.UserClient, { foreignKey: 'userId', as: 'userClients' });
     User.hasMany(models.DailyLog, { foreignKey: 'userId', as: 'dailyLogs' });
     User.hasMany(models.Inspection, { foreignKey: 'userId', as: 'inspections' });
     User.hasMany(models.Incident, { foreignKey: 'userId', as: 'incidents' });
@@ -94,6 +96,8 @@ module.exports = (sequelize, DataTypes) => {
     User.hasMany(models.Document, { foreignKey: 'uploadedBy', as: 'documents' });
     User.hasMany(models.ProductUsage, { foreignKey: 'userId', as: 'productUsages' });
     User.hasMany(models.IncidentComment, { foreignKey: 'userId', as: 'incidentComments' });
+    User.hasMany(models.ReportTemplate, { foreignKey: 'userId', as: 'reportTemplates' });
+    User.hasMany(models.GeneratedReport, { foreignKey: 'userId', as: 'generatedReports' });
   };
 
   return User;

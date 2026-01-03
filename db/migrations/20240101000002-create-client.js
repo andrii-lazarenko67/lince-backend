@@ -9,11 +9,11 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      organizationId: {
+      ownerId: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'Organizations',
+          model: 'Users',
           key: 'id'
         },
         onUpdate: 'CASCADE',
@@ -39,6 +39,14 @@ module.exports = {
         type: Sequelize.STRING(100),
         allowNull: true
       },
+      logo: {
+        type: Sequelize.STRING(500),
+        allowNull: true
+      },
+      brandColor: {
+        type: Sequelize.STRING(7),
+        allowNull: true
+      },
       isActive: {
         type: Sequelize.BOOLEAN,
         defaultValue: true
@@ -53,7 +61,7 @@ module.exports = {
       }
     });
 
-    await queryInterface.addIndex('Clients', ['organizationId']);
+    await queryInterface.addIndex('Clients', ['ownerId']);
   },
 
   async down(queryInterface) {
