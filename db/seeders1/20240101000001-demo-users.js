@@ -14,6 +14,7 @@ module.exports = {
         password: hashedPassword,
         role: 'manager',
         phone: '+1 555-000-0001',
+        organizationId: 1,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -24,6 +25,7 @@ module.exports = {
         password: hashedPassword,
         role: 'manager',
         phone: '+1 555-000-0002',
+        organizationId: 1,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -34,6 +36,7 @@ module.exports = {
         password: hashedPassword,
         role: 'technician',
         phone: '+1 555-000-0003',
+        organizationId: 1,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -44,6 +47,7 @@ module.exports = {
         password: hashedPassword,
         role: 'technician',
         phone: '+1 555-000-0004',
+        organizationId: 1,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -54,6 +58,7 @@ module.exports = {
         password: hashedPassword,
         role: 'technician',
         phone: '+1 555-000-0005',
+        organizationId: 1,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()

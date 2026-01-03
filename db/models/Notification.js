@@ -34,6 +34,10 @@ module.exports = (sequelize, DataTypes) => {
     createdById: {
       type: DataTypes.INTEGER,
       allowNull: true
+    },
+    clientId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     tableName: 'Notifications',
@@ -44,6 +48,7 @@ module.exports = (sequelize, DataTypes) => {
   Notification.associate = function(models) {
     Notification.belongsTo(models.User, { foreignKey: 'createdById', as: 'createdBy' });
     Notification.hasMany(models.NotificationRecipient, { foreignKey: 'notificationId', as: 'recipients' });
+    Notification.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
   };
 
   return Notification;

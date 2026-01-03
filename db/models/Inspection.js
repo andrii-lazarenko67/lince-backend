@@ -42,6 +42,10 @@ module.exports = (sequelize, DataTypes) => {
     viewedAt: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    clientId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     tableName: 'Inspections',
@@ -53,6 +57,7 @@ module.exports = (sequelize, DataTypes) => {
     Inspection.belongsTo(models.System, { foreignKey: 'systemId', as: 'system' });
     Inspection.belongsTo(models.System, { foreignKey: 'stageId', as: 'stage' });
     Inspection.belongsTo(models.User, { foreignKey: 'viewedBy', as: 'viewedByUser' });
+    Inspection.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
     Inspection.hasMany(models.InspectionItem, { foreignKey: 'inspectionId', as: 'items' });
     Inspection.hasMany(models.InspectionPhoto, { foreignKey: 'inspectionId', as: 'photos' });
   };

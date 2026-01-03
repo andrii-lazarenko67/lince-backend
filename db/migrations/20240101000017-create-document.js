@@ -69,6 +69,16 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         defaultValue: true
       },
+      clientId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Clients',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
@@ -78,6 +88,8 @@ module.exports = {
         type: Sequelize.DATE
       }
     });
+
+    await queryInterface.addIndex('Documents', ['clientId']);
   },
 
   async down(queryInterface, Sequelize) {

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const clientContextMiddleware = require('../middlewares/clientContextMiddleware');
 
 const authRoutes = require('./authRoutes');
 const userRoutes = require('./userRoutes');
@@ -19,24 +20,33 @@ const parameterRoutes = require('./parameterRoutes');
 const unitRoutes = require('./unitRoutes');
 const productDosageRoutes = require('./productDosageRoutes');
 const systemPhotoRoutes = require('./systemPhotoRoutes');
+const organizationRoutes = require('./organizationRoutes');
+const clientRoutes = require('./clientRoutes');
+const reportTemplateRoutes = require('./reportTemplateRoutes');
 
+// Auth routes (no client context needed)
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
-router.use('/systems', systemRoutes);
+router.use('/organizations', organizationRoutes);
+router.use('/clients', clientRoutes);
+
+// Apply client context middleware for data routes
+router.use('/systems', clientContextMiddleware, systemRoutes);
 router.use('/system-types', systemTypeRoutes);
 router.use('/monitoring-points', monitoringPointRoutes);
 router.use('/checklist-items', checklistItemRoutes);
-router.use('/daily-logs', dailyLogRoutes);
-router.use('/inspections', inspectionRoutes);
-router.use('/incidents', incidentRoutes);
-router.use('/reports', reportRoutes);
-router.use('/products', productRoutes);
-router.use('/library', libraryRoutes);
-router.use('/notifications', notificationRoutes);
-router.use('/dashboard', dashboardRoutes);
+router.use('/daily-logs', clientContextMiddleware, dailyLogRoutes);
+router.use('/inspections', clientContextMiddleware, inspectionRoutes);
+router.use('/incidents', clientContextMiddleware, incidentRoutes);
+router.use('/reports', clientContextMiddleware, reportRoutes);
+router.use('/products', clientContextMiddleware, productRoutes);
+router.use('/library', clientContextMiddleware, libraryRoutes);
+router.use('/notifications', clientContextMiddleware, notificationRoutes);
+router.use('/dashboard', clientContextMiddleware, dashboardRoutes);
 router.use('/parameters', parameterRoutes);
 router.use('/units', unitRoutes);
 router.use('/product-dosages', productDosageRoutes);
 router.use('/system-photos', systemPhotoRoutes);
+router.use('/report-templates', reportTemplateRoutes);
 
 module.exports = router;

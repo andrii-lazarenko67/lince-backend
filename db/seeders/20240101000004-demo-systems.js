@@ -11,6 +11,7 @@ module.exports = {
         location: 'Área de Lazer - Bloco A',
         description: 'Piscina principal do hotel com capacidade de 500.000 litros. Uso recreativo.',
         status: 'active',
+        clientId: 1,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -21,6 +22,7 @@ module.exports = {
         location: 'Área de Lazer - Bloco A',
         description: 'Piscina infantil com profundidade máxima de 60cm.',
         status: 'active',
+        clientId: 1,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -31,6 +33,7 @@ module.exports = {
         location: 'Área Industrial - Setor B',
         description: 'Torre de resfriamento principal para sistema de ar condicionado central.',
         status: 'active',
+        clientId: 2,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -41,6 +44,7 @@ module.exports = {
         location: 'Área Industrial - Setor B',
         description: 'Torre de resfriamento secundária de backup.',
         status: 'active',
+        clientId: 2,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -51,6 +55,7 @@ module.exports = {
         location: 'Casa de Máquinas',
         description: 'Caldeira principal para geração de vapor industrial. Capacidade: 10 ton/h.',
         status: 'active',
+        clientId: 3,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -61,6 +66,7 @@ module.exports = {
         location: 'Área de Utilidades',
         description: 'Estação de tratamento de água para abastecimento industrial.',
         status: 'active',
+        clientId: 3,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -71,6 +77,7 @@ module.exports = {
         location: 'Área de Utilidades - Fundos',
         description: 'Estação de tratamento de efluentes industriais antes do descarte.',
         status: 'active',
+        clientId: 3,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -81,6 +88,7 @@ module.exports = {
         location: 'Área de Produção',
         description: 'Sistema de coleta e tratamento de efluentes da linha de produção 1.',
         status: 'active',
+        clientId: 3,
         createdAt: new Date(),
         updatedAt: new Date()
       }

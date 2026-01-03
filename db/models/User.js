@@ -49,6 +49,10 @@ module.exports = (sequelize, DataTypes) => {
     lastLogin: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    organizationId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     tableName: 'Users',
@@ -80,6 +84,7 @@ module.exports = (sequelize, DataTypes) => {
   };
 
   User.associate = function(models) {
+    User.belongsTo(models.Organization, { foreignKey: 'organizationId', as: 'organization' });
     User.hasMany(models.DailyLog, { foreignKey: 'userId', as: 'dailyLogs' });
     User.hasMany(models.Inspection, { foreignKey: 'userId', as: 'inspections' });
     User.hasMany(models.Incident, { foreignKey: 'userId', as: 'incidents' });

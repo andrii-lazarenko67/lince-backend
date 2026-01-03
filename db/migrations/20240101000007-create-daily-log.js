@@ -82,6 +82,16 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true
       },
+      clientId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Clients',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
@@ -96,6 +106,8 @@ module.exports = {
       unique: true,
       name: 'daily_logs_user_system_date_unique'
     });
+
+    await queryInterface.addIndex('DailyLogs', ['clientId']);
   },
 
   async down(queryInterface, Sequelize) {

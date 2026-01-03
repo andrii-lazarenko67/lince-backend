@@ -43,6 +43,16 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: true
       },
+      organizationId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Organizations',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
@@ -52,6 +62,8 @@ module.exports = {
         type: Sequelize.DATE
       }
     });
+
+    await queryInterface.addIndex('Users', ['organizationId']);
   },
 
   async down(queryInterface, Sequelize) {

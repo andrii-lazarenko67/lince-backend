@@ -42,6 +42,10 @@ module.exports = (sequelize, DataTypes) => {
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    clientId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     tableName: 'Products',
@@ -51,6 +55,7 @@ module.exports = (sequelize, DataTypes) => {
   Product.associate = function(models) {
     Product.belongsTo(models.ProductType, { foreignKey: 'typeId', as: 'type' });
     Product.belongsTo(models.Unit, { foreignKey: 'unitId', as: 'unit' });
+    Product.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
     Product.hasMany(models.ProductUsage, { foreignKey: 'productId', as: 'usages' });
   };
 

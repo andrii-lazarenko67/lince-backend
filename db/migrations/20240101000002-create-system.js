@@ -45,6 +45,16 @@ module.exports = {
         type: Sequelize.ENUM('active', 'inactive', 'maintenance'),
         defaultValue: 'active'
       },
+      clientId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Clients',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
@@ -64,6 +74,8 @@ module.exports = {
     await queryInterface.addIndex('Systems', ['systemTypeId'], {
       name: 'systems_system_type_id_index'
     });
+
+    await queryInterface.addIndex('Systems', ['clientId']);
   },
 
   async down(queryInterface, Sequelize) {

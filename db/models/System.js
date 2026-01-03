@@ -41,6 +41,10 @@ module.exports = (sequelize, DataTypes) => {
         model: 'Systems',
         key: 'id'
       }
+    },
+    clientId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     tableName: 'Systems',
@@ -53,6 +57,9 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'systemTypeId',
       as: 'systemType'
     });
+
+    // Client association
+    System.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
 
     // Regular associations
     System.hasMany(models.MonitoringPoint, { foreignKey: 'systemId', as: 'monitoringPoints' });

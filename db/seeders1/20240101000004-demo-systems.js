@@ -11,6 +11,7 @@ module.exports = {
         location: 'Recreation Area - Block A',
         description: 'Main hotel pool with 500,000 liter capacity. Recreational use.',
         status: 'active',
+        clientId: 1,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -21,6 +22,7 @@ module.exports = {
         location: 'Recreation Area - Block A',
         description: 'Children\'s pool with maximum depth of 60cm.',
         status: 'active',
+        clientId: 1,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -31,6 +33,7 @@ module.exports = {
         location: 'Industrial Area - Sector B',
         description: 'Main cooling tower for central air conditioning system.',
         status: 'active',
+        clientId: 2,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -41,6 +44,7 @@ module.exports = {
         location: 'Industrial Area - Sector B',
         description: 'Secondary backup cooling tower.',
         status: 'active',
+        clientId: 2,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -51,6 +55,7 @@ module.exports = {
         location: 'Machine Room',
         description: 'Main boiler for industrial steam generation. Capacity: 10 ton/h.',
         status: 'active',
+        clientId: 3,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -61,6 +66,7 @@ module.exports = {
         location: 'Utilities Area',
         description: 'Water treatment plant for industrial water supply.',
         status: 'active',
+        clientId: 3,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -71,6 +77,7 @@ module.exports = {
         location: 'Utilities Area - Rear',
         description: 'Industrial wastewater treatment plant before discharge.',
         status: 'active',
+        clientId: 3,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -81,6 +88,7 @@ module.exports = {
         location: 'Production Area',
         description: 'Collection and treatment system for production line 1 effluent.',
         status: 'active',
+        clientId: 3,
         createdAt: new Date(),
         updatedAt: new Date()
       }

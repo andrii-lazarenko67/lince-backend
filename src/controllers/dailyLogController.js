@@ -9,6 +9,11 @@ const dailyLogController = {
 
       const where = {};
 
+      // Client filtering for service provider mode
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
       if (systemId) where.systemId = systemId;
       if (stageId) where.stageId = stageId;
       if (userId) where.userId = userId;

@@ -54,6 +54,10 @@ module.exports = (sequelize, DataTypes) => {
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    clientId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     tableName: 'Documents',
@@ -63,6 +67,7 @@ module.exports = (sequelize, DataTypes) => {
   Document.associate = function(models) {
     Document.belongsTo(models.System, { foreignKey: 'systemId', as: 'system' });
     Document.belongsTo(models.User, { foreignKey: 'uploadedBy', as: 'uploader' });
+    Document.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
   };
 
   return Document;

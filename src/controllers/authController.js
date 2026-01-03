@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../../db/models');
+const { User, Organization } = require('../../db/models');
 const uploadService = require('../services/uploadService');
 
 const generateToken = (userId) => {
@@ -20,7 +20,14 @@ const authController = {
         });
       }
 
-      const user = await User.findOne({ where: { email } });
+      const user = await User.findOne({
+        where: { email },
+        include: [{
+          model: Organization,
+          as: 'organization',
+          attributes: ['id', 'name', 'isServiceProvider']
+        }]
+      });
 
       if (!user || !user.isActive) {
         return res.status(401).json({
@@ -98,9 +105,17 @@ const authController = {
 
   async getMe(req, res, next) {
     try {
+      const user = await User.findByPk(req.user.id, {
+        include: [{
+          model: Organization,
+          as: 'organization',
+          attributes: ['id', 'name', 'isServiceProvider']
+        }]
+      });
+
       res.json({
         success: true,
-        data: req.user.toJSON()
+        data: user.toJSON()
       });
     } catch (error) {
       next(error);

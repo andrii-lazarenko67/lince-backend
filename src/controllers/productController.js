@@ -103,6 +103,11 @@ const productController = {
 
       const where = {};
 
+      // Client filtering for service provider mode
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
       if (typeId) where.typeId = typeId;
       // By default, only show active products unless explicitly requested otherwise
       if (isActive !== undefined) {

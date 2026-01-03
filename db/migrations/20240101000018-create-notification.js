@@ -44,11 +44,23 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL'
       },
+      clientId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Clients',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
       }
     });
+
+    await queryInterface.addIndex('Notifications', ['clientId']);
 
     // Create NotificationRecipients table (tracks read status per user)
     await queryInterface.createTable('NotificationRecipients', {

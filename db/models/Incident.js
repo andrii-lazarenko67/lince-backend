@@ -46,6 +46,10 @@ module.exports = (sequelize, DataTypes) => {
     resolution: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    clientId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     tableName: 'Incidents',
@@ -57,6 +61,7 @@ module.exports = (sequelize, DataTypes) => {
     Incident.belongsTo(models.User, { foreignKey: 'assignedTo', as: 'assignee' });
     Incident.belongsTo(models.System, { foreignKey: 'systemId', as: 'system' });
     Incident.belongsTo(models.System, { foreignKey: 'stageId', as: 'stage' });
+    Incident.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
     Incident.hasMany(models.IncidentPhoto, { foreignKey: 'incidentId', as: 'photos' });
     Incident.hasMany(models.IncidentComment, { foreignKey: 'incidentId', as: 'comments' });
   };

@@ -8,6 +8,11 @@ const systemController = {
 
       const where = {};
 
+      // Client filtering for service provider mode
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
       if (status) where.status = status;
       if (systemTypeId) where.systemTypeId = systemTypeId;
       if (parentId !== undefined) {

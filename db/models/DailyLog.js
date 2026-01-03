@@ -61,6 +61,10 @@ module.exports = (sequelize, DataTypes) => {
     notes: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    clientId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     tableName: 'DailyLogs',
@@ -71,6 +75,7 @@ module.exports = (sequelize, DataTypes) => {
     DailyLog.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
     DailyLog.belongsTo(models.System, { foreignKey: 'systemId', as: 'system' });
     DailyLog.belongsTo(models.System, { foreignKey: 'stageId', as: 'stage' });
+    DailyLog.belongsTo(models.Client, { foreignKey: 'clientId', as: 'client' });
     DailyLog.hasMany(models.DailyLogEntry, { foreignKey: 'dailyLogId', as: 'entries' });
   };
 
