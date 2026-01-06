@@ -26,8 +26,9 @@ module.exports = {
       unitMap[u.abbreviation] = u.id;
     });
 
+    // SHARED PRODUCTS (clientId = NULL) - Available to ALL clients
     await queryInterface.bulkInsert('Products', [
-      // Desinfetantes e Oxidantes
+      // Desinfetantes e Oxidantes - SHARED
       {
         name: 'Hipoclorito de Sódio 12%',
         typeId: typeMap['Desinfetante'],
@@ -37,6 +38,7 @@ module.exports = {
         minStockAlert: 100.00,
         description: 'Cloro líquido para desinfecção de água, concentração 12%. Usado em piscinas e sistemas de água potável.',
         recommendedDosage: 'Piscinas: 50-100 ml/m³ para manutenção diária. Tratamento de choque: 200-300 ml/m³. Água potável: conforme análise de cloro residual (manter 0,5-2,0 ppm).',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -50,6 +52,7 @@ module.exports = {
         minStockAlert: 30.00,
         description: 'Hipoclorito de cálcio granulado, alta concentração. Ideal para tratamento de choque em piscinas.',
         recommendedDosage: 'Tratamento de choque: 10-15 g/m³. Manutenção: 3-5 g/m³ diariamente. Dissolver previamente em balde antes de aplicar.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -63,11 +66,13 @@ module.exports = {
         minStockAlert: 20.00,
         description: 'Desinfetante oxidante para sistemas de água potável e torres de resfriamento. Alta eficiência contra biofilme.',
         recommendedDosage: 'Água potável: 0,1-0,5 ppm. Torres de resfriamento: 0,5-2,0 ppm. Aplicar continuamente ou por batelada conforme necessidade.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
       },
-      // Reguladores de pH
+
+      // Reguladores de pH - SHARED
       {
         name: 'Ácido Clorídrico 33%',
         typeId: typeMap['Redutor de pH'],
@@ -77,6 +82,7 @@ module.exports = {
         minStockAlert: 50.00,
         description: 'Ácido muriático para redução de pH e alcalinidade. Manuseio requer EPI adequado.',
         recommendedDosage: 'Piscinas: 100-200 ml/10m³ para reduzir 0,2 unidades de pH. Adicionar lentamente ao redor da piscina com bomba ligada. Aguardar 4 horas antes de usar.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -90,6 +96,7 @@ module.exports = {
         minStockAlert: 25.00,
         description: 'Ácido concentrado para sistemas industriais. Usado em caldeiras e torres de resfriamento.',
         recommendedDosage: 'Torres de resfriamento: Diluir a 10% antes de aplicar. Dosagem: 50-100 ml de solução diluída/m³ para ajustar pH. Caldeiras: conforme análise de pH (manter 10,5-11,5). Aplicar por bomba dosadora.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -103,6 +110,7 @@ module.exports = {
         minStockAlert: 50.00,
         description: 'Aumenta pH e alcalinidade da água. Produto em pó, fácil dissolução.',
         recommendedDosage: 'Piscinas: 100-150 g/10m³ para elevar 0,2 unidades de pH. Dissolver em balde antes de aplicar. Para alcalinidade: 150-200 g/10m³ eleva 10 ppm. Aplicar com bomba ligada.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -116,11 +124,13 @@ module.exports = {
         minStockAlert: 30.00,
         description: 'Produto alcalino forte para correção de pH em sistemas industriais.',
         recommendedDosage: 'Torres de resfriamento: Solução a 10%, dosar 20-50 ml/m³ para elevar pH. Tratamento de efluentes: conforme análise. CUIDADO: Produto corrosivo, usar EPI completo. Adicionar sempre a água, nunca o contrário.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
       },
-      // Algicidas e Bactericidas
+
+      // Algicidas e Bactericidas - SHARED
       {
         name: 'Algicida Quaternário',
         typeId: typeMap['Algicida'],
@@ -130,6 +140,7 @@ module.exports = {
         minStockAlert: 15.00,
         description: 'Controle preventivo de algas em piscinas. Não espumante, compatível com cloro.',
         recommendedDosage: 'Manutenção preventiva: 50-100 ml/10m³ semanalmente. Tratamento de choque (água verde): 200-300 ml/10m³. Aplicar ao entardecer com bomba ligada. Aguardar 24h para banho.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -143,6 +154,7 @@ module.exports = {
         minStockAlert: 10.00,
         description: 'Sulfato de cobre quelatizado para tratamento de algas resistentes. Ação prolongada.',
         recommendedDosage: 'Tratamento de algas persistentes: 100-150 ml/10m³. Manutenção: 30-50 ml/10m³ quinzenalmente. Não usar em piscinas com revestimento metálico. Manter pH entre 7,2-7,6. Aguardar 48h para banho.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -156,11 +168,13 @@ module.exports = {
         minStockAlert: 15.00,
         description: 'Biocida biodegradável para torres de resfriamento. Eficaz contra Legionella.',
         recommendedDosage: 'Torres de resfriamento: Dosagem inicial: 50-100 ppm (50-100 ml/m³). Manutenção: 10-20 ppm (10-20 ml/m³) semanalmente. Para controle de Legionella: 100-200 ppm por 24h, depois manter 20-30 ppm.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
       },
-      // Inibidores e Dispersantes
+
+      // Inibidores e Dispersantes - SHARED
       {
         name: 'Inibidor de Corrosão',
         typeId: typeMap['Inibidor'],
@@ -170,6 +184,7 @@ module.exports = {
         minStockAlert: 25.00,
         description: 'Protege superfícies metálicas em sistemas de água. Base fosfato/molibdato.',
         recommendedDosage: 'Torres de resfriamento: 30-50 ppm (30-50 ml/m³) na partida inicial. Manutenção: 10-20 ppm (10-20 ml/m³) conforme purga. Sistemas fechados: 200-500 ppm. Aplicar por bomba dosadora contínua.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -183,6 +198,7 @@ module.exports = {
         minStockAlert: 20.00,
         description: 'Previne formação de carbonato e sulfato de cálcio. Para caldeiras e torres.',
         recommendedDosage: 'Torres de resfriamento: 20-40 ppm (20-40 ml/m³) conforme dureza da água. Caldeiras: 50-100 ppm na água de alimentação. Ajustar conforme análise de incrustação. Dosagem contínua por bomba.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -196,11 +212,13 @@ module.exports = {
         minStockAlert: 10.00,
         description: 'Mantém sólidos em suspensão, evita depósitos. Para sistemas de resfriamento.',
         recommendedDosage: 'Torres de resfriamento: 10-30 ppm (10-30 ml/m³) conforme turbidez da água. Adicionar continuamente junto com biocida. Ajustar dosagem conforme análise de sólidos suspensos.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
       },
-      // Coagulantes e Floculantes
+
+      // Coagulantes e Floculantes - SHARED
       {
         name: 'Sulfato de Alumínio',
         typeId: typeMap['Coagulante'],
@@ -210,6 +228,7 @@ module.exports = {
         minStockAlert: 100.00,
         description: 'Coagulante primário para tratamento de água. Remove turbidez e cor.',
         recommendedDosage: 'Tratamento de água: 10-50 mg/L (10-50 g/m³) conforme turbidez. Preparar solução a 10% e dosar no canal de mistura rápida. Ajustar pH para 6,5-7,5. Realizar jar test para dosagem ótima.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -223,6 +242,7 @@ module.exports = {
         minStockAlert: 60.00,
         description: 'Coagulante líquido de alta eficiência. Menor geração de lodo que sulfato.',
         recommendedDosage: 'Tratamento de água: 5-30 mg/L (5-30 ml/m³) conforme turbidez. Usar puro ou diluído a 10%. Dosar na entrada do decantador. pH ótimo: 6,0-8,0. Realizar jar test. Reduz 30% do lodo vs sulfato.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -236,6 +256,7 @@ module.exports = {
         minStockAlert: 10.00,
         description: 'Auxiliar de floculação em pó. Acelera sedimentação de partículas.',
         recommendedDosage: 'Preparar solução a 0,1-0,5% com agitação lenta. Dosar 0,1-1,0 mg/L (0,1-1,0 g/m³) após coagulante. Adicionar em tanque de floculação com agitação suave. Tempo maturação: 30min.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -249,11 +270,13 @@ module.exports = {
         minStockAlert: 10.00,
         description: 'Para desidratação de lodo e tratamento de efluentes.',
         recommendedDosage: 'Desidratação de lodo: Preparar solução a 0,5%. Dosar 2-10 kg/ton de lodo seco. Centrifugação: 3-6 kg/ton. Filtro prensa: 5-10 kg/ton. Ajustar por teste de bancada.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
       },
-      // Produtos para Caldeira
+
+      // Produtos para Caldeira - SHARED
       {
         name: 'Sequestrante de Oxigênio',
         typeId: typeMap['Tratamento Caldeira'],
@@ -263,6 +286,7 @@ module.exports = {
         minStockAlert: 20.00,
         description: 'Remove oxigênio dissolvido da água de caldeira. Previne corrosão por pitting.',
         recommendedDosage: 'Água de alimentação de caldeira: 10-20 ppm (10-20 ml/m³) para cada 1 ppm de O₂. Dosar continuamente no tanque de alimentação. Verificar O₂ residual < 0,02 ppm. Base sulfito de sódio.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -276,11 +300,13 @@ module.exports = {
         minStockAlert: 25.00,
         description: 'Mantém alcalinidade adequada na água de caldeira. Protege contra corrosão ácida.',
         recommendedDosage: 'Água de caldeira: Manter alcalinidade 200-400 ppm (baixa pressão) ou 400-700 ppm (alta pressão). Dosar conforme purga. Controlar pH 10,5-11,5. Usar fosfato trissódico ou soda cáustica.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
       },
-      // Produtos Auxiliares
+
+      // Produtos Auxiliares - SHARED
       {
         name: 'Clarificante Líquido',
         typeId: typeMap['Clarificante'],
@@ -290,6 +316,7 @@ module.exports = {
         minStockAlert: 15.00,
         description: 'Melhora transparência da água de piscinas. Aglomera partículas finas.',
         recommendedDosage: 'Piscinas: 50-100 ml/10m³ quando água estiver turva. Aplicar diretamente na piscina com bomba ligada. Manter filtração por 24h. Fazer retrolavagem após. Não usar com floculante granulado.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -303,6 +330,7 @@ module.exports = {
         minStockAlert: 10.00,
         description: 'Protege cloro da degradação UV. Para piscinas externas.',
         recommendedDosage: 'Piscinas externas: Manter nível 30-50 ppm. Dosagem inicial: 40-60 g/10m³. Dissolver em balde e adicionar no skimmer com bomba ligada. Aplicar 1 vez/mês. Não usar em piscinas cobertas.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -316,6 +344,7 @@ module.exports = {
         minStockAlert: 5.00,
         description: 'Remove cloro residual da água. Usado antes do descarte ou análises.',
         recommendedDosage: 'Neutralização de cloro: 7 g para cada 1 ppm de cloro em 1m³. Dissolver em água e adicionar ao sistema. Aguardar 15 min e testar cloro residual (deve estar < 0,1 ppm). Para análises laboratoriais.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -329,6 +358,7 @@ module.exports = {
         minStockAlert: 5.00,
         description: 'Elimina espuma em torres de resfriamento e estações de tratamento.',
         recommendedDosage: 'Torres de resfriamento: 10-50 ppm (10-50 ml/m³) conforme severidade da espuma. ETE: 5-20 ppm. Adicionar direto no ponto de espuma. Base silicone ou poliéter. Reaplicar conforme necessário.',
+        clientId: null,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -342,6 +372,137 @@ module.exports = {
         minStockAlert: 40.00,
         description: 'Remove cloro, odores e compostos orgânicos. Para filtros de carvão.',
         recommendedDosage: 'Filtros de água: Altura do leito 0,8-1,2 m. Taxa de filtração 10-20 m³/m²/h. Trocar quando cloro residual > 0,5 ppm na saída. Retrolavagem semanal. Vida útil: 12-24 meses conforme uso.',
+        clientId: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ], {});
+
+    // CLIENT-SPECIFIC PRODUCTS - Each client has some unique products
+
+    // CLIENT 1 (Hotel Praia Azul) - Specific products for hotel pools
+    await queryInterface.bulkInsert('Products', [
+      {
+        name: 'Algicida Premium Hotel',
+        typeId: typeMap['Algicida'],
+        unitId: unitMap['L'],
+        supplier: 'Pool Tech Brasil - Exclusivo',
+        currentStock: 50.00,
+        minStockAlert: 10.00,
+        description: 'Algicida especial para piscinas de hotéis com alto tráfego. Fórmula não espumante.',
+        recommendedDosage: 'Piscinas de alto uso: 100-150 ml/10m³ semanalmente. Tratamento intensivo: 300-400 ml/10m³. Aplicar ao entardecer.',
+        clientId: 1,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        name: 'Clarificante Rápido Hotel',
+        typeId: typeMap['Clarificante'],
+        unitId: unitMap['L'],
+        supplier: 'AquaTrat Produtos',
+        currentStock: 30.00,
+        minStockAlert: 5.00,
+        description: 'Clarificante de ação ultra rápida para uso em hotéis. Permite banho em 6 horas.',
+        recommendedDosage: 'Piscinas: 100-150 ml/10m³. Aplicar com bomba ligada. Filtração contínua por 6h. Permite uso após 6h.',
+        clientId: 1,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ], {});
+
+    // CLIENT 2 (Condomínio Solar das Palmeiras) - Specific products for cooling towers
+    await queryInterface.bulkInsert('Products', [
+      {
+        name: 'Biocida Especial Torre',
+        typeId: typeMap['Bactericida'],
+        unitId: unitMap['L'],
+        supplier: 'BioQuímica Industrial - Linha Premium',
+        currentStock: 40.00,
+        minStockAlert: 10.00,
+        description: 'Biocida especial para torres de resfriamento de grande porte. Controle total de Legionella.',
+        recommendedDosage: 'Torres: 100-150 ppm inicial. Manutenção: 20-30 ppm semanalmente. Controle de Legionella garantido.',
+        clientId: 2,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ], {});
+
+    // CLIENT 3 (Indústria Metalúrgica Norte) - Specific products for industrial systems
+    await queryInterface.bulkInsert('Products', [
+      {
+        name: 'Inibidor Industrial Alta Performance',
+        typeId: typeMap['Inibidor'],
+        unitId: unitMap['L'],
+        supplier: 'IndQuímica S.A. - Industrial',
+        currentStock: 80.00,
+        minStockAlert: 20.00,
+        description: 'Inibidor de corrosão industrial para sistemas de alto risco. Proteção máxima para caldeiras e trocadores.',
+        recommendedDosage: 'Caldeiras: 100-150 ppm. Torres: 50-80 ppm. Sistemas fechados: 500-800 ppm. Dosagem contínua.',
+        clientId: 3,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        name: 'Coagulante ETA Industrial',
+        typeId: typeMap['Coagulante'],
+        unitId: unitMap['L'],
+        supplier: 'IndQuímica S.A.',
+        currentStock: 200.00,
+        minStockAlert: 50.00,
+        description: 'PAC especial para ETA industrial com água de alta turbidez. Eficiência superior.',
+        recommendedDosage: 'ETA: 10-40 mg/L conforme turbidez. Dosar na entrada do floculador. pH ótimo: 6,0-8,0.',
+        clientId: 3,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        name: 'Polímero Desidratação Lodo',
+        typeId: typeMap['Floculante'],
+        unitId: unitMap['kg'],
+        supplier: 'AquaTrat Produtos - Industrial',
+        currentStock: 60.00,
+        minStockAlert: 15.00,
+        description: 'Polímero catiônico de alta carga para desidratação de lodo industrial.',
+        recommendedDosage: 'Centrífuga: 4-8 kg/ton lodo seco. Filtro prensa: 6-12 kg/ton. Preparar solução a 0,5%.',
+        clientId: 3,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ], {});
+
+    // CLIENT 4 (Empresa Cliente Final) - Specific products for corporate office
+    await queryInterface.bulkInsert('Products', [
+      {
+        name: 'Cloro Pastilha 3 em 1',
+        typeId: typeMap['Desinfetante'],
+        unitId: unitMap['kg'],
+        supplier: 'Pool Tech Brasil',
+        currentStock: 20.00,
+        minStockAlert: 5.00,
+        description: 'Pastilha multifunção com cloro, algicida e clarificante. Ideal para piscinas pequenas.',
+        recommendedDosage: 'Piscinas pequenas: 1 pastilha (200g) para cada 25m³. Colocar no skimmer. Trocar semanalmente.',
+        clientId: 4,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        name: 'Kit Teste pH/Cloro',
+        typeId: typeMap['Auxiliar'],
+        unitId: unitMap['un'],
+        supplier: 'AquaTrat Produtos',
+        currentStock: 5.00,
+        minStockAlert: 2.00,
+        description: 'Kit de teste colorimétrico para pH e cloro. Fácil uso para análise rápida.',
+        recommendedDosage: 'Uso: Coletar amostra, adicionar reagentes conforme instrução. Leitura imediata por comparação de cores.',
+        clientId: 4,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()

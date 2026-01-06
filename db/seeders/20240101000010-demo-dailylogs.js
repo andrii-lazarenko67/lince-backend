@@ -16,7 +16,7 @@ module.exports = {
     );
 
     const systems = await queryInterface.sequelize.query(
-      'SELECT id, name FROM "Systems" WHERE "parentId" IS NULL ORDER BY id',
+      'SELECT id, name, "clientId" FROM "Systems" WHERE "parentId" IS NULL ORDER BY id',
       { type: Sequelize.QueryTypes.SELECT }
     );
 
@@ -26,23 +26,35 @@ module.exports = {
       if (user.email === 'technician@lince.com') userMap.pedro = user.id; // Pedro
       else if (user.email === 'maria.costa@lince.com') userMap.maria = user.id; // Maria
       else if (user.email === 'joao.ferreira@lince.com') userMap.joao = user.id; // João
+      else if (user.email === 'cliente@endcustomer.com') userMap.endcustomer = user.id; // End customer admin (Ricardo)
+      else if (user.email === 'manager@lince.com') userMap.carlos = user.id; // Carlos (Manager)
     });
 
     // Create system lookup by name
     const systemMap = {};
     systems.forEach(system => {
+      // Client 1 systems
       if (system.name === 'Piscina Principal - Hotel Sunset') systemMap.piscina = system.id;
       else if (system.name === 'Piscina Infantil - Hotel Sunset') systemMap.infantil = system.id;
+      // Client 2 systems
       else if (system.name === 'Torre de Resfriamento - Unidade 1') systemMap.torre = system.id;
+      else if (system.name === 'Torre de Resfriamento - Unidade 2') systemMap.torre2 = system.id;
+      // Client 3 systems
       else if (system.name === 'Caldeira a Vapor - Principal') systemMap.caldeira = system.id;
       else if (system.name === 'ETA - Estação de Tratamento') systemMap.eta = system.id;
       else if (system.name === 'ETE - Tratamento de Efluentes') systemMap.ete = system.id;
+      else if (system.name === 'Sistema de Efluentes - Linha 1') systemMap.efluente = system.id;
+      // Client 4 systems
+      else if (system.name === 'Piscina Aquecida - Área de Lazer') systemMap.piscinaClient4 = system.id;
+      else if (system.name === 'Torre de Resfriamento - Data Center') systemMap.torreClient4 = system.id;
+      else if (system.name === 'ETE - Corporativa') systemMap.eteClient4 = system.id;
     });
 
-    // Create daily logs for the past 30 days across different systems
+    // Create daily logs for the past 30 days across ALL client systems
     const dailyLogs = [];
 
-    // System 1: Piscina Principal (userId: 3 - Pedro technician)
+    // ===== CLIENT 1: Hotel Praia Azul =====
+    // System 1: Piscina Principal (userId: Pedro technician)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
         systemId: systemMap.piscina,
@@ -65,7 +77,7 @@ module.exports = {
       });
     }
 
-    // System 2: Piscina Infantil (userId: 4 - Maria technician)
+    // System 2: Piscina Infantil (userId: Maria technician)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
         systemId: systemMap.infantil,
@@ -88,7 +100,8 @@ module.exports = {
       });
     }
 
-    // System 3: Torre de Resfriamento 1 (userId: 3 - Pedro)
+    // ===== CLIENT 2: Condomínio Solar das Palmeiras =====
+    // System 3: Torre de Resfriamento 1 (userId: Pedro)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
         systemId: systemMap.torre,
@@ -113,7 +126,31 @@ module.exports = {
       });
     }
 
-    // System 5: Caldeira (userId: 5 - João technician)
+    // System 4: Torre de Resfriamento 2 (userId: Maria)
+    for (let i = 0; i < 30; i++) {
+      dailyLogs.push({
+        systemId: systemMap.torre2,
+        userId: userMap.maria,
+        date: getDate(i),
+        recordType: 'field',
+        stageId: null,
+        period: 'morning',
+        time: '10:00',
+        timeMode: 'manual',
+        laboratory: null,
+        collectionDate: null,
+        collectionTime: null,
+        collectionTimeMode: null,
+        notes: i % 8 === 0
+          ? 'Ajuste de purga realizado. Condutividade normalizada.'
+          : 'Torre operando em condições normais. Sistema de resfriamento eficiente.',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    // ===== CLIENT 3: Indústria Metalúrgica Norte =====
+    // System 5: Caldeira (userId: João technician)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
         systemId: systemMap.caldeira,
@@ -136,7 +173,7 @@ module.exports = {
       });
     }
 
-    // System 6: ETA (userId: 3 - Pedro)
+    // System 6: ETA (userId: Pedro)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
         systemId: systemMap.eta,
@@ -159,7 +196,7 @@ module.exports = {
       });
     }
 
-    // System 7: ETE (userId: 4 - Maria)
+    // System 7: ETE (userId: Maria)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
         systemId: systemMap.ete,
@@ -177,6 +214,101 @@ module.exports = {
         notes: i === 8
           ? 'DQO de entrada acima do normal. Verificar fontes de efluentes na indústria.'
           : 'Efluente final dentro dos parâmetros de lançamento. Sistema biológico estável.',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    // System 8: Sistema de Efluentes Linha 1 (userId: João)
+    for (let i = 0; i < 30; i++) {
+      dailyLogs.push({
+        systemId: systemMap.efluente,
+        userId: userMap.joao,
+        date: getDate(i),
+        recordType: 'field',
+        stageId: null,
+        period: 'afternoon',
+        time: '16:00',
+        timeMode: 'manual',
+        laboratory: null,
+        collectionDate: null,
+        collectionTime: null,
+        collectionTimeMode: null,
+        notes: i % 12 === 0
+          ? 'pH ajustado antes do tratamento. Efluente dentro dos padrões.'
+          : 'Linha 1 operando normalmente. Vazão constante.',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    // ===== CLIENT 4: Empresa Cliente Final =====
+    // System 9: Piscina Aquecida (userId: End customer admin - end customer does self-service)
+    for (let i = 0; i < 20; i++) {
+      dailyLogs.push({
+        systemId: systemMap.piscinaClient4,
+        userId: userMap.endcustomer,
+        date: getDate(i),
+        recordType: 'field',
+        stageId: null,
+        period: 'morning',
+        time: '09:00',
+        timeMode: 'manual',
+        laboratory: null,
+        collectionDate: null,
+        collectionTime: null,
+        collectionTimeMode: null,
+        notes: i % 5 === 0
+          ? 'Temperatura ajustada para conforto dos usuários. Sistema de aquecimento funcionando perfeitamente.'
+          : 'Piscina em condições ideais. Água aquecida e cristalina.',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    // System 10: Torre de Resfriamento Data Center (userId: Carlos - service provider manager)
+    for (let i = 0; i < 25; i++) {
+      dailyLogs.push({
+        systemId: systemMap.torreClient4,
+        userId: userMap.carlos,
+        date: getDate(i),
+        recordType: 'field',
+        stageId: null,
+        period: 'morning',
+        time: '08:30',
+        timeMode: 'manual',
+        laboratory: null,
+        collectionDate: null,
+        collectionTime: null,
+        collectionTimeMode: null,
+        notes: i === 10
+          ? 'CRÍTICO: Temperatura do data center ligeiramente elevada. Verificado sistema de resfriamento e ajustada vazão.'
+          : (i % 6 === 0
+            ? 'Manutenção preventiva realizada. Sistema funcionando perfeitamente.'
+            : 'Data center mantendo temperatura ideal. Resfriamento eficiente.'),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    // System 11: ETE Corporativa (userId: End customer admin)
+    for (let i = 0; i < 20; i++) {
+      dailyLogs.push({
+        systemId: systemMap.eteClient4,
+        userId: userMap.endcustomer,
+        date: getDate(i),
+        recordType: 'field',
+        stageId: null,
+        period: 'afternoon',
+        time: '15:00',
+        timeMode: 'manual',
+        laboratory: null,
+        collectionDate: null,
+        collectionTime: null,
+        collectionTimeMode: null,
+        notes: i % 7 === 0
+          ? 'Efluente final analisado. Todos os parâmetros dentro dos limites de lançamento.'
+          : 'ETE operando normalmente. Tratamento biológico estável.',
         createdAt: new Date(),
         updatedAt: new Date()
       });
