@@ -5,6 +5,19 @@ const checklistItemController = {
     try {
       const { systemId, isActive } = req.query;
 
+      // If systemId provided, verify it belongs to client
+      if (systemId && req.clientId) {
+        const system = await System.findOne({
+          where: { id: systemId, clientId: req.clientId }
+        });
+        if (!system) {
+          return res.status(404).json({
+            success: false,
+            messageKey: 'systems.errors.notFound'
+          });
+        }
+      }
+
       const where = {};
 
       if (systemId) where.systemId = systemId;
@@ -28,6 +41,18 @@ const checklistItemController = {
   async getBySystem(req, res, next) {
     try {
       const { systemId } = req.params;
+
+      // Verify system belongs to client
+      const system = await System.findOne({
+        where: { id: systemId, clientId: req.clientId }
+      });
+
+      if (!system) {
+        return res.status(404).json({
+          success: false,
+          messageKey: 'systems.errors.notFound'
+        });
+      }
 
       const checklistItems = await ChecklistItem.findAll({
         where: { systemId, isActive: true },
@@ -69,7 +94,12 @@ const checklistItemController = {
     try {
       const { systemId, name, description, isRequired, order } = req.body;
 
-      const system = await System.findByPk(systemId);
+      // Validate system exists and belongs to client
+      const where = { id: systemId };
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+      const system = await System.findOne({ where });
       if (!system) {
         return res.status(404).json({
           success: false,
@@ -98,12 +128,22 @@ const checklistItemController = {
     try {
       const { name, description, isRequired, order, isActive } = req.body;
 
-      const checklistItem = await ChecklistItem.findByPk(req.params.id);
+      const checklistItem = await ChecklistItem.findByPk(req.params.id, {
+        include: [{ model: System, as: 'system' }]
+      });
 
       if (!checklistItem) {
         return res.status(404).json({
           success: false,
           messageKey: 'checklistItems.errors.notFound'
+        });
+      }
+
+      // Verify system belongs to client
+      if (req.clientId && checklistItem.system.clientId !== req.clientId) {
+        return res.status(403).json({
+          success: false,
+          messageKey: 'errors.noClientAccess'
         });
       }
 
@@ -126,12 +166,22 @@ const checklistItemController = {
 
   async delete(req, res, next) {
     try {
-      const checklistItem = await ChecklistItem.findByPk(req.params.id);
+      const checklistItem = await ChecklistItem.findByPk(req.params.id, {
+        include: [{ model: System, as: 'system' }]
+      });
 
       if (!checklistItem) {
         return res.status(404).json({
           success: false,
           messageKey: 'checklistItems.errors.notFound'
+        });
+      }
+
+      // Verify system belongs to client
+      if (req.clientId && checklistItem.system.clientId !== req.clientId) {
+        return res.status(403).json({
+          success: false,
+          messageKey: 'errors.noClientAccess'
         });
       }
 

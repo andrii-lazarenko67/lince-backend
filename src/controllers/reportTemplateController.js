@@ -28,25 +28,17 @@ const DEFAULT_TEMPLATE_CONFIG = {
 const reportTemplateController = {
   async getAll(req, res, next) {
     try {
-      const clientId = req.clientId || req.query.clientId;
+      const clientId = req.clientId;
 
-      // Build where clause: user's templates + global templates
+      // Build where clause: user's templates for this client + global templates
       const whereClause = {
         isActive: true,
         [Op.or]: [
-          { userId: req.user.id },
+          { userId: req.user.id, clientId: clientId },
+          { userId: req.user.id, clientId: null },
           { isGlobal: true }
         ]
       };
-
-      // If clientId is provided, also filter by specific client templates
-      if (clientId) {
-        whereClause[Op.or] = [
-          { userId: req.user.id, clientId: parseInt(clientId) },
-          { userId: req.user.id, clientId: null },
-          { isGlobal: true }
-        ];
-      }
 
       const templates = await ReportTemplate.findAll({
         where: whereClause,

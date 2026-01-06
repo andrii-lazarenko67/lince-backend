@@ -180,6 +180,30 @@ const dailyLogController = {
         });
       }
 
+      // Validate system belongs to client
+      const system = await System.findOne({
+        where: { id: systemId, clientId: req.clientId }
+      });
+      if (!system) {
+        return res.status(404).json({
+          success: false,
+          messageKey: 'systems.errors.notFound'
+        });
+      }
+
+      // Validate stage belongs to system if provided
+      if (stageId) {
+        const stage = await System.findOne({
+          where: { id: stageId, parentId: systemId }
+        });
+        if (!stage) {
+          return res.status(404).json({
+            success: false,
+            messageKey: 'systems.errors.notFound'
+          });
+        }
+      }
+
       // Validate record type specific fields
       if (recordType === 'laboratory' && !laboratory) {
         return res.status(400).json({

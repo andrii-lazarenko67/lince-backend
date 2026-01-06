@@ -152,12 +152,83 @@ const libraryController = {
         });
       }
 
+      // Validate systemId belongs to client if being updated
+      if (systemId !== undefined && systemId !== null && systemId !== document.systemId && req.clientId) {
+        const system = await System.findOne({
+          where: { id: systemId, clientId: req.clientId }
+        });
+        if (!system) {
+          return res.status(404).json({
+            success: false,
+            messageKey: 'systems.errors.notFound'
+          });
+        }
+      }
+
       await document.update({
         title: title || document.title,
         description: description !== undefined ? description : document.description,
         category: category || document.category,
         systemId: systemId !== undefined ? systemId : document.systemId,
         fileName: fileName || document.fileName
+      });
+
+      const updatedDocument = await Document.findByPk(document.id, {
+        include: [
+          { model: System, as: 'system' },
+          { model: User, as: 'uploader', attributes: ['id', 'name'] }
+        ]
+      });
+
+      res.json({
+        success: true,
+        data: updatedDocument
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async uploadNewVersion(req, res, next) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'library.errors.noFile'
+        });
+      }
+
+      const where = { id: req.params.id };
+
+      // Client filtering
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      const document = await Document.findOne({ where });
+
+      if (!document) {
+        return res.status(404).json({
+          success: false,
+          messageKey: 'library.errors.notFound'
+        });
+      }
+
+      // Delete old version from Cloudinary
+      if (document.publicId) {
+        await uploadService.deleteDocument(document.publicId);
+      }
+
+      // Upload new version
+      const result = await uploadService.uploadDocument(req.file.buffer, req.file.originalname);
+
+      // Update document with new version
+      await document.update({
+        url: result.secure_url,
+        publicId: result.public_id,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        updatedAt: new Date()
       });
 
       const updatedDocument = await Document.findByPk(document.id, {

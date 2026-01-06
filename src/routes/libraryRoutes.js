@@ -10,6 +10,7 @@ router.use(authMiddleware);
 router.get('/', libraryController.getAll);
 router.get('/:id', libraryController.getById);
 router.post('/', roleMiddleware('manager', 'admin'), upload.single('file'), libraryController.create);
+router.post('/:id/version', roleMiddleware('manager', 'admin'), upload.single('file'), libraryController.uploadNewVersion);
 router.put('/:id', roleMiddleware('manager', 'admin'), libraryController.update);
 router.delete('/:id', roleMiddleware('manager', 'admin'), libraryController.delete);
 

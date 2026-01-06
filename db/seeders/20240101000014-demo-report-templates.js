@@ -18,9 +18,8 @@ module.exports = {
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
             { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: true },
             { type: 'inspections', enabled: true, order: 5, includePhotos: true },
-            { type: 'occurrences', enabled: true, order: 6, includeTimeline: true },
-            { type: 'conclusion', enabled: true, order: 7 },
-            { type: 'signature', enabled: true, order: 8 }
+            { type: 'conclusion', enabled: true, order: 6 },
+            { type: 'signature', enabled: true, order: 7 }
           ],
           branding: {
             showLogo: true,
@@ -172,24 +171,54 @@ module.exports = {
         id: 6,
         userId: 1,
         clientId: null,
-        name: 'Relatório de Ocorrências',
-        description: 'Modelo focado em ocorrências e incidentes',
+        name: 'Relatório de Manutenção Piscina',
+        description: 'Modelo para relatórios de manutenção em piscinas',
         type: 'both',
         config: JSON.stringify({
           blocks: [
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
-            { type: 'systems', enabled: true, order: 3 },
-            { type: 'occurrences', enabled: true, order: 4, includeTimeline: true },
-            { type: 'conclusion', enabled: true, order: 5 },
-            { type: 'signature', enabled: true, order: 6 }
+            { type: 'systems', enabled: true, order: 3, includePhotos: true },
+            { type: 'analyses', enabled: true, order: 4, includeCharts: true },
+            { type: 'occurrences', enabled: true, order: 5, includeTimeline: true },
+            { type: 'conclusion', enabled: true, order: 6 }
           ],
           branding: {
             showLogo: true,
             logoPosition: 'left',
-            primaryColor: '#f57c00',
+            primaryColor: '#0288d1',
             showHeader: true,
-            headerText: 'Relatório de Ocorrências',
+            headerText: 'Relatório de Manutenção',
+            showFooter: true,
+            footerText: 'Página {page} de {pages}'
+          }
+        }),
+        isDefault: false,
+        isGlobal: true,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 7,
+        userId: 1,
+        clientId: null,
+        name: 'Relatório de Análises Piscina',
+        description: 'Modelo para relatórios de análises laboratoriais em piscinas',
+        type: 'both',
+        config: JSON.stringify({
+          blocks: [
+            { type: 'identification', enabled: true, order: 1 },
+            { type: 'scope', enabled: true, order: 2 },
+            { type: 'analyses', enabled: true, order: 3, includeCharts: true, highlightAlerts: true },
+            { type: 'conclusion', enabled: true, order: 4 }
+          ],
+          branding: {
+            showLogo: true,
+            logoPosition: 'left',
+            primaryColor: '#0288d1',
+            showHeader: true,
+            headerText: 'Relatório de Análises',
             showFooter: true,
             footerText: 'Página {page} de {pages}'
           }

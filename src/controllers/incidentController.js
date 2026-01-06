@@ -103,6 +103,30 @@ const incidentController = {
         });
       }
 
+      // Validate system belongs to client
+      const system = await System.findOne({
+        where: { id: systemId, clientId: req.clientId }
+      });
+      if (!system) {
+        return res.status(404).json({
+          success: false,
+          messageKey: 'systems.errors.notFound'
+        });
+      }
+
+      // Validate stage belongs to system if provided
+      if (stageId) {
+        const stage = await System.findOne({
+          where: { id: stageId, parentId: systemId }
+        });
+        if (!stage) {
+          return res.status(404).json({
+            success: false,
+            messageKey: 'systems.errors.notFound'
+          });
+        }
+      }
+
       const incident = await Incident.create({
         userId,
         systemId,

@@ -8,27 +8,27 @@ const dashboardController = {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
 
-      // Get counts
-      const totalSystems = await System.count({ where: { status: 'active' } });
+      // Get counts filtered by clientId
+      const totalSystems = await System.count({ where: { status: 'active', clientId: req.clientId } });
       const totalUsers = await User.count({ where: { isActive: true } });
 
-      const todayLogs = await DailyLog.count({ where: { date: today } });
+      const todayLogs = await DailyLog.count({ where: { date: today, clientId: req.clientId } });
       const weekLogs = await DailyLog.count({
-        where: { date: { [Op.gte]: weekAgo.toISOString().split('T')[0] } }
+        where: { date: { [Op.gte]: weekAgo.toISOString().split('T')[0] }, clientId: req.clientId }
       });
 
-      const openIncidents = await Incident.count({ where: { status: 'open' } });
+      const openIncidents = await Incident.count({ where: { status: 'open', clientId: req.clientId } });
       const totalIncidentsThisWeek = await Incident.count({
-        where: { createdAt: { [Op.gte]: weekAgo } }
+        where: { createdAt: { [Op.gte]: weekAgo }, clientId: req.clientId }
       });
 
-      const pendingInspections = await Inspection.count({ where: { status: 'pending' } });
+      const pendingInspections = await Inspection.count({ where: { status: 'pending', clientId: req.clientId } });
       const inspectionsThisWeek = await Inspection.count({
-        where: { date: { [Op.gte]: weekAgo } }
+        where: { date: { [Op.gte]: weekAgo }, clientId: req.clientId }
       });
 
-      // Low stock products
-      const products = await Product.findAll({ where: { isActive: true } });
+      // Low stock products filtered by clientId
+      const products = await Product.findAll({ where: { isActive: true, clientId: req.clientId } });
       const lowStockProducts = products.filter(p =>
         p.minStockAlert && parseFloat(p.currentStock) <= parseFloat(p.minStockAlert)
       ).length;
@@ -38,9 +38,9 @@ const dashboardController = {
         where: { userId: req.user.id, isRead: false }
       });
 
-      // Out of range readings today
+      // Out of range readings today filtered by clientId
       const todayDailyLogs = await DailyLog.findAll({
-        where: { date: today },
+        where: { date: today, clientId: req.clientId },
         include: [{ model: DailyLogEntry, as: 'entries' }]
       });
       const outOfRangeToday = todayDailyLogs.reduce((acc, log) => {
@@ -88,6 +88,7 @@ const dashboardController = {
       const limit = parseInt(req.query.limit) || 10;
 
       const recentLogs = await DailyLog.findAll({
+        where: { clientId: req.clientId },
         include: [
           { model: User, as: 'user', attributes: ['id', 'name'] },
           { model: System, as: 'system', attributes: ['id', 'name'] }
@@ -97,6 +98,7 @@ const dashboardController = {
       });
 
       const recentInspections = await Inspection.findAll({
+        where: { clientId: req.clientId },
         include: [
           { model: User, as: 'user', attributes: ['id', 'name'] },
           { model: System, as: 'system', attributes: ['id', 'name'] }
@@ -106,6 +108,7 @@ const dashboardController = {
       });
 
       const recentIncidents = await Incident.findAll({
+        where: { clientId: req.clientId },
         include: [
           { model: User, as: 'reporter', attributes: ['id', 'name'] },
           { model: System, as: 'system', attributes: ['id', 'name'] }
@@ -160,9 +163,9 @@ const dashboardController = {
     try {
       const alerts = [];
 
-      // Open incidents
+      // Open incidents filtered by clientId
       const openIncidents = await Incident.findAll({
-        where: { status: 'open' },
+        where: { status: 'open', clientId: req.clientId },
         include: [{ model: System, as: 'system', attributes: ['id', 'name'] }],
         order: [
           ['priority', 'DESC'],
@@ -183,8 +186,8 @@ const dashboardController = {
         });
       });
 
-      // Low stock products
-      const products = await Product.findAll({ where: { isActive: true } });
+      // Low stock products filtered by clientId
+      const products = await Product.findAll({ where: { isActive: true, clientId: req.clientId } });
       const lowStockProducts = products.filter(p =>
         p.minStockAlert && parseFloat(p.currentStock) <= parseFloat(p.minStockAlert)
       );
@@ -201,10 +204,10 @@ const dashboardController = {
         });
       });
 
-      // Today's out of range readings
+      // Today's out of range readings filtered by clientId
       const today = new Date().toISOString().split('T')[0];
       const todayLogs = await DailyLog.findAll({
-        where: { date: today },
+        where: { date: today, clientId: req.clientId },
         include: [
           { model: System, as: 'system', attributes: ['id', 'name'] },
           {

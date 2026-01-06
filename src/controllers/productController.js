@@ -211,6 +211,20 @@ const productController = {
     try {
       const { startDate, endDate } = req.query;
 
+      // Verify product belongs to client
+      const productWhere = { id: req.params.id };
+      if (req.clientId) {
+        productWhere.clientId = req.clientId;
+      }
+
+      const product = await Product.findOne({ where: productWhere });
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          messageKey: 'products.errors.notFound'
+        });
+      }
+
       const where = { productId: req.params.id };
 
       if (startDate && endDate) {
@@ -344,6 +358,19 @@ const productController = {
           success: false,
           messageKey: 'products.errors.notFound'
         });
+      }
+
+      // Validate systemId belongs to client if provided
+      if (systemId && req.clientId) {
+        const system = await System.findOne({
+          where: { id: systemId, clientId: req.clientId }
+        });
+        if (!system) {
+          return res.status(404).json({
+            success: false,
+            messageKey: 'systems.errors.notFound'
+          });
+        }
       }
 
       const usage = await ProductUsage.create({

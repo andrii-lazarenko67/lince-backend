@@ -80,8 +80,12 @@ const monitoringPointController = {
     try {
       const { systemId, name, parameterId, unitId, minValue, maxValue, alertEnabled } = req.body;
 
-      // Validate system exists
-      const system = await System.findByPk(systemId);
+      // Validate system exists and belongs to client
+      const where = { id: systemId };
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+      const system = await System.findOne({ where });
       if (!system) {
         return res.status(404).json({
           success: false,
@@ -140,12 +144,22 @@ const monitoringPointController = {
     try {
       const { name, parameterId, unitId, minValue, maxValue, alertEnabled } = req.body;
 
-      const monitoringPoint = await MonitoringPoint.findByPk(req.params.id);
+      const monitoringPoint = await MonitoringPoint.findByPk(req.params.id, {
+        include: [{ model: System, as: 'system' }]
+      });
 
       if (!monitoringPoint) {
         return res.status(404).json({
           success: false,
           messageKey: 'monitoringPoints.errors.notFound'
+        });
+      }
+
+      // Verify system belongs to client
+      if (req.clientId && monitoringPoint.system.clientId !== req.clientId) {
+        return res.status(403).json({
+          success: false,
+          messageKey: 'errors.noClientAccess'
         });
       }
 
@@ -199,12 +213,22 @@ const monitoringPointController = {
 
   async delete(req, res, next) {
     try {
-      const monitoringPoint = await MonitoringPoint.findByPk(req.params.id);
+      const monitoringPoint = await MonitoringPoint.findByPk(req.params.id, {
+        include: [{ model: System, as: 'system' }]
+      });
 
       if (!monitoringPoint) {
         return res.status(404).json({
           success: false,
           messageKey: 'monitoringPoints.errors.notFound'
+        });
+      }
+
+      // Verify system belongs to client
+      if (req.clientId && monitoringPoint.system.clientId !== req.clientId) {
+        return res.status(403).json({
+          success: false,
+          messageKey: 'errors.noClientAccess'
         });
       }
 
