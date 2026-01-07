@@ -31,11 +31,10 @@ const clientContextMiddleware = async (req, res, next) => {
 
         clientId = userClient.clientId;
       } else {
-        // For service providers, clientId is REQUIRED
-        return res.status(400).json({
-          success: false,
-          messageKey: 'errors.clientIdRequired'
-        });
+        // For service providers without clientId, allow them to proceed
+        // Controllers will handle showing data from all their managed clients
+        req.clientId = null;
+        return next();
       }
     }
 

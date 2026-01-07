@@ -1,4 +1,4 @@
-const { GeneratedReport, ReportTemplate, User, Client, System, DailyLog, DailyLogEntry, MonitoringPoint, Inspection, InspectionItem, InspectionPhoto, Incident, IncidentPhoto, IncidentComment, Product, ProductUsage, ChecklistItem, SystemPhoto } = require('../../db/models');
+const { GeneratedReport, ReportTemplate, User, Client, System, DailyLog, DailyLogEntry, MonitoringPoint, Inspection, InspectionItem, InspectionPhoto, Incident, IncidentPhoto, IncidentComment, Product, ProductUsage, ChecklistItem, SystemPhoto, UserClient } = require('../../db/models');
 const { Op } = require('sequelize');
 const cloudinary = require('../config/cloudinary');
 
@@ -11,8 +11,23 @@ const generatedReportController = {
 
       const whereClause = { userId: req.user.id };
 
+      // Client filtering for service provider mode
       if (clientId) {
+        // Specific client selected
         whereClause.clientId = clientId;
+      } else if (req.user && req.user.isServiceProvider) {
+        // No client selected but service provider - show all their clients' reports
+        const userClients = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const clientIds = userClients.map(uc => uc.clientId);
+        if (clientIds.length > 0) {
+          whereClause.clientId = { [Op.in]: clientIds };
+        } else {
+          // No clients - return empty
+          whereClause.clientId = -1;
+        }
       }
 
       if (templateId) {

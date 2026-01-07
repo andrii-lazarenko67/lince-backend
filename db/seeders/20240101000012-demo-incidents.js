@@ -17,7 +17,7 @@ module.exports = {
     );
 
     const systems = await queryInterface.sequelize.query(
-      'SELECT id, name FROM "Systems" WHERE "parentId" IS NULL ORDER BY id',
+      'SELECT id, name, "clientId" FROM "Systems" WHERE "parentId" IS NULL ORDER BY id',
       { type: Sequelize.QueryTypes.SELECT }
     );
 
@@ -37,16 +37,16 @@ module.exports = {
       else if (user.email === 'joao.ferreira@lince.com') userMap.joao = user.id;
     });
 
-    // Create system lookup by name
+    // Create system lookup by name (with clientId)
     const systemMap = {};
     systems.forEach(system => {
-      if (system.name === 'Piscina Principal - Hotel Sunset') systemMap.piscina = system.id;
-      else if (system.name === 'Piscina Infantil - Hotel Sunset') systemMap.piscinaInfantil = system.id;
-      else if (system.name === 'Torre de Resfriamento - Unidade 1') systemMap.torre1 = system.id;
-      else if (system.name === 'Torre de Resfriamento - Unidade 2') systemMap.torre2 = system.id;
-      else if (system.name === 'Caldeira a Vapor - Principal') systemMap.caldeira = system.id;
-      else if (system.name === 'ETA - Estação de Tratamento') systemMap.eta = system.id;
-      else if (system.name === 'ETE - Tratamento de Efluentes') systemMap.ete = system.id;
+      if (system.name === 'Piscina Principal - Hotel Sunset') systemMap.piscina = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'Piscina Infantil - Hotel Sunset') systemMap.piscinaInfantil = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'Torre de Resfriamento - Unidade 1') systemMap.torre1 = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'Torre de Resfriamento - Unidade 2') systemMap.torre2 = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'Caldeira a Vapor - Principal') systemMap.caldeira = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'ETA - Estação de Tratamento') systemMap.eta = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'ETE - Tratamento de Efluentes') systemMap.ete = { id: system.id, clientId: system.clientId };
     });
 
     // Create stage lookup by name
@@ -60,9 +60,10 @@ module.exports = {
     });
 
     const incidents = [
-      // Incident 1: Resolved - Chlorine pump failure
+      // Incident 1: Resolved - Chlorine pump failure (Client 1)
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.pedro,
         title: 'Falha na bomba dosadora de cloro',
@@ -75,9 +76,10 @@ module.exports = {
         createdAt: getDate(25, 9),
         updatedAt: getDate(24, 14)
       },
-      // Incident 2: Resolved - pH out of range
+      // Incident 2: Resolved - pH out of range (Client 1)
       {
-        systemId: systemMap.piscinaInfantil,
+        systemId: systemMap.piscinaInfantil.id,
+        clientId: systemMap.piscinaInfantil.clientId,
         stageId: null,
         userId: userMap.maria,
         title: 'pH da piscina infantil fora do padrão',
@@ -90,9 +92,10 @@ module.exports = {
         createdAt: getDate(20, 8),
         updatedAt: getDate(20, 11)
       },
-      // Incident 3: Resolved - Legionella alert
+      // Incident 3: Resolved - Legionella alert (Client 2)
       {
-        systemId: systemMap.torre1,
+        systemId: systemMap.torre1.id,
+        clientId: systemMap.torre1.clientId,
         stageId: null,
         userId: userMap.joao,
         title: 'Alerta de Legionella na torre de resfriamento',
@@ -105,9 +108,10 @@ module.exports = {
         createdAt: getDate(5, 10),
         updatedAt: getDate(3, 16)
       },
-      // Incident 4: In Progress - Scale buildup
+      // Incident 4: In Progress - Scale buildup (Client 2)
       {
-        systemId: systemMap.torre2,
+        systemId: systemMap.torre2.id,
+        clientId: systemMap.torre2.clientId,
         stageId: null,
         userId: userMap.pedro,
         title: 'Incrustação detectada nas tubulações',
@@ -120,9 +124,10 @@ module.exports = {
         createdAt: getDate(2, 14),
         updatedAt: getDate(1, 9)
       },
-      // Incident 5: Resolved - Boiler water quality
+      // Incident 5: Resolved - Boiler water quality (Client 3)
       {
-        systemId: systemMap.caldeira,
+        systemId: systemMap.caldeira.id,
+        clientId: systemMap.caldeira.clientId,
         stageId: null,
         userId: userMap.joao,
         title: 'Dureza elevada na água de alimentação da caldeira',
@@ -135,9 +140,10 @@ module.exports = {
         createdAt: getDate(12, 7),
         updatedAt: getDate(11, 15)
       },
-      // Incident 6: Resolved - WTP turbidity (with stage: Floculador)
+      // Incident 6: Resolved - WTP turbidity (Client 3, with stage: Floculador)
       {
-        systemId: systemMap.eta,
+        systemId: systemMap.eta.id,
+        clientId: systemMap.eta.clientId,
         stageId: stageMap.floculador,
         userId: userMap.pedro,
         title: 'Turbidez elevada na água bruta',
@@ -150,9 +156,10 @@ module.exports = {
         createdAt: getDate(20, 6),
         updatedAt: getDate(19, 18)
       },
-      // Incident 7: Open - WWTP odor (with stage: Tanque de Aeração)
+      // Incident 7: Open - WWTP odor (Client 3, with stage: Tanque de Aeração)
       {
-        systemId: systemMap.ete,
+        systemId: systemMap.ete.id,
+        clientId: systemMap.ete.clientId,
         stageId: stageMap.tanqueAeracao,
         userId: userMap.maria,
         title: 'Odor característico no tanque de aeração',
@@ -165,9 +172,10 @@ module.exports = {
         createdAt: getDate(1, 15),
         updatedAt: getDate(1, 15)
       },
-      // Incident 8: Resolved - Pool filter issue
+      // Incident 8: Resolved - Pool filter issue (Client 1)
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.joao,
         title: 'Pressão elevada no filtro de areia',
@@ -180,9 +188,10 @@ module.exports = {
         createdAt: getDate(15, 10),
         updatedAt: getDate(15, 12)
       },
-      // Incident 9: In Progress - Cooling tower fan
+      // Incident 9: In Progress - Cooling tower fan (Client 2)
       {
-        systemId: systemMap.torre1,
+        systemId: systemMap.torre1.id,
+        clientId: systemMap.torre1.clientId,
         stageId: null,
         userId: userMap.pedro,
         title: 'Vibração excessiva no ventilador',
@@ -195,9 +204,10 @@ module.exports = {
         createdAt: getDate(3, 8),
         updatedAt: getDate(2, 10)
       },
-      // Incident 10: Resolved - Chemical spill (with stage: Filtros)
+      // Incident 10: Resolved - Chemical spill (Client 3, with stage: Filtros)
       {
-        systemId: systemMap.eta,
+        systemId: systemMap.eta.id,
+        clientId: systemMap.eta.clientId,
         stageId: stageMap.filtros,
         userId: userMap.maria,
         title: 'Vazamento de ácido no sistema de dosagem',

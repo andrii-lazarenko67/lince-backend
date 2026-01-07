@@ -1,4 +1,5 @@
-const { Notification, NotificationRecipient, User } = require('../../db/models');
+const { Notification, NotificationRecipient, User, UserClient } = require('../../db/models');
+const { Op } = require('sequelize');
 
 const notificationController = {
   // Get all notifications for current user with their read status
@@ -15,7 +16,20 @@ const notificationController = {
 
       // Client filtering - show notifications for the selected client
       if (req.clientId) {
+        // Specific client selected - show only that client's notifications
         whereNotification.clientId = req.clientId;
+      } else if (req.user && req.user.isServiceProvider) {
+        // No client selected but service provider - show all their clients' notifications
+        const userClients = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const clientIds = userClients.map(uc => uc.clientId);
+        if (clientIds.length > 0) {
+          whereNotification.clientId = { [Op.in]: clientIds };
+        } else {
+          whereNotification.clientId = -1; // No clients - return empty
+        }
       }
 
       const recipients = await NotificationRecipient.findAll({
@@ -65,7 +79,20 @@ const notificationController = {
       // Build where clause for notifications
       const whereNotification = {};
       if (req.clientId) {
+        // Specific client selected - count only that client's notifications
         whereNotification.clientId = req.clientId;
+      } else if (req.user && req.user.isServiceProvider) {
+        // No client selected but service provider - count all their clients' notifications
+        const userClients = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const clientIds = userClients.map(uc => uc.clientId);
+        if (clientIds.length > 0) {
+          whereNotification.clientId = { [Op.in]: clientIds };
+        } else {
+          whereNotification.clientId = -1; // No clients - return empty
+        }
       }
 
       const count = await NotificationRecipient.count({
@@ -253,7 +280,20 @@ const notificationController = {
 
       // Client filtering
       if (req.clientId) {
+        // Specific client selected - show only that client's notifications
         where.clientId = req.clientId;
+      } else if (req.user && req.user.isServiceProvider) {
+        // No client selected but service provider - show all their clients' notifications
+        const userClients = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const clientIds = userClients.map(uc => uc.clientId);
+        if (clientIds.length > 0) {
+          where.clientId = { [Op.in]: clientIds };
+        } else {
+          where.clientId = -1; // No clients - return empty
+        }
       }
 
       const notifications = await Notification.findAll({

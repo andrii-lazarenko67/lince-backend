@@ -16,7 +16,7 @@ module.exports = {
     );
 
     const systems = await queryInterface.sequelize.query(
-      'SELECT id, name FROM "Systems" WHERE "parentId" IS NULL ORDER BY id',
+      'SELECT id, name, "clientId" FROM "Systems" WHERE "parentId" IS NULL ORDER BY id',
       { type: Sequelize.QueryTypes.SELECT }
     );
 
@@ -28,21 +28,22 @@ module.exports = {
       else if (user.email === 'joao.ferreira@lince.com') userMap.joao = user.id; // João - userId 5
     });
 
-    // Create system lookup by name
+    // Create system lookup by name (with clientId)
     const systemMap = {};
     systems.forEach(system => {
-      if (system.name === 'Piscina Principal - Hotel Sunset') systemMap.piscina = system.id; // systemId 1
-      else if (system.name === 'Torre de Resfriamento - Unidade 1') systemMap.torre = system.id; // systemId 3
-      else if (system.name === 'Caldeira a Vapor - Principal') systemMap.caldeira = system.id; // systemId 5
-      else if (system.name === 'ETA - Estação de Tratamento') systemMap.eta = system.id; // systemId 6
-      else if (system.name === 'ETE - Tratamento de Efluentes') systemMap.ete = system.id; // systemId 7
+      if (system.name === 'Piscina Principal - Hotel Sunset') systemMap.piscina = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'Torre de Resfriamento - Unidade 1') systemMap.torre = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'Caldeira a Vapor - Principal') systemMap.caldeira = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'ETA - Estação de Tratamento') systemMap.eta = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'ETE - Tratamento de Efluentes') systemMap.ete = { id: system.id, clientId: system.clientId };
     });
 
     // Create inspections
     const inspections = [
       // System 1: Piscina Principal - weekly inspections
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.pedro,
         date: getDate(56),
@@ -53,7 +54,8 @@ module.exports = {
         updatedAt: getDate(56)
       },
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.maria,
         date: getDate(49),
@@ -64,7 +66,8 @@ module.exports = {
         updatedAt: getDate(49)
       },
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.joao,
         date: getDate(42),
@@ -75,7 +78,8 @@ module.exports = {
         updatedAt: getDate(42)
       },
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.pedro,
         date: getDate(35),
@@ -86,7 +90,8 @@ module.exports = {
         updatedAt: getDate(35)
       },
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.maria,
         date: getDate(28),
@@ -97,7 +102,8 @@ module.exports = {
         updatedAt: getDate(28)
       },
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.joao,
         date: getDate(21),
@@ -108,7 +114,8 @@ module.exports = {
         updatedAt: getDate(21)
       },
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.pedro,
         date: getDate(14),
@@ -119,7 +126,8 @@ module.exports = {
         updatedAt: getDate(14)
       },
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.maria,
         date: getDate(7),
@@ -132,7 +140,8 @@ module.exports = {
 
       // System 3: Torre de Resfriamento 1 - inspections with issues
       {
-        systemId: systemMap.torre,
+        systemId: systemMap.torre.id,
+        clientId: systemMap.torre.clientId,
         stageId: null,
         userId: userMap.pedro,
         date: getDate(45),
@@ -143,7 +152,8 @@ module.exports = {
         updatedAt: getDate(45)
       },
       {
-        systemId: systemMap.torre,
+        systemId: systemMap.torre.id,
+        clientId: systemMap.torre.clientId,
         stageId: null,
         userId: userMap.joao,
         date: getDate(38),
@@ -154,7 +164,8 @@ module.exports = {
         updatedAt: getDate(38)
       },
       {
-        systemId: systemMap.torre,
+        systemId: systemMap.torre.id,
+        clientId: systemMap.torre.clientId,
         stageId: null,
         userId: userMap.pedro,
         date: getDate(30),
@@ -165,7 +176,8 @@ module.exports = {
         updatedAt: getDate(30)
       },
       {
-        systemId: systemMap.torre,
+        systemId: systemMap.torre.id,
+        clientId: systemMap.torre.clientId,
         stageId: null,
         userId: userMap.maria,
         date: getDate(15),
@@ -176,7 +188,8 @@ module.exports = {
         updatedAt: getDate(15)
       },
       {
-        systemId: systemMap.torre,
+        systemId: systemMap.torre.id,
+        clientId: systemMap.torre.clientId,
         stageId: null,
         userId: userMap.joao,
         date: getDate(5),
@@ -189,7 +202,8 @@ module.exports = {
 
       // System 5: Caldeira
       {
-        systemId: systemMap.caldeira,
+        systemId: systemMap.caldeira.id,
+        clientId: systemMap.caldeira.clientId,
         stageId: null,
         userId: userMap.joao,
         date: getDate(50),
@@ -200,7 +214,8 @@ module.exports = {
         updatedAt: getDate(50)
       },
       {
-        systemId: systemMap.caldeira,
+        systemId: systemMap.caldeira.id,
+        clientId: systemMap.caldeira.clientId,
         stageId: null,
         userId: userMap.pedro,
         date: getDate(20),
@@ -213,7 +228,8 @@ module.exports = {
 
       // System 6: ETA
       {
-        systemId: systemMap.eta,
+        systemId: systemMap.eta.id,
+        clientId: systemMap.eta.clientId,
         stageId: null,
         userId: userMap.pedro,
         date: getDate(40),
@@ -224,7 +240,8 @@ module.exports = {
         updatedAt: getDate(40)
       },
       {
-        systemId: systemMap.eta,
+        systemId: systemMap.eta.id,
+        clientId: systemMap.eta.clientId,
         stageId: null,
         userId: userMap.maria,
         date: getDate(25),
@@ -235,7 +252,8 @@ module.exports = {
         updatedAt: getDate(25)
       },
       {
-        systemId: systemMap.eta,
+        systemId: systemMap.eta.id,
+        clientId: systemMap.eta.clientId,
         stageId: null,
         userId: userMap.joao,
         date: getDate(10),
@@ -248,7 +266,8 @@ module.exports = {
 
       // System 7: ETE
       {
-        systemId: systemMap.ete,
+        systemId: systemMap.ete.id,
+        clientId: systemMap.ete.clientId,
         stageId: null,
         userId: userMap.maria,
         date: getDate(35),
@@ -259,7 +278,8 @@ module.exports = {
         updatedAt: getDate(35)
       },
       {
-        systemId: systemMap.ete,
+        systemId: systemMap.ete.id,
+        clientId: systemMap.ete.clientId,
         stageId: null,
         userId: userMap.pedro,
         date: getDate(18),
@@ -270,7 +290,8 @@ module.exports = {
         updatedAt: getDate(18)
       },
       {
-        systemId: systemMap.ete,
+        systemId: systemMap.ete.id,
+        clientId: systemMap.ete.clientId,
         stageId: null,
         userId: userMap.joao,
         date: getDate(3),
@@ -283,7 +304,8 @@ module.exports = {
 
       // Pending inspections (created in the past, waiting to be completed)
       {
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         stageId: null,
         userId: userMap.pedro,
         date: getDate(1),
@@ -294,7 +316,8 @@ module.exports = {
         updatedAt: getDate(1)
       },
       {
-        systemId: systemMap.torre,
+        systemId: systemMap.torre.id,
+        clientId: systemMap.torre.clientId,
         stageId: null,
         userId: userMap.maria,
         date: getDate(2),
@@ -305,7 +328,8 @@ module.exports = {
         updatedAt: getDate(2)
       },
       {
-        systemId: systemMap.caldeira,
+        systemId: systemMap.caldeira.id,
+        clientId: systemMap.caldeira.clientId,
         stageId: null,
         userId: userMap.joao,
         date: getDate(3),

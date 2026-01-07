@@ -30,24 +30,24 @@ module.exports = {
       else if (user.email === 'manager@lince.com') userMap.carlos = user.id; // Carlos (Manager)
     });
 
-    // Create system lookup by name
+    // Create system lookup by name (with clientId)
     const systemMap = {};
     systems.forEach(system => {
       // Client 1 systems
-      if (system.name === 'Piscina Principal - Hotel Sunset') systemMap.piscina = system.id;
-      else if (system.name === 'Piscina Infantil - Hotel Sunset') systemMap.infantil = system.id;
+      if (system.name === 'Piscina Principal - Hotel Sunset') systemMap.piscina = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'Piscina Infantil - Hotel Sunset') systemMap.infantil = { id: system.id, clientId: system.clientId };
       // Client 2 systems
-      else if (system.name === 'Torre de Resfriamento - Unidade 1') systemMap.torre = system.id;
-      else if (system.name === 'Torre de Resfriamento - Unidade 2') systemMap.torre2 = system.id;
+      else if (system.name === 'Torre de Resfriamento - Unidade 1') systemMap.torre = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'Torre de Resfriamento - Unidade 2') systemMap.torre2 = { id: system.id, clientId: system.clientId };
       // Client 3 systems
-      else if (system.name === 'Caldeira a Vapor - Principal') systemMap.caldeira = system.id;
-      else if (system.name === 'ETA - Estação de Tratamento') systemMap.eta = system.id;
-      else if (system.name === 'ETE - Tratamento de Efluentes') systemMap.ete = system.id;
-      else if (system.name === 'Sistema de Efluentes - Linha 1') systemMap.efluente = system.id;
+      else if (system.name === 'Caldeira a Vapor - Principal') systemMap.caldeira = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'ETA - Estação de Tratamento') systemMap.eta = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'ETE - Tratamento de Efluentes') systemMap.ete = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'Sistema de Efluentes - Linha 1') systemMap.efluente = { id: system.id, clientId: system.clientId };
       // Client 4 systems
-      else if (system.name === 'Piscina Aquecida - Área de Lazer') systemMap.piscinaClient4 = system.id;
-      else if (system.name === 'Torre de Resfriamento - Data Center') systemMap.torreClient4 = system.id;
-      else if (system.name === 'ETE - Corporativa') systemMap.eteClient4 = system.id;
+      else if (system.name === 'Piscina Aquecida - Área de Lazer') systemMap.piscinaClient4 = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'Torre de Resfriamento - Data Center') systemMap.torreClient4 = { id: system.id, clientId: system.clientId };
+      else if (system.name === 'ETE - Corporativa') systemMap.eteClient4 = { id: system.id, clientId: system.clientId };
     });
 
     // Create daily logs for the past 30 days across ALL client systems
@@ -57,7 +57,8 @@ module.exports = {
     // System 1: Piscina Principal (userId: Pedro technician)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
-        systemId: systemMap.piscina,
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
         userId: userMap.pedro,
         date: getDate(i),
         recordType: 'field',
@@ -80,7 +81,8 @@ module.exports = {
     // System 2: Piscina Infantil (userId: Maria technician)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
-        systemId: systemMap.infantil,
+        systemId: systemMap.infantil.id,
+        clientId: systemMap.infantil.clientId,
         userId: userMap.maria,
         date: getDate(i),
         recordType: 'field',
@@ -104,7 +106,8 @@ module.exports = {
     // System 3: Torre de Resfriamento 1 (userId: Pedro)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
-        systemId: systemMap.torre,
+        systemId: systemMap.torre.id,
+        clientId: systemMap.torre.clientId,
         userId: userMap.pedro,
         date: getDate(i),
         recordType: 'field',
@@ -129,7 +132,8 @@ module.exports = {
     // System 4: Torre de Resfriamento 2 (userId: Maria)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
-        systemId: systemMap.torre2,
+        systemId: systemMap.torre2.id,
+        clientId: systemMap.torre2.clientId,
         userId: userMap.maria,
         date: getDate(i),
         recordType: 'field',
@@ -153,7 +157,8 @@ module.exports = {
     // System 5: Caldeira (userId: João technician)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
-        systemId: systemMap.caldeira,
+        systemId: systemMap.caldeira.id,
+        clientId: systemMap.caldeira.clientId,
         userId: userMap.joao,
         date: getDate(i),
         recordType: 'field',
@@ -176,7 +181,8 @@ module.exports = {
     // System 6: ETA (userId: Pedro)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
-        systemId: systemMap.eta,
+        systemId: systemMap.eta.id,
+        clientId: systemMap.eta.clientId,
         userId: userMap.pedro,
         date: getDate(i),
         recordType: 'field',
@@ -199,7 +205,8 @@ module.exports = {
     // System 7: ETE (userId: Maria)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
-        systemId: systemMap.ete,
+        systemId: systemMap.ete.id,
+        clientId: systemMap.ete.clientId,
         userId: userMap.maria,
         date: getDate(i),
         recordType: 'field',
@@ -222,7 +229,8 @@ module.exports = {
     // System 8: Sistema de Efluentes Linha 1 (userId: João)
     for (let i = 0; i < 30; i++) {
       dailyLogs.push({
-        systemId: systemMap.efluente,
+        systemId: systemMap.efluente.id,
+        clientId: systemMap.efluente.clientId,
         userId: userMap.joao,
         date: getDate(i),
         recordType: 'field',
@@ -246,7 +254,8 @@ module.exports = {
     // System 9: Piscina Aquecida (userId: End customer admin - end customer does self-service)
     for (let i = 0; i < 20; i++) {
       dailyLogs.push({
-        systemId: systemMap.piscinaClient4,
+        systemId: systemMap.piscinaClient4.id,
+        clientId: systemMap.piscinaClient4.clientId,
         userId: userMap.endcustomer,
         date: getDate(i),
         recordType: 'field',
@@ -269,7 +278,8 @@ module.exports = {
     // System 10: Torre de Resfriamento Data Center (userId: Carlos - service provider manager)
     for (let i = 0; i < 25; i++) {
       dailyLogs.push({
-        systemId: systemMap.torreClient4,
+        systemId: systemMap.torreClient4.id,
+        clientId: systemMap.torreClient4.clientId,
         userId: userMap.carlos,
         date: getDate(i),
         recordType: 'field',
@@ -294,7 +304,8 @@ module.exports = {
     // System 11: ETE Corporativa (userId: End customer admin)
     for (let i = 0; i < 20; i++) {
       dailyLogs.push({
-        systemId: systemMap.eteClient4,
+        systemId: systemMap.eteClient4.id,
+        clientId: systemMap.eteClient4.clientId,
         userId: userMap.endcustomer,
         date: getDate(i),
         recordType: 'field',

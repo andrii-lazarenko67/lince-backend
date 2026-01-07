@@ -7,21 +7,36 @@ const libraryController = {
     try {
       const { category, systemId, search } = req.query;
 
-      const where = { isActive: true };
+      const where = {
+        isActive: true,
+        [Op.and]: []
+      };
 
-      // Client filtering - required for data isolation
+      // Client filtering - include BOTH shared documents (clientId = NULL) AND client-specific documents
       if (req.clientId) {
-        where.clientId = req.clientId;
+        where[Op.and].push({
+          [Op.or]: [
+            { clientId: null },           // Shared documents available to all clients
+            { clientId: req.clientId }    // Client-specific documents
+          ]
+        });
       }
 
       if (category) where.category = category;
       if (systemId) where.systemId = systemId;
       if (search) {
-        where[Op.or] = [
-          { title: { [Op.iLike]: `%${search}%` } },
-          { description: { [Op.iLike]: `%${search}%` } },
-          { fileName: { [Op.iLike]: `%${search}%` } }
-        ];
+        where[Op.and].push({
+          [Op.or]: [
+            { title: { [Op.iLike]: `%${search}%` } },
+            { description: { [Op.iLike]: `%${search}%` } },
+            { fileName: { [Op.iLike]: `%${search}%` } }
+          ]
+        });
+      }
+
+      // Remove empty Op.and if no conditions were added
+      if (where[Op.and].length === 0) {
+        delete where[Op.and];
       }
 
       const documents = await Document.findAll({
@@ -44,12 +59,13 @@ const libraryController = {
 
   async getById(req, res, next) {
     try {
-      const where = { id: req.params.id };
-
-      // Client filtering
-      if (req.clientId) {
-        where.clientId = req.clientId;
-      }
+      const where = {
+        id: req.params.id,
+        [Op.or]: req.clientId ? [
+          { clientId: null },           // Shared documents
+          { clientId: req.clientId }    // Client-specific documents
+        ] : undefined
+      };
 
       const document = await Document.findOne({
         where,

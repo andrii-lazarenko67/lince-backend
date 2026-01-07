@@ -1,5 +1,28 @@
-const { System, DailyLog, DailyLogEntry, Inspection, Incident, Product, NotificationRecipient, User, MonitoringPoint } = require('../../db/models');
+const { System, DailyLog, DailyLogEntry, Inspection, Incident, Product, NotificationRecipient, User, MonitoringPoint, UserClient } = require('../../db/models');
 const { Op } = require('sequelize');
+
+/**
+ * Helper function to build clientId filter for dashboard queries
+ */
+async function getClientFilter(req) {
+  if (req.clientId) {
+    // Specific client selected
+    return req.clientId;
+  } else if (req.user && req.user.isServiceProvider) {
+    // No client selected but service provider - get all their clients
+    const userClients = await UserClient.findAll({
+      where: { userId: req.user.id },
+      attributes: ['clientId']
+    });
+    const clientIds = userClients.map(uc => uc.clientId);
+    if (clientIds.length > 0) {
+      return { [Op.in]: clientIds };
+    } else {
+      return -1; // No clients - return non-existent ID
+    }
+  }
+  return req.clientId; // End customer case
+}
 
 const dashboardController = {
   async getStats(req, res, next) {
@@ -8,27 +31,53 @@ const dashboardController = {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
 
+      // Get client filter
+      const clientFilter = await getClientFilter(req);
+
       // Get counts filtered by clientId
-      const totalSystems = await System.count({ where: { status: 'active', clientId: req.clientId } });
+      const totalSystems = await System.count({ where: { status: 'active', clientId: clientFilter } });
       const totalUsers = await User.count({ where: { isActive: true } });
 
-      const todayLogs = await DailyLog.count({ where: { date: today, clientId: req.clientId } });
+      const todayLogs = await DailyLog.count({ where: { date: today, clientId: clientFilter } });
       const weekLogs = await DailyLog.count({
-        where: { date: { [Op.gte]: weekAgo.toISOString().split('T')[0] }, clientId: req.clientId }
+        where: { date: { [Op.gte]: weekAgo.toISOString().split('T')[0] }, clientId: clientFilter }
       });
 
-      const openIncidents = await Incident.count({ where: { status: 'open', clientId: req.clientId } });
+      const openIncidents = await Incident.count({ where: { status: 'open', clientId: clientFilter } });
       const totalIncidentsThisWeek = await Incident.count({
-        where: { createdAt: { [Op.gte]: weekAgo }, clientId: req.clientId }
+        where: { createdAt: { [Op.gte]: weekAgo }, clientId: clientFilter }
       });
 
-      const pendingInspections = await Inspection.count({ where: { status: 'pending', clientId: req.clientId } });
+      const pendingInspections = await Inspection.count({ where: { status: 'pending', clientId: clientFilter } });
       const inspectionsThisWeek = await Inspection.count({
-        where: { date: { [Op.gte]: weekAgo }, clientId: req.clientId }
+        where: { date: { [Op.gte]: weekAgo }, clientId: clientFilter }
       });
 
       // Low stock products filtered by clientId
-      const products = await Product.findAll({ where: { isActive: true, clientId: req.clientId } });
+      const productWhere = { isActive: true };
+      if (req.clientId) {
+        // Specific client - show shared + client-specific products
+        productWhere[Op.or] = [
+          { clientId: null },
+          { clientId: clientFilter }
+        ];
+      } else if (req.user && req.user.isServiceProvider) {
+        // No client selected - show shared + all their clients' products
+        const userClients = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const clientIds = userClients.map(uc => uc.clientId);
+        if (clientIds.length > 0) {
+          productWhere[Op.or] = [
+            { clientId: null },
+            { clientId: { [Op.in]: clientIds } }
+          ];
+        } else {
+          productWhere.clientId = null; // Only shared products
+        }
+      }
+      const products = await Product.findAll({ where: productWhere });
       const lowStockProducts = products.filter(p =>
         p.minStockAlert && parseFloat(p.currentStock) <= parseFloat(p.minStockAlert)
       ).length;
@@ -40,7 +89,7 @@ const dashboardController = {
 
       // Out of range readings today filtered by clientId
       const todayDailyLogs = await DailyLog.findAll({
-        where: { date: today, clientId: req.clientId },
+        where: { date: today, clientId: clientFilter },
         include: [{ model: DailyLogEntry, as: 'entries' }]
       });
       const outOfRangeToday = todayDailyLogs.reduce((acc, log) => {
@@ -87,8 +136,11 @@ const dashboardController = {
     try {
       const limit = parseInt(req.query.limit) || 10;
 
+      // Get client filter
+      const clientFilter = await getClientFilter(req);
+
       const recentLogs = await DailyLog.findAll({
-        where: { clientId: req.clientId },
+        where: { clientId: clientFilter },
         include: [
           { model: User, as: 'user', attributes: ['id', 'name'] },
           { model: System, as: 'system', attributes: ['id', 'name'] }
@@ -98,7 +150,7 @@ const dashboardController = {
       });
 
       const recentInspections = await Inspection.findAll({
-        where: { clientId: req.clientId },
+        where: { clientId: clientFilter },
         include: [
           { model: User, as: 'user', attributes: ['id', 'name'] },
           { model: System, as: 'system', attributes: ['id', 'name'] }
@@ -108,7 +160,7 @@ const dashboardController = {
       });
 
       const recentIncidents = await Incident.findAll({
-        where: { clientId: req.clientId },
+        where: { clientId: clientFilter },
         include: [
           { model: User, as: 'reporter', attributes: ['id', 'name'] },
           { model: System, as: 'system', attributes: ['id', 'name'] }
@@ -163,9 +215,12 @@ const dashboardController = {
     try {
       const alerts = [];
 
+      // Get client filter
+      const clientFilter = await getClientFilter(req);
+
       // Open incidents filtered by clientId
       const openIncidents = await Incident.findAll({
-        where: { status: 'open', clientId: req.clientId },
+        where: { status: 'open', clientId: clientFilter },
         include: [{ model: System, as: 'system', attributes: ['id', 'name'] }],
         order: [
           ['priority', 'DESC'],
@@ -187,7 +242,30 @@ const dashboardController = {
       });
 
       // Low stock products filtered by clientId
-      const products = await Product.findAll({ where: { isActive: true, clientId: req.clientId } });
+      const productWhere = { isActive: true };
+      if (req.clientId) {
+        // Specific client - show shared + client-specific products
+        productWhere[Op.or] = [
+          { clientId: null },
+          { clientId: clientFilter }
+        ];
+      } else if (req.user && req.user.isServiceProvider) {
+        // No client selected - show shared + all their clients' products
+        const userClients = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const clientIds = userClients.map(uc => uc.clientId);
+        if (clientIds.length > 0) {
+          productWhere[Op.or] = [
+            { clientId: null },
+            { clientId: { [Op.in]: clientIds } }
+          ];
+        } else {
+          productWhere.clientId = null; // Only shared products
+        }
+      }
+      const products = await Product.findAll({ where: productWhere });
       const lowStockProducts = products.filter(p =>
         p.minStockAlert && parseFloat(p.currentStock) <= parseFloat(p.minStockAlert)
       );
@@ -207,7 +285,7 @@ const dashboardController = {
       // Today's out of range readings filtered by clientId
       const today = new Date().toISOString().split('T')[0];
       const todayLogs = await DailyLog.findAll({
-        where: { date: today, clientId: req.clientId },
+        where: { date: today, clientId: clientFilter },
         include: [
           { model: System, as: 'system', attributes: ['id', 'name'] },
           {

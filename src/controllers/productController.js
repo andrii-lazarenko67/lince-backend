@@ -103,9 +103,33 @@ const productController = {
 
       const where = {};
 
-      // Client filtering - required for data isolation
+      // Client filtering - include BOTH shared products (clientId = NULL) AND client-specific products
       if (req.clientId) {
-        where.clientId = req.clientId;
+        // Specific client selected - show shared + that client's products
+        where[Op.or] = [
+          { clientId: null },           // Shared products available to all clients
+          { clientId: req.clientId }    // Client-specific products
+        ];
+      } else if (req.user && req.user.isServiceProvider) {
+        // No client selected but service provider - show shared + all their clients' products
+        const { UserClient } = require('../../db/models');
+        const userClients = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const clientIds = userClients.map(uc => uc.clientId);
+        if (clientIds.length > 0) {
+          where[Op.or] = [
+            { clientId: null },                 // Shared products
+            { clientId: { [Op.in]: clientIds } } // All their clients' products
+          ];
+        } else {
+          // No clients - show only shared products
+          where.clientId = null;
+        }
+      } else {
+        // End customer with no client (shouldn't happen) - show only shared
+        where.clientId = null;
       }
 
       if (typeId) where.typeId = typeId;
@@ -176,12 +200,13 @@ const productController = {
 
   async getById(req, res, next) {
     try {
-      const where = { id: req.params.id };
-
-      // Client filtering
-      if (req.clientId) {
-        where.clientId = req.clientId;
-      }
+      const where = {
+        id: req.params.id,
+        [Op.or]: req.clientId ? [
+          { clientId: null },           // Shared products
+          { clientId: req.clientId }    // Client-specific products
+        ] : undefined
+      };
 
       const product = await Product.findOne({
         where,
@@ -211,11 +236,14 @@ const productController = {
     try {
       const { startDate, endDate } = req.query;
 
-      // Verify product belongs to client
-      const productWhere = { id: req.params.id };
-      if (req.clientId) {
-        productWhere.clientId = req.clientId;
-      }
+      // Verify product belongs to client - include both shared and client-specific products
+      const productWhere = {
+        id: req.params.id,
+        [Op.or]: req.clientId ? [
+          { clientId: null },           // Shared products
+          { clientId: req.clientId }    // Client-specific products
+        ] : undefined
+      };
 
       const product = await Product.findOne({ where: productWhere });
       if (!product) {

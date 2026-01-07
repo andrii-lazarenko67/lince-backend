@@ -1,4 +1,4 @@
-const { DailyLog, DailyLogEntry, MonitoringPoint, System, User, Parameter, Unit } = require('../../db/models');
+const { DailyLog, DailyLogEntry, MonitoringPoint, System, User, Parameter, Unit, UserClient } = require('../../db/models');
 const { Op } = require('sequelize');
 const notificationService = require('../services/notificationService');
 
@@ -11,7 +11,20 @@ const dailyLogController = {
 
       // Client filtering for service provider mode
       if (req.clientId) {
+        // Specific client selected - show only that client's data
         where.clientId = req.clientId;
+      } else if (req.user && req.user.isServiceProvider) {
+        // No client selected but service provider - show all their clients' data
+        const userClients = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const clientIds = userClients.map(uc => uc.clientId);
+        if (clientIds.length > 0) {
+          where.clientId = { [Op.in]: clientIds };
+        } else {
+          where.clientId = -1; // No clients - return empty
+        }
       }
 
       if (systemId) where.systemId = systemId;

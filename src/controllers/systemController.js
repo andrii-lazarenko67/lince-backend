@@ -1,4 +1,4 @@
-const { System, SystemType, MonitoringPoint, ChecklistItem } = require('../../db/models');
+const { System, SystemType, MonitoringPoint, ChecklistItem, UserClient } = require('../../db/models');
 const { Op } = require('sequelize');
 
 const systemController = {
@@ -10,7 +10,21 @@ const systemController = {
 
       // Client filtering for service provider mode
       if (req.clientId) {
+        // Specific client selected - show only that client's systems
         where.clientId = req.clientId;
+      } else if (req.user && req.user.isServiceProvider) {
+        // No client selected but service provider - show all their clients' systems
+        const userClients = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const clientIds = userClients.map(uc => uc.clientId);
+        if (clientIds.length > 0) {
+          where.clientId = { [Op.in]: clientIds };
+        } else {
+          // No clients assigned - return empty
+          where.clientId = -1; // Non-existent ID to return empty result
+        }
       }
 
       if (status) where.status = status;
