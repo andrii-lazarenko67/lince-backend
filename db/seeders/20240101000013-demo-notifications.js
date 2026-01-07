@@ -26,6 +26,14 @@ module.exports = {
       else if (user.email === 'joao.ferreira@lince.com') userMap.joao = user.id;
     });
 
+    // Fetch actual client IDs
+    const clients = await queryInterface.sequelize.query(
+      'SELECT id, name FROM "Clients" ORDER BY id',
+      { type: Sequelize.QueryTypes.SELECT }
+    );
+    const defaultClientId = clients.length > 0 ? clients[0].id : null;
+    const adminClientId = clients.length > 3 ? clients[3].id : null; // Client ID 4 for admin user
+
     // Fetch actual system IDs
     const systems = await queryInterface.sequelize.query(
       'SELECT id, name FROM "Systems" WHERE "parentId" IS NULL ORDER BY id',
@@ -85,6 +93,7 @@ module.exports = {
         priority: 'critical',
         referenceType: 'Incident',
         referenceId: incidentMap[3] || null,
+        clientId: defaultClientId,
         createdById: userMap.carlos,
         createdAt: getDate(5, 10)
       },
@@ -95,6 +104,7 @@ module.exports = {
         priority: 'medium',
         referenceType: 'Incident',
         referenceId: incidentMap[3] || null,
+        clientId: defaultClientId,
         createdById: userMap.carlos,
         createdAt: getDate(3, 16)
       },
@@ -105,6 +115,7 @@ module.exports = {
         priority: 'medium',
         referenceType: 'Inspection',
         referenceId: inspectionMap[25] || inspectionMap[1] || null,
+        clientId: defaultClientId,
         createdById: userMap.carlos,
         createdAt: getDate(0, 8)
       },
@@ -115,6 +126,7 @@ module.exports = {
         priority: 'high',
         referenceType: 'Product',
         referenceId: productMap[1] || null,
+        clientId: defaultClientId,
         createdById: null,
         createdAt: getDate(1, 9)
       },
@@ -125,6 +137,7 @@ module.exports = {
         priority: 'high',
         referenceType: 'System',
         referenceId: systemMap.piscina,
+        clientId: defaultClientId,
         createdById: null,
         createdAt: getDate(7, 10)
       },
@@ -135,6 +148,7 @@ module.exports = {
         priority: 'medium',
         referenceType: 'Incident',
         referenceId: incidentMap[9] || null,
+        clientId: defaultClientId,
         createdById: userMap.ana,
         createdAt: getDate(3, 8)
       },
@@ -145,6 +159,7 @@ module.exports = {
         priority: 'low',
         referenceType: 'Inspection',
         referenceId: inspectionMap[18] || inspectionMap[1] || null,
+        clientId: defaultClientId,
         createdById: userMap.ana,
         createdAt: getDate(10, 11)
       },
@@ -155,6 +170,7 @@ module.exports = {
         priority: 'high',
         referenceType: 'Product',
         referenceId: productMap[10] || productMap[1] || null,
+        clientId: defaultClientId,
         createdById: null,
         createdAt: getDate(2, 14)
       },
@@ -165,6 +181,7 @@ module.exports = {
         priority: 'low',
         referenceType: null,
         referenceId: null,
+        clientId: defaultClientId,
         createdById: userMap.carlos,
         createdAt: getDate(0, 6)
       },
@@ -175,6 +192,7 @@ module.exports = {
         priority: 'medium',
         referenceType: 'System',
         referenceId: systemMap.eta,
+        clientId: defaultClientId,
         createdById: userMap.carlos,
         createdAt: getDate(5, 9)
       },
@@ -185,6 +203,7 @@ module.exports = {
         priority: 'high',
         referenceType: 'System',
         referenceId: systemMap.eta,
+        clientId: defaultClientId,
         createdById: null,
         createdAt: getDate(20, 6)
       },
@@ -195,10 +214,51 @@ module.exports = {
         priority: 'low',
         referenceType: 'System',
         referenceId: systemMap.piscina,
+        clientId: defaultClientId,
         createdById: null,
         createdAt: getDate(1, 7)
       }
     ];
+
+    // Add notifications for admin user's client (clientId 4) if it exists
+    if (adminClientId) {
+      const adminNotifications = [
+        {
+          type: 'alert',
+          title: 'notifications.seed.parameterOutOfRange.title',
+          message: 'notifications.seed.parameterOutOfRange.message',
+          priority: 'high',
+          referenceType: null,
+          referenceId: null,
+          clientId: adminClientId,
+          createdById: userMap.carlos || null,
+          createdAt: getDate(2, 14)
+        },
+        {
+          type: 'system',
+          title: 'notifications.seed.monthlyReport.title',
+          message: 'notifications.seed.monthlyReport.message',
+          priority: 'low',
+          referenceType: null,
+          referenceId: null,
+          clientId: adminClientId,
+          createdById: userMap.carlos || null,
+          createdAt: getDate(1, 9)
+        },
+        {
+          type: 'system',
+          title: 'notifications.seed.recordReminder.title',
+          message: 'notifications.seed.recordReminder.message',
+          priority: 'low',
+          referenceType: null,
+          referenceId: null,
+          clientId: adminClientId,
+          createdById: null,
+          createdAt: getDate(0, 7)
+        }
+      ];
+      notifications.push(...adminNotifications);
+    }
 
     await queryInterface.bulkInsert('Notifications', notifications, {});
 
@@ -212,7 +272,7 @@ module.exports = {
     const allUserIds = users.map(u => u.id);
     const recipients = [];
 
-    const daysOldArray = [5, 3, 0, 1, 7, 3, 10, 2, 0, 5, 20, 1];
+    const daysOldArray = [5, 3, 0, 1, 7, 3, 10, 2, 0, 5, 20, 1, 2, 1, 0]; // Added 3 more for admin notifications
     const now = new Date();
 
     insertedNotifications.forEach((notification, index) => {
