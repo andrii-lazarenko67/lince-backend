@@ -1,4 +1,4 @@
-const { ChecklistItem, System } = require('../../db/models');
+const { ChecklistItem, System, UserClient } = require('../../db/models');
 
 const checklistItemController = {
   async getAll(req, res, next) {
@@ -42,16 +42,37 @@ const checklistItemController = {
     try {
       const { systemId } = req.params;
 
-      // Verify system belongs to client
-      const system = await System.findOne({
-        where: { id: systemId, clientId: req.clientId }
-      });
+      // Build where clause for system lookup
+      const where = { id: systemId };
+      if (req.clientId) {
+        where.clientId = req.clientId;
+      }
+
+      // Verify system exists and belongs to client (if clientId is set)
+      const system = await System.findOne({ where });
 
       if (!system) {
         return res.status(404).json({
           success: false,
           messageKey: 'systems.errors.notFound'
         });
+      }
+
+      // For service providers without clientId, verify they have access to this system's client
+      if (req.user.isServiceProvider && !req.clientId) {
+        const userClient = await UserClient.findOne({
+          where: {
+            userId: req.user.id,
+            clientId: system.clientId
+          }
+        });
+
+        if (!userClient) {
+          return res.status(403).json({
+            success: false,
+            messageKey: 'errors.noClientAccess'
+          });
+        }
       }
 
       const checklistItems = await ChecklistItem.findAll({

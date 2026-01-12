@@ -1,10 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const checklistItemController = require('../controllers/checklistItemController');
-const authMiddleware = require('../middlewares/authMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
-
-router.use(authMiddleware);
 
 router.get('/', checklistItemController.getAll);
 router.get('/system/:systemId', checklistItemController.getBySystem);

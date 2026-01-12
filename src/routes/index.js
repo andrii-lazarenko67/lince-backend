@@ -34,7 +34,7 @@ router.use('/clients', clientRoutes);
 router.use('/systems', authMiddleware, clientContextMiddleware, systemRoutes);
 router.use('/system-types', systemTypeRoutes);
 router.use('/monitoring-points', monitoringPointRoutes);
-router.use('/checklist-items', checklistItemRoutes);
+router.use('/checklist-items', authMiddleware, clientContextMiddleware, checklistItemRoutes);
 router.use('/daily-logs', authMiddleware, clientContextMiddleware, dailyLogRoutes);
 router.use('/inspections', authMiddleware, clientContextMiddleware, inspectionRoutes);
 router.use('/incidents', authMiddleware, clientContextMiddleware, incidentRoutes);
