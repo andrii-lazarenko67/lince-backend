@@ -16,7 +16,7 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false },
+            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, includeDetailedAnalysis: false },
             { type: 'inspections', enabled: true, order: 5, includePhotos: true },
             { type: 'conclusion', enabled: true, order: 6 },
             { type: 'signature', enabled: true, order: 7 }
@@ -49,7 +49,7 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false },
+            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, includeDetailedAnalysis: false },
             { type: 'inspections', enabled: true, order: 5, includePhotos: true },
             { type: 'conclusion', enabled: true, order: 6 },
             { type: 'signature', enabled: true, order: 7 }
@@ -82,7 +82,7 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false },
+            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, includeDetailedAnalysis: false },
             { type: 'inspections', enabled: true, order: 5, includePhotos: true },
             { type: 'conclusion', enabled: true, order: 6 },
             { type: 'signature', enabled: true, order: 7 }
@@ -115,7 +115,7 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false },
+            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, includeDetailedAnalysis: false },
             { type: 'occurrences', enabled: true, order: 5, includeTimeline: true },
             { type: 'conclusion', enabled: true, order: 6 }
           ],
@@ -147,7 +147,7 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false },
+            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, includeDetailedAnalysis: false },
             { type: 'inspections', enabled: true, order: 5, includePhotos: true },
             { type: 'conclusion', enabled: true, order: 6 }
           ],
@@ -179,7 +179,7 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false },
+            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, includeDetailedAnalysis: false },
             { type: 'occurrences', enabled: true, order: 5, includeTimeline: true },
             { type: 'conclusion', enabled: true, order: 6 }
           ],
@@ -210,7 +210,7 @@ module.exports = {
           blocks: [
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
-            { type: 'analyses', enabled: true, order: 3, includeCharts: true, highlightAlerts: false },
+            { type: 'analyses', enabled: true, order: 3, includeCharts: true, highlightAlerts: false, includeDetailedAnalysis: false },
             { type: 'conclusion', enabled: true, order: 4 }
           ],
           branding: {
