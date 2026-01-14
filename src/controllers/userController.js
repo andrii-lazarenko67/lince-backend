@@ -1,5 +1,6 @@
 const { User } = require('../../db/models');
 const { Op } = require('sequelize');
+const uploadService = require('../services/uploadService');
 
 const userController = {
   async getAll(req, res, next) {
@@ -155,6 +156,53 @@ const userController = {
       res.json({
         success: true,
         data: req.user
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async uploadAvatar(req, res, next) {
+    try {
+      const userId = req.params.id;
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'users.errors.avatarRequired'
+        });
+      }
+
+      const user = await User.findByPk(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          messageKey: 'users.errors.notFound'
+        });
+      }
+
+      // Delete old avatar from Cloudinary if exists
+      if (user.avatar) {
+        const urlParts = user.avatar.split('/');
+        const filename = urlParts[urlParts.length - 1];
+        const publicId = `lince/avatars/${filename.split('.')[0]}`;
+        try {
+          await uploadService.deleteImage(publicId);
+        } catch (error) {
+          console.error('Error deleting old avatar:', error);
+        }
+      }
+
+      // Upload new avatar to Cloudinary
+      const result = await uploadService.uploadImage(req.file.buffer, 'avatars');
+
+      // Update user with new avatar URL
+      await user.update({ avatar: result.secure_url });
+
+      res.json({
+        success: true,
+        data: user
       });
     } catch (error) {
       next(error);

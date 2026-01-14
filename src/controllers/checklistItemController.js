@@ -115,6 +115,22 @@ const checklistItemController = {
     try {
       const { systemId, name, description, isRequired, order } = req.body;
 
+      // Validate name is provided
+      if (!name || !name.trim()) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'checklistItems.errors.nameRequired'
+        });
+      }
+
+      // Validate order is non-negative if provided
+      if (order !== undefined && (typeof order !== 'number' || order < 0)) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'checklistItems.errors.invalidOrder'
+        });
+      }
+
       // Validate system exists and belongs to client
       const where = { id: systemId };
       if (req.clientId) {
@@ -130,7 +146,7 @@ const checklistItemController = {
 
       const checklistItem = await ChecklistItem.create({
         systemId,
-        name,
+        name: name.trim(),
         description,
         isRequired: isRequired || false,
         order: order || 0
@@ -148,6 +164,22 @@ const checklistItemController = {
   async update(req, res, next) {
     try {
       const { name, description, isRequired, order, isActive } = req.body;
+
+      // Validate name if provided
+      if (name !== undefined && (!name || !name.trim())) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'checklistItems.errors.nameRequired'
+        });
+      }
+
+      // Validate order is non-negative if provided
+      if (order !== undefined && (typeof order !== 'number' || order < 0)) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'checklistItems.errors.invalidOrder'
+        });
+      }
 
       const checklistItem = await ChecklistItem.findByPk(req.params.id, {
         include: [{ model: System, as: 'system' }]
@@ -169,7 +201,7 @@ const checklistItemController = {
       }
 
       await checklistItem.update({
-        name: name || checklistItem.name,
+        name: name ? name.trim() : checklistItem.name,
         description: description !== undefined ? description : checklistItem.description,
         isRequired: isRequired !== undefined ? isRequired : checklistItem.isRequired,
         order: order !== undefined ? order : checklistItem.order,

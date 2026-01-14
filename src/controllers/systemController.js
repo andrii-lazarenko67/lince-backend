@@ -330,19 +330,48 @@ const systemController = {
           });
         }
 
-        // Prevent circular reference (parent can't be a child of this system)
-        const checkCircular = async (checkId, targetId) => {
-          const checkSystem = await System.findByPk(checkId);
-          if (!checkSystem || !checkSystem.parentId) return false;
-          if (checkSystem.parentId === targetId) return true;
-          return await checkCircular(checkSystem.parentId, targetId);
-        };
+        // Verify parent belongs to the same client
+        if (req.clientId && parent.clientId !== req.clientId) {
+          return res.status(403).json({
+            success: false,
+            messageKey: 'errors.noClientAccess'
+          });
+        }
 
-        const isCircular = await checkCircular(parentId, parseInt(req.params.id));
-        if (isCircular) {
+        // Prevent circular reference using iterative approach with depth limit
+        const MAX_DEPTH = 100;
+        let currentId = parentId;
+        let depth = 0;
+        const targetId = parseInt(req.params.id);
+
+        while (currentId && depth < MAX_DEPTH) {
+          const currentSystem = await System.findByPk(currentId, { attributes: ['id', 'parentId'] });
+          if (!currentSystem || !currentSystem.parentId) break;
+          if (currentSystem.parentId === targetId) {
+            return res.status(400).json({
+              success: false,
+              messageKey: 'systems.errors.circularReference'
+            });
+          }
+          currentId = currentSystem.parentId;
+          depth++;
+        }
+
+        if (depth >= MAX_DEPTH) {
           return res.status(400).json({
             success: false,
-            messageKey: 'systems.errors.circularReference'
+            messageKey: 'systems.errors.hierarchyTooDeep'
+          });
+        }
+      }
+
+      // If systemTypeId is not being changed, verify the existing one is still valid
+      if (systemTypeId === undefined && system.systemTypeId) {
+        const existingType = await SystemType.findByPk(system.systemTypeId);
+        if (!existingType) {
+          return res.status(400).json({
+            success: false,
+            messageKey: 'systems.errors.typeInvalidOrDeleted'
           });
         }
       }
