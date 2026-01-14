@@ -1,4 +1,4 @@
-const { GeneratedReport, ReportTemplate, User, Client, System, DailyLog, DailyLogEntry, MonitoringPoint, Inspection, InspectionItem, InspectionPhoto, Incident, IncidentPhoto, IncidentComment, Product, ProductUsage, ChecklistItem, SystemPhoto, UserClient } = require('../../db/models');
+const { GeneratedReport, ReportTemplate, User, Client, System, SystemType, DailyLog, DailyLogEntry, MonitoringPoint, Inspection, InspectionItem, InspectionPhoto, Incident, IncidentPhoto, IncidentComment, Product, ProductUsage, ChecklistItem, SystemPhoto, UserClient } = require('../../db/models');
 const { Op } = require('sequelize');
 const cloudinary = require('../config/cloudinary');
 
@@ -174,15 +174,25 @@ const generatedReportController = {
         ]
       };
 
-      // Build system filter
+      // Build system filter - only fetch parent systems (parentId is null)
+      // to avoid fetching children as top-level items
       const systemFilter = systemIds && systemIds.length > 0
-        ? { id: { [Op.in]: systemIds }, clientId }
-        : { clientId };
+        ? { id: { [Op.in]: systemIds }, clientId, parentId: { [Op.is]: null } }
+        : { clientId, parentId: { [Op.is]: null } };
 
-      // Fetch systems
+      // Fetch systems with their type and children (stages/sub-systems)
       const systems = await System.findAll({
         where: systemFilter,
-        include: [{ model: SystemPhoto, as: 'photos' }]
+        include: [
+          { model: SystemPhoto, as: 'photos' },
+          { model: SystemType, as: 'systemType', attributes: ['id', 'name'] },
+          {
+            model: System,
+            as: 'children',
+            attributes: ['id', 'name', 'status', 'description'],
+            include: [{ model: SystemType, as: 'systemType', attributes: ['id', 'name'] }]
+          }
+        ]
       });
 
       const systemIdList = systems.map(s => s.id);
