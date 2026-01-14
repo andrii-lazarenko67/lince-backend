@@ -1,4 +1,5 @@
 const { MonitoringPoint, System, Parameter, Unit } = require('../../db/models');
+const { Op } = require('sequelize');
 
 const monitoringPointController = {
   async getAll(req, res, next) {
@@ -237,6 +238,65 @@ const monitoringPointController = {
       res.json({
         success: true,
         messageKey: 'monitoringPoints.success.deleted'
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Get monitoring points formatted for chart configuration
+  async getForChartConfig(req, res, next) {
+    try {
+      const clientId = req.clientId;
+      const { systemIds } = req.query;
+
+      const where = {};
+
+      if (systemIds) {
+        const ids = systemIds.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
+        if (ids.length > 0) {
+          where.systemId = { [Op.in]: ids };
+        }
+      }
+
+      // Build system where clause for client filtering
+      const systemWhere = {};
+      if (clientId) {
+        systemWhere.clientId = clientId;
+      }
+
+      // Get monitoring points with their parameters and units
+      const monitoringPoints = await MonitoringPoint.findAll({
+        where,
+        include: [
+          {
+            model: System,
+            as: 'system',
+            attributes: ['id', 'name', 'clientId'],
+            where: Object.keys(systemWhere).length > 0 ? systemWhere : undefined
+          },
+          { model: Parameter, as: 'parameterObj', attributes: ['id', 'name'] },
+          { model: Unit, as: 'unitObj', attributes: ['id', 'abbreviation'] }
+        ],
+        order: [['name', 'ASC']]
+      });
+
+      // Format response for chart config UI
+      const formatted = monitoringPoints.map(mp => ({
+        id: mp.id,
+        name: mp.name,
+        systemId: mp.systemId,
+        systemName: mp.system?.name || '',
+        parameterName: mp.parameterObj?.name || mp.name,
+        unit: mp.unitObj?.abbreviation || '',
+        minValue: mp.minValue !== null ? parseFloat(mp.minValue) : null,
+        maxValue: mp.maxValue !== null ? parseFloat(mp.maxValue) : null,
+        hasSpecLimits: mp.minValue !== null || mp.maxValue !== null
+      }));
+
+      res.json({
+        success: true,
+        data: formatted
       });
     } catch (error) {
       next(error);

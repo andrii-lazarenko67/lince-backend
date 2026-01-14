@@ -1,6 +1,7 @@
 const { GeneratedReport, ReportTemplate, User, Client, System, SystemType, DailyLog, DailyLogEntry, MonitoringPoint, Inspection, InspectionItem, InspectionPhoto, Incident, IncidentPhoto, IncidentComment, Product, ProductUsage, ChecklistItem, SystemPhoto, UserClient } = require('../../db/models');
 const { Op } = require('sequelize');
 const cloudinary = require('../config/cloudinary');
+const chartDataService = require('../services/chartDataService');
 
 const generatedReportController = {
   // Get all generated reports (history)
@@ -328,6 +329,70 @@ const generatedReportController = {
           name: req.user.name
         }
       };
+
+      // Prepare chart data if charts are enabled
+      let chartData = null;
+      const analysesBlock = reportConfig.blocks?.find(b => b.type === 'analyses');
+
+      if (analysesBlock?.includeCharts && analysesBlock?.chartConfig?.enabled) {
+        const chartConfig = analysesBlock.chartConfig;
+
+        // Get monitoring point IDs from config, or use all from the systems
+        let chartMonitoringPointIds = chartConfig.parameters?.map(p => p.monitoringPointId) || [];
+
+        // If no specific monitoring points selected, get top 5 by data volume
+        if (chartMonitoringPointIds.length === 0) {
+          const allMps = await MonitoringPoint.findAll({
+            where: systemIdList.length > 0 ? { systemId: { [Op.in]: systemIdList } } : {},
+            attributes: ['id'],
+            limit: 5
+          });
+          chartMonitoringPointIds = allMps.map(mp => mp.id);
+        }
+
+        // Prepare field charts
+        const fieldCharts = await chartDataService.prepareChartData({
+          clientId,
+          systemIds: systemIdList,
+          startDate: start.toISOString().split('T')[0],
+          endDate: end.toISOString().split('T')[0],
+          monitoringPointIds: chartMonitoringPointIds,
+          aggregation: chartConfig.aggregation || 'daily',
+          recordType: 'field'
+        });
+
+        // Prepare laboratory charts
+        const laboratoryCharts = await chartDataService.prepareChartData({
+          clientId,
+          systemIds: systemIdList,
+          startDate: start.toISOString().split('T')[0],
+          endDate: end.toISOString().split('T')[0],
+          monitoringPointIds: chartMonitoringPointIds,
+          aggregation: chartConfig.aggregation || 'daily',
+          recordType: 'laboratory'
+        });
+
+        // Apply colors from config
+        const applyColors = (charts) => {
+          const defaultColors = ['#1976d2', '#dc004e', '#ff9800', '#4caf50', '#9c27b0', '#00bcd4'];
+          return charts.map((chart, index) => {
+            const paramConfig = chartConfig.parameters?.find(p => p.monitoringPointId === chart.monitoringPointId);
+            return {
+              ...chart,
+              color: paramConfig?.color || chartConfig.colors?.primary || defaultColors[index % defaultColors.length],
+              showSpecLimit: paramConfig?.showSpecLimit !== false
+            };
+          });
+        };
+
+        chartData = {
+          fieldCharts: applyColors(fieldCharts),
+          laboratoryCharts: applyColors(laboratoryCharts)
+        };
+      }
+
+      // Add chartData to reportData
+      reportData.chartData = chartData;
 
       // Generate report name if not provided
       const reportName = name || `Report - ${client.name} - ${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]}`;

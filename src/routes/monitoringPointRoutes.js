@@ -7,6 +7,7 @@ const roleMiddleware = require('../middlewares/roleMiddleware');
 router.use(authMiddleware);
 
 router.get('/', monitoringPointController.getAll);
+router.get('/for-chart-config', monitoringPointController.getForChartConfig);
 router.get('/system/:systemId', monitoringPointController.getBySystem);
 router.get('/:id', monitoringPointController.getById);
 router.post('/', roleMiddleware('manager', 'admin'), monitoringPointController.create);
