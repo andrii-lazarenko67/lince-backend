@@ -325,6 +325,129 @@ module.exports = {
       });
     }
 
+    // ===== LABORATORY RECORDS =====
+    // Add laboratory analysis records for various systems (weekly frequency)
+
+    // Laboratory records for Piscina Principal - Client 1 (weekly)
+    for (let i = 0; i < 5; i++) {
+      dailyLogs.push({
+        systemId: systemMap.piscina.id,
+        clientId: systemMap.piscina.clientId,
+        userId: userMap.pedro,
+        date: getDate(i * 7), // Weekly: 0, 7, 14, 21, 28 days ago
+        recordType: 'laboratory',
+        stageId: null,
+        period: null,
+        time: null,
+        timeMode: null,
+        laboratory: 'Laboratório Central de Análises',
+        collectionDate: getDate(i * 7 + 1),
+        collectionTime: '09:00',
+        collectionTimeMode: 'manual',
+        notes: i === 2
+          ? 'Análise microbiológica: Coliformes totais dentro do limite. Amostra coletada conforme protocolo.'
+          : 'Análise laboratorial completa realizada. Resultados dentro dos padrões da ABNT NBR.',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    // Laboratory records for Torre de Resfriamento - Client 2 (weekly)
+    for (let i = 0; i < 5; i++) {
+      dailyLogs.push({
+        systemId: systemMap.torre.id,
+        clientId: systemMap.torre.clientId,
+        userId: userMap.maria,
+        date: getDate(i * 7),
+        recordType: 'laboratory',
+        stageId: null,
+        period: null,
+        time: null,
+        timeMode: null,
+        laboratory: 'AquaLab Análises Industriais',
+        collectionDate: getDate(i * 7 + 1),
+        collectionTime: '10:30',
+        collectionTimeMode: 'manual',
+        notes: i === 1
+          ? 'Análise de Legionella: Resultado negativo. Sistema em conformidade com normas de segurança.'
+          : 'Análise de corrosão e incrustação realizada. Índices de Langelier e Ryznar calculados.',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    // Laboratory records for ETA - Client 3 (weekly)
+    for (let i = 0; i < 5; i++) {
+      dailyLogs.push({
+        systemId: systemMap.eta.id,
+        clientId: systemMap.eta.clientId,
+        userId: userMap.joao,
+        date: getDate(i * 7),
+        recordType: 'laboratory',
+        stageId: null,
+        period: null,
+        time: null,
+        timeMode: null,
+        laboratory: 'Laboratório de Potabilidade SANASA',
+        collectionDate: getDate(i * 7 + 1),
+        collectionTime: '08:00',
+        collectionTimeMode: 'manual',
+        notes: i === 3
+          ? 'Análise de potabilidade completa conforme Portaria GM/MS 888/2021. Todos os parâmetros aprovados.'
+          : 'Análise de metais pesados e compostos orgânicos. Resultados dentro dos limites permitidos.',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    // Laboratory records for ETE - Client 3 (weekly)
+    for (let i = 0; i < 5; i++) {
+      dailyLogs.push({
+        systemId: systemMap.ete.id,
+        clientId: systemMap.ete.clientId,
+        userId: userMap.maria,
+        date: getDate(i * 7),
+        recordType: 'laboratory',
+        stageId: null,
+        period: null,
+        time: null,
+        timeMode: null,
+        laboratory: 'EcoLab Análises Ambientais',
+        collectionDate: getDate(i * 7 + 1),
+        collectionTime: '14:00',
+        collectionTimeMode: 'manual',
+        notes: i === 0
+          ? 'DBO5 e DQO analisados. Eficiência de remoção acima de 90%. Sistema em excelente condição.'
+          : 'Análise de lançamento conforme CONAMA 430. Efluente aprovado para descarte.',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    // Laboratory records for Caldeira - Client 3 (bi-weekly)
+    for (let i = 0; i < 3; i++) {
+      dailyLogs.push({
+        systemId: systemMap.caldeira.id,
+        clientId: systemMap.caldeira.clientId,
+        userId: userMap.joao,
+        date: getDate(i * 14),
+        recordType: 'laboratory',
+        stageId: null,
+        period: null,
+        time: null,
+        timeMode: null,
+        laboratory: 'ThermoLab Análises Térmicas',
+        collectionDate: getDate(i * 14 + 1),
+        collectionTime: '07:30',
+        collectionTimeMode: 'manual',
+        notes: i === 1
+          ? 'Análise de sílica e alcalinidade. Necessário ajuste no tratamento de água de make-up.'
+          : 'Análise completa de água de caldeira. Fosfato e sulfito dentro dos limites operacionais.',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
     await queryInterface.bulkInsert('DailyLogs', dailyLogs, {});
 
     // Get the inserted daily logs to reference their IDs

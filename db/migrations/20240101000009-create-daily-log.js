@@ -102,9 +102,11 @@ module.exports = {
       }
     });
 
-    await queryInterface.addIndex('DailyLogs', ['userId', 'systemId', 'date'], {
+    // Unique constraint includes recordType to allow both 'field' and 'laboratory' logs
+    // for the same user/system/date combination
+    await queryInterface.addIndex('DailyLogs', ['userId', 'systemId', 'date', 'recordType'], {
       unique: true,
-      name: 'daily_logs_user_system_date_unique'
+      name: 'daily_logs_user_system_date_recordtype_unique'
     });
 
     await queryInterface.addIndex('DailyLogs', ['clientId']);
