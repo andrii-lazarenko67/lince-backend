@@ -172,15 +172,22 @@ const generatedReportController = {
       // Use provided config or template config or default
       const reportConfig = config || template?.config || {
         blocks: [
-          { type: 'identification', enabled: true },
-          { type: 'scope', enabled: true },
-          { type: 'systems', enabled: true },
-          { type: 'analyses', enabled: true },
-          { type: 'inspections', enabled: true },
-          { type: 'occurrences', enabled: true },
-          { type: 'conclusion', enabled: true },
-          { type: 'signature', enabled: true }
-        ]
+          { type: 'identification', enabled: true, order: 1 },
+          { type: 'scope', enabled: true, order: 2 },
+          { type: 'systems', enabled: true, order: 3 },
+          { type: 'analyses', enabled: true, order: 4 },
+          { type: 'inspections', enabled: true, order: 5 },
+          { type: 'occurrences', enabled: true, order: 6 },
+          { type: 'conclusion', enabled: true, order: 7 },
+          { type: 'signature', enabled: true, order: 8 }
+        ],
+        branding: {
+          showLogo: true,
+          logoPosition: 'left',
+          showHeader: true,
+          headerText: 'Technical Report',
+          showFooter: true
+        }
       };
 
       // Build system filter - only fetch parent systems (parentId is null)
@@ -456,7 +463,13 @@ const generatedReportController = {
         name: reportName,
         systemIds: allSystemIds,
         period: { start: start.toISOString(), end: end.toISOString() },
-        filters: { periodType, systemIds, config: reportConfig },
+        filters: {
+          periodType,
+          systemIds,
+          config: reportConfig,
+          conclusion: conclusion || '',
+          signature: signature || null
+        },
         config: reportConfig,
         pdfUrl: null, // Will be updated when PDF is uploaded
         generatedAt: new Date()
@@ -820,6 +833,8 @@ const generatedReportController = {
           { type: 'signature', enabled: true, order: 8 }
         ],
         branding: {
+          showLogo: true,
+          logoPosition: 'left',
           showHeader: true,
           headerText: 'Technical Report',
           showFooter: true

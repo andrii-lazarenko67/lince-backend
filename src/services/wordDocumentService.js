@@ -1040,11 +1040,12 @@ async function generateWordDocument(reportData, config, reportName, templateLogo
     const logoPosition = branding.logoPosition || 'left';
 
     if (logoBuffer && branding.showLogo) {
+      // Match PDF styling: width 80, height 40 (same aspect ratio as PDF headerLogo)
       const logoRun = new ImageRun({
         data: logoBuffer,
         transformation: {
           width: 80,
-          height: 80
+          height: 40
         }
       });
 
