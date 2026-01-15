@@ -440,6 +440,42 @@ const incidentController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  // Get users that can be assigned to incidents for the current client
+  async getAssignableUsers(req, res, next) {
+    try {
+      const clientId = req.clientId;
+
+      if (!clientId) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'errors.clientIdRequired'
+        });
+      }
+
+      // Get users associated with this client
+      const userClients = await UserClient.findAll({
+        where: { clientId },
+        include: [{
+          model: User,
+          as: 'user',
+          where: { isActive: true },
+          attributes: ['id', 'name', 'email', 'role']
+        }]
+      });
+
+      const users = userClients
+        .map(uc => uc.user)
+        .filter(u => u !== null);
+
+      res.json({
+        success: true,
+        data: users
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 

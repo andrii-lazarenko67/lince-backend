@@ -8,6 +8,7 @@ const upload = require('../middlewares/upload');
 router.use(authMiddleware);
 
 router.get('/', incidentController.getAll);
+router.get('/assignable-users', roleMiddleware('manager', 'admin'), incidentController.getAssignableUsers);
 router.get('/:id', incidentController.getById);
 router.post('/', upload.array('photos', 10), incidentController.create);
 router.put('/:id', incidentController.update);
