@@ -48,16 +48,16 @@ module.exports = {
       else if (system.name === 'ETA - Estação de Tratamento') systemMap.eta = system.id;
     });
 
-    // Fetch actual incident IDs
+    // Fetch actual incident IDs with clientId
     const incidents = await queryInterface.sequelize.query(
-      'SELECT id, title FROM "Incidents" ORDER BY id',
+      'SELECT id, title, "clientId" FROM "Incidents" ORDER BY id',
       { type: Sequelize.QueryTypes.SELECT }
     );
 
-    // Create incident lookup
+    // Create incident lookup (with clientId)
     const incidentMap = {};
     incidents.forEach((incident, idx) => {
-      incidentMap[idx + 1] = incident.id;
+      incidentMap[idx + 1] = { id: incident.id, clientId: incident.clientId };
     });
 
     // Fetch actual inspection IDs
@@ -92,8 +92,8 @@ module.exports = {
         message: 'notifications.seed.legionellaAlert.message',
         priority: 'critical',
         referenceType: 'Incident',
-        referenceId: incidentMap[3] || null,
-        clientId: defaultClientId,
+        referenceId: incidentMap[3]?.id || null,
+        clientId: incidentMap[3]?.clientId || defaultClientId,
         createdById: userMap.carlos,
         createdAt: getDate(5, 10)
       },
@@ -103,8 +103,8 @@ module.exports = {
         message: 'notifications.seed.incidentResolved.message',
         priority: 'medium',
         referenceType: 'Incident',
-        referenceId: incidentMap[3] || null,
-        clientId: defaultClientId,
+        referenceId: incidentMap[3]?.id || null,
+        clientId: incidentMap[3]?.clientId || defaultClientId,
         createdById: userMap.carlos,
         createdAt: getDate(3, 16)
       },
@@ -147,8 +147,8 @@ module.exports = {
         message: 'notifications.seed.vibrationDetected.message',
         priority: 'medium',
         referenceType: 'Incident',
-        referenceId: incidentMap[9] || null,
-        clientId: defaultClientId,
+        referenceId: incidentMap[9]?.id || null,
+        clientId: incidentMap[9]?.clientId || defaultClientId,
         createdById: userMap.ana,
         createdAt: getDate(3, 8)
       },
