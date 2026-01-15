@@ -6,7 +6,12 @@ const notificationService = require('../services/notificationService');
 const inspectionController = {
   async getAll(req, res, next) {
     try {
-      const { systemId, stageId, userId, status, startDate, endDate } = req.query;
+      const { systemId, stageId, userId, status, startDate, endDate, page = 1, limit = 10 } = req.query;
+
+      // Parse pagination params
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+      const offset = (pageNum - 1) * limitNum;
 
       const where = {};
 
@@ -36,7 +41,7 @@ const inspectionController = {
         where.date = { [Op.between]: [new Date(startDate), new Date(endDate)] };
       }
 
-      const inspections = await Inspection.findAll({
+      const { count, rows: inspections } = await Inspection.findAndCountAll({
         where,
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
@@ -50,12 +55,23 @@ const inspectionController = {
           },
           { model: InspectionPhoto, as: 'photos' }
         ],
-        order: [['date', 'DESC']]
+        order: [['date', 'DESC']],
+        limit: limitNum,
+        offset,
+        distinct: true
       });
+
+      const totalPages = Math.ceil(count / limitNum);
 
       res.json({
         success: true,
-        data: inspections
+        data: inspections,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count,
+          totalPages
+        }
       });
     } catch (error) {
       next(error);

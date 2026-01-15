@@ -99,7 +99,12 @@ const productController = {
 
   async getAll(req, res, next) {
     try {
-      const { typeId, isActive, search, lowStock, systemId } = req.query;
+      const { typeId, isActive, search, lowStock, systemId, page = 1, limit = 10 } = req.query;
+
+      // Parse pagination params
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+      const offset = (pageNum - 1) * limitNum;
 
       const where = {};
 
@@ -140,13 +145,24 @@ const productController = {
         where.isActive = true; // Default to showing only active products
       }
       if (search) {
-        where[Op.or] = [
-          { name: { [Op.iLike]: `%${search}%` } },
-          { supplier: { [Op.iLike]: `%${search}%` } }
-        ];
+        // Use Op.and to combine existing Op.or (client filter) with search Op.or
+        const searchCondition = {
+          [Op.or]: [
+            { name: { [Op.iLike]: `%${search}%` } },
+            { supplier: { [Op.iLike]: `%${search}%` } }
+          ]
+        };
+        if (where[Op.or]) {
+          // Wrap client filter in Op.and with search
+          where[Op.and] = [{ [Op.or]: where[Op.or] }, searchCondition];
+          delete where[Op.or];
+        } else {
+          where[Op.or] = searchCondition[Op.or];
+        }
       }
 
       let products;
+      let count;
 
       // If systemId is provided, filter products that have been used in that system
       if (systemId) {
@@ -160,38 +176,60 @@ const productController = {
 
         if (productIds.length > 0) {
           where.id = { [Op.in]: productIds };
-          products = await Product.findAll({
+          const result = await Product.findAndCountAll({
             where,
             include: [
               { model: ProductType, as: 'type' },
               { model: Unit, as: 'unit' }
             ],
-            order: [['name', 'ASC']]
+            order: [['name', 'ASC']],
+            limit: limitNum,
+            offset,
+            distinct: true
           });
+          count = result.count;
+          products = result.rows;
         } else {
+          count = 0;
           products = [];
         }
       } else {
-        products = await Product.findAll({
+        const result = await Product.findAndCountAll({
           where,
           include: [
             { model: ProductType, as: 'type' },
             { model: Unit, as: 'unit' }
           ],
-          order: [['name', 'ASC']]
+          order: [['name', 'ASC']],
+          limit: limitNum,
+          offset,
+          distinct: true
         });
+        count = result.count;
+        products = result.rows;
       }
 
-      // Filter low stock products
+      // Filter low stock products (note: this affects pagination accuracy for lowStock filter)
+      // For accurate lowStock pagination, this should ideally be done in the WHERE clause
       if (lowStock === 'true') {
         products = products.filter(p =>
           p.minStockAlert && parseFloat(p.currentStock) <= parseFloat(p.minStockAlert)
         );
+        // Note: count will not be accurate for lowStock filter since it's post-filtered
+        // For production, consider adding a computed column or different approach
       }
+
+      const totalPages = Math.ceil(count / limitNum);
 
       res.json({
         success: true,
-        data: products
+        data: products,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count,
+          totalPages
+        }
       });
     } catch (error) {
       next(error);

@@ -5,7 +5,12 @@ const uploadService = require('../services/uploadService');
 const libraryController = {
   async getAll(req, res, next) {
     try {
-      const { category, systemId, search } = req.query;
+      const { category, systemId, search, page = 1, limit = 10 } = req.query;
+
+      // Parse pagination params
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+      const offset = (pageNum - 1) * limitNum;
 
       const where = {
         isActive: true,
@@ -39,18 +44,29 @@ const libraryController = {
         delete where[Op.and];
       }
 
-      const documents = await Document.findAll({
+      const { count, rows: documents } = await Document.findAndCountAll({
         where,
         include: [
           { model: System, as: 'system' },
           { model: User, as: 'uploader', attributes: ['id', 'name'] }
         ],
-        order: [['createdAt', 'DESC']]
+        order: [['createdAt', 'DESC']],
+        limit: limitNum,
+        offset,
+        distinct: true
       });
+
+      const totalPages = Math.ceil(count / limitNum);
 
       res.json({
         success: true,
-        data: documents
+        data: documents,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count,
+          totalPages
+        }
       });
     } catch (error) {
       next(error);

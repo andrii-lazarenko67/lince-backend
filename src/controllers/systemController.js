@@ -4,7 +4,12 @@ const { Op } = require('sequelize');
 const systemController = {
   async getAll(req, res, next) {
     try {
-      const { status, systemTypeId, search, parentId } = req.query;
+      const { status, systemTypeId, search, parentId, page = 1, limit = 100 } = req.query;
+
+      // Parse pagination params - default high limit for hierarchical view
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(500, Math.max(1, parseInt(limit, 10) || 100));
+      const offset = (pageNum - 1) * limitNum;
 
       const where = {};
 
@@ -40,7 +45,7 @@ const systemController = {
         ];
       }
 
-      const systems = await System.findAll({
+      const { count, rows: systems } = await System.findAndCountAll({
         where,
         include: [
           {
@@ -85,12 +90,23 @@ const systemController = {
             required: false
           }
         ],
-        order: [['name', 'ASC']]
+        order: [['name', 'ASC']],
+        limit: limitNum,
+        offset,
+        distinct: true
       });
+
+      const totalPages = Math.ceil(count / limitNum);
 
       res.json({
         success: true,
-        data: systems
+        data: systems,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count,
+          totalPages
+        }
       });
     } catch (error) {
       next(error);

@@ -5,7 +5,12 @@ const uploadService = require('../services/uploadService');
 const userController = {
   async getAll(req, res, next) {
     try {
-      const { role, isActive, search } = req.query;
+      const { role, isActive, search, page = 1, limit = 10 } = req.query;
+
+      // Parse pagination params
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+      const offset = (pageNum - 1) * limitNum;
 
       const where = {};
 
@@ -18,14 +23,24 @@ const userController = {
         ];
       }
 
-      const users = await User.findAll({
+      const { count, rows: users } = await User.findAndCountAll({
         where,
-        order: [['name', 'ASC']]
+        order: [['name', 'ASC']],
+        limit: limitNum,
+        offset
       });
+
+      const totalPages = Math.ceil(count / limitNum);
 
       res.json({
         success: true,
-        data: users
+        data: users,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count,
+          totalPages
+        }
       });
     } catch (error) {
       next(error);

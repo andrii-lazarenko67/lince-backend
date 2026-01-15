@@ -5,7 +5,12 @@ const cloudinary = require('../config/cloudinary');
 const clientController = {
   async getAll(req, res, next) {
     try {
-      const { search, isActive } = req.query;
+      const { search, isActive, page = 1, limit = 10 } = req.query;
+
+      // Parse pagination params
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+      const offset = (pageNum - 1) * limitNum;
 
       // Get clients the user has access to via UserClient table
       const userClients = await UserClient.findAll({
@@ -17,7 +22,13 @@ const clientController = {
       if (clientIds.length === 0) {
         return res.json({
           success: true,
-          data: []
+          data: [],
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: 0,
+            totalPages: 0
+          }
         });
       }
 
@@ -39,14 +50,25 @@ const clientController = {
         ];
       }
 
-      const clients = await Client.findAll({
+      // Use findAndCountAll for pagination
+      const { count, rows: clients } = await Client.findAndCountAll({
         where,
-        order: [['name', 'ASC']]
+        order: [['name', 'ASC']],
+        limit: limitNum,
+        offset
       });
+
+      const totalPages = Math.ceil(count / limitNum);
 
       res.json({
         success: true,
-        data: clients
+        data: clients,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count,
+          totalPages
+        }
       });
     } catch (error) {
       next(error);

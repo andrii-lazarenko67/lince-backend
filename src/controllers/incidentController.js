@@ -6,7 +6,12 @@ const notificationService = require('../services/notificationService');
 const incidentController = {
   async getAll(req, res, next) {
     try {
-      const { systemId, stageId, userId, status, priority, assignedTo } = req.query;
+      const { systemId, stageId, userId, status, priority, assignedTo, page = 1, limit = 10 } = req.query;
+
+      // Parse pagination params
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+      const offset = (pageNum - 1) * limitNum;
 
       const where = {};
 
@@ -35,7 +40,7 @@ const incidentController = {
       if (priority) where.priority = priority;
       if (assignedTo) where.assignedTo = assignedTo;
 
-      const incidents = await Incident.findAll({
+      const { count, rows: incidents } = await Incident.findAndCountAll({
         where,
         include: [
           { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
@@ -49,12 +54,23 @@ const incidentController = {
             include: [{ model: User, as: 'user', attributes: ['id', 'name'] }]
           }
         ],
-        order: [['createdAt', 'DESC']]
+        order: [['createdAt', 'DESC']],
+        limit: limitNum,
+        offset,
+        distinct: true
       });
+
+      const totalPages = Math.ceil(count / limitNum);
 
       res.json({
         success: true,
-        data: incidents
+        data: incidents,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count,
+          totalPages
+        }
       });
     } catch (error) {
       next(error);

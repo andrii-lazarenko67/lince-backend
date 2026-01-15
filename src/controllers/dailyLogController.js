@@ -5,7 +5,12 @@ const notificationService = require('../services/notificationService');
 const dailyLogController = {
   async getAll(req, res, next) {
     try {
-      const { systemId, stageId, userId, recordType, startDate, endDate } = req.query;
+      const { systemId, stageId, userId, recordType, startDate, endDate, page = 1, limit = 10 } = req.query;
+
+      // Parse pagination params
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+      const offset = (pageNum - 1) * limitNum;
 
       const where = {};
 
@@ -39,7 +44,7 @@ const dailyLogController = {
         where.date = { [Op.lte]: endDate };
       }
 
-      const dailyLogs = await DailyLog.findAll({
+      const { count, rows: dailyLogs } = await DailyLog.findAndCountAll({
         where,
         include: [
           { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
@@ -58,12 +63,23 @@ const dailyLogController = {
             }]
           }
         ],
-        order: [['date', 'DESC'], ['createdAt', 'DESC']]
+        order: [['date', 'DESC'], ['createdAt', 'DESC']],
+        limit: limitNum,
+        offset,
+        distinct: true
       });
+
+      const totalPages = Math.ceil(count / limitNum);
 
       res.json({
         success: true,
-        data: dailyLogs
+        data: dailyLogs,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count,
+          totalPages
+        }
       });
     } catch (error) {
       next(error);
