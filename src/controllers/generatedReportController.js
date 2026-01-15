@@ -203,14 +203,21 @@ const generatedReportController = {
         ]
       });
 
+      // Build list of all system IDs including children (stages)
       const systemIdList = systems.map(s => s.id);
+      const allSystemIds = [...systemIdList];
+      systems.forEach(s => {
+        if (s.children && s.children.length > 0) {
+          allSystemIds.push(...s.children.map(c => c.id));
+        }
+      });
 
       // Fetch daily logs with entries
       const dailyLogs = await DailyLog.findAll({
         where: {
           clientId,
           date: { [Op.between]: [start.toISOString().split('T')[0], end.toISOString().split('T')[0]] },
-          ...(systemIdList.length > 0 && { systemId: { [Op.in]: systemIdList } })
+          ...(allSystemIds.length > 0 && { systemId: { [Op.in]: allSystemIds } })
         },
         include: [
           { model: User, as: 'user', attributes: ['id', 'name'] },
@@ -225,11 +232,17 @@ const generatedReportController = {
       });
 
       // Fetch inspections
+      // Use start of start day to end of end day to ensure inclusive date range
+      const inspectionStartDate = new Date(start);
+      inspectionStartDate.setHours(0, 0, 0, 0);
+      const inspectionEndDate = new Date(end);
+      inspectionEndDate.setHours(23, 59, 59, 999);
+
       const inspections = await Inspection.findAll({
         where: {
           clientId,
-          date: { [Op.between]: [start, end] },
-          ...(systemIdList.length > 0 && { systemId: { [Op.in]: systemIdList } })
+          date: { [Op.between]: [inspectionStartDate, inspectionEndDate] },
+          ...(allSystemIds.length > 0 && { systemId: { [Op.in]: allSystemIds } })
         },
         include: [
           { model: User, as: 'user', attributes: ['id', 'name'] },
@@ -245,11 +258,17 @@ const generatedReportController = {
       });
 
       // Fetch incidents (occurrences)
+      // Use start of start day to end of end day to ensure inclusive date range
+      const incidentStartDate = new Date(start);
+      incidentStartDate.setHours(0, 0, 0, 0);
+      const incidentEndDate = new Date(end);
+      incidentEndDate.setHours(23, 59, 59, 999);
+
       const incidents = await Incident.findAll({
         where: {
           clientId,
-          createdAt: { [Op.between]: [start, end] },
-          ...(systemIdList.length > 0 && { systemId: { [Op.in]: systemIdList } })
+          createdAt: { [Op.between]: [incidentStartDate, incidentEndDate] },
+          ...(allSystemIds.length > 0 && { systemId: { [Op.in]: allSystemIds } })
         },
         include: [
           { model: User, as: 'reporter', attributes: ['id', 'name'] },
@@ -275,7 +294,7 @@ const generatedReportController = {
       const productUsages = await ProductUsage.findAll({
         where: {
           date: { [Op.between]: [start, end] },
-          ...(systemIdList.length > 0 && { systemId: { [Op.in]: systemIdList } })
+          ...(allSystemIds.length > 0 && { systemId: { [Op.in]: allSystemIds } })
         },
         include: [
           { model: Product, as: 'product' },
@@ -358,7 +377,7 @@ const generatedReportController = {
         // If no specific monitoring points selected, get top 5 by data volume
         if (chartMonitoringPointIds.length === 0) {
           const allMps = await MonitoringPoint.findAll({
-            where: systemIdList.length > 0 ? { systemId: { [Op.in]: systemIdList } } : {},
+            where: allSystemIds.length > 0 ? { systemId: { [Op.in]: allSystemIds } } : {},
             attributes: ['id'],
             limit: 5
           });
@@ -368,7 +387,7 @@ const generatedReportController = {
         // Prepare field charts
         const fieldCharts = await chartDataService.prepareChartData({
           clientId,
-          systemIds: systemIdList,
+          systemIds: allSystemIds,
           startDate: start.toISOString().split('T')[0],
           endDate: end.toISOString().split('T')[0],
           monitoringPointIds: chartMonitoringPointIds,
@@ -379,7 +398,7 @@ const generatedReportController = {
         // Prepare laboratory charts
         const laboratoryCharts = await chartDataService.prepareChartData({
           clientId,
-          systemIds: systemIdList,
+          systemIds: allSystemIds,
           startDate: start.toISOString().split('T')[0],
           endDate: end.toISOString().split('T')[0],
           monitoringPointIds: chartMonitoringPointIds,
@@ -434,7 +453,7 @@ const generatedReportController = {
         userId: req.user.id,
         clientId,
         name: reportName,
-        systemIds: systemIdList,
+        systemIds: allSystemIds,
         period: { start: start.toISOString(), end: end.toISOString() },
         filters: { periodType, systemIds, config: reportConfig },
         config: reportConfig,
