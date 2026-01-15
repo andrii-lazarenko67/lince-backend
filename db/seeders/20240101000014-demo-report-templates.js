@@ -12,6 +12,31 @@ module.exports = {
       default: { primary: '#1976d2', secondary: '#42a5f5' }        // Default blue
     };
 
+    // Default inspections block configuration
+    const defaultInspectionsBlock = {
+      type: 'inspections',
+      enabled: true,
+      order: 5,
+      includePhotos: true,
+      showInspectionOverview: true,
+      showInspectionDetailed: false,
+      highlightOnlyNonConformities: true
+    };
+
+    // Default occurrences block configuration
+    const defaultOccurrencesBlock = {
+      type: 'occurrences',
+      enabled: true,
+      order: 6,
+      includeTimeline: true,
+      includePhotos: true,
+      includeComments: true,
+      showOccurrenceOverview: true,
+      showOccurrenceDetailed: false,
+      showOnlyHighestCriticality: true,
+      criticalityFilter: 'all'
+    };
+
     await queryInterface.bulkInsert('ReportTemplates', [
       // Global templates (isGlobal: true, clientId: null)
       {
@@ -55,9 +80,10 @@ module.exports = {
                 colors: chartColors.ete
               }
             },
-            { type: 'inspections', enabled: true, order: 5, includePhotos: true },
-            { type: 'conclusion', enabled: true, order: 6 },
-            { type: 'signature', enabled: true, order: 7 }
+            { ...defaultInspectionsBlock, order: 5 },
+            { ...defaultOccurrencesBlock, order: 6 },
+            { type: 'conclusion', enabled: true, order: 7 },
+            { type: 'signature', enabled: true, order: 8 }
           ],
           branding: {
             showLogo: true,
@@ -116,9 +142,10 @@ module.exports = {
                 colors: chartColors.eta
               }
             },
-            { type: 'inspections', enabled: true, order: 5, includePhotos: true },
-            { type: 'conclusion', enabled: true, order: 6 },
-            { type: 'signature', enabled: true, order: 7 }
+            { ...defaultInspectionsBlock, order: 5 },
+            { ...defaultOccurrencesBlock, order: 6 },
+            { type: 'conclusion', enabled: true, order: 7 },
+            { type: 'signature', enabled: true, order: 8 }
           ],
           branding: {
             showLogo: true,
@@ -177,9 +204,10 @@ module.exports = {
                 colors: chartColors.piscina
               }
             },
-            { type: 'inspections', enabled: true, order: 5, includePhotos: true },
-            { type: 'conclusion', enabled: true, order: 6 },
-            { type: 'signature', enabled: true, order: 7 }
+            { ...defaultInspectionsBlock, order: 5 },
+            { ...defaultOccurrencesBlock, order: 6 },
+            { type: 'conclusion', enabled: true, order: 7 },
+            { type: 'signature', enabled: true, order: 8 }
           ],
           branding: {
             showLogo: true,
@@ -238,8 +266,10 @@ module.exports = {
                 colors: chartColors.torre
               }
             },
-            { type: 'occurrences', enabled: true, order: 5, includeTimeline: true },
-            { type: 'conclusion', enabled: true, order: 6 }
+            { ...defaultInspectionsBlock, order: 5 },
+            { ...defaultOccurrencesBlock, order: 6 },
+            { type: 'conclusion', enabled: true, order: 7 },
+            { type: 'signature', enabled: true, order: 8 }
           ],
           branding: {
             showLogo: true,
@@ -298,8 +328,10 @@ module.exports = {
                 colors: chartColors.caldeira
               }
             },
-            { type: 'inspections', enabled: true, order: 5, includePhotos: true },
-            { type: 'conclusion', enabled: true, order: 6 }
+            { ...defaultInspectionsBlock, order: 5 },
+            { ...defaultOccurrencesBlock, order: 6 },
+            { type: 'conclusion', enabled: true, order: 7 },
+            { type: 'signature', enabled: true, order: 8 }
           ],
           branding: {
             showLogo: true,
@@ -358,8 +390,10 @@ module.exports = {
                 colors: chartColors.piscina
               }
             },
-            { type: 'occurrences', enabled: true, order: 5, includeTimeline: true },
-            { type: 'conclusion', enabled: true, order: 6 }
+            { ...defaultInspectionsBlock, order: 5 },
+            { ...defaultOccurrencesBlock, order: 6, showOccurrenceDetailed: true },
+            { type: 'conclusion', enabled: true, order: 7 },
+            { type: 'signature', enabled: true, order: 8 }
           ],
           branding: {
             showLogo: true,
@@ -388,10 +422,11 @@ module.exports = {
           blocks: [
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
+            { type: 'systems', enabled: true, order: 3, includePhotos: true },
             {
               type: 'analyses',
               enabled: true,
-              order: 3,
+              order: 4,
               includeCharts: true,
               highlightAlerts: true,
               showFieldOverview: true,
@@ -417,7 +452,10 @@ module.exports = {
                 colors: chartColors.piscina
               }
             },
-            { type: 'conclusion', enabled: true, order: 4 }
+            { ...defaultInspectionsBlock, order: 5, enabled: false },
+            { ...defaultOccurrencesBlock, order: 6, enabled: false },
+            { type: 'conclusion', enabled: true, order: 7 },
+            { type: 'signature', enabled: true, order: 8 }
           ],
           branding: {
             showLogo: true,
