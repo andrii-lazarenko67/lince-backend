@@ -1,5 +1,6 @@
 const { ReportTemplate, User, Client } = require('../../db/models');
 const { Op } = require('sequelize');
+const cloudinary = require('../config/cloudinary');
 
 // Default template configuration based on CLIENT_REQUIREMENTS_FINAL.md
 const DEFAULT_TEMPLATE_CONFIG = {
@@ -367,6 +368,138 @@ const reportTemplateController = {
       res.json({
         success: true,
         data: DEFAULT_TEMPLATE_CONFIG
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Upload template logo
+  async uploadLogo(req, res, next) {
+    try {
+      const template = await ReportTemplate.findOne({
+        where: { id: req.params.id, userId: req.user.id, isActive: true }
+      });
+
+      if (!template) {
+        return res.status(404).json({
+          success: false,
+          messageKey: 'reports.templates.errors.notFound'
+        });
+      }
+
+      // Cannot edit global templates unless you're the creator
+      if (template.isGlobal && template.userId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          messageKey: 'reports.templates.errors.cannotEditGlobal'
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'reports.templates.errors.noFile'
+        });
+      }
+
+      // Upload to Cloudinary
+      const uploadResult = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'lince/template-logos',
+            public_id: `template-${template.id}-${Date.now()}`,
+            resource_type: 'image',
+            transformation: [
+              { width: 400, height: 400, crop: 'limit' },
+              { quality: 'auto' }
+            ]
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(req.file.buffer);
+      });
+
+      // Delete old logo from Cloudinary if exists
+      if (template.logo) {
+        try {
+          const publicId = template.logo.split('/').slice(-2).join('/').split('.')[0];
+          await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+          // Ignore errors deleting old logo
+        }
+      }
+
+      // Update template with new logo URL
+      await template.update({ logo: uploadResult.secure_url });
+
+      // Fetch with associations
+      const updatedTemplate = await ReportTemplate.findByPk(template.id, {
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: Client, as: 'client', attributes: ['id', 'name'] }
+        ]
+      });
+
+      res.json({
+        success: true,
+        data: updatedTemplate,
+        messageKey: 'reports.templates.logoUploaded'
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // Delete template logo
+  async deleteLogo(req, res, next) {
+    try {
+      const template = await ReportTemplate.findOne({
+        where: { id: req.params.id, userId: req.user.id, isActive: true }
+      });
+
+      if (!template) {
+        return res.status(404).json({
+          success: false,
+          messageKey: 'reports.templates.errors.notFound'
+        });
+      }
+
+      // Cannot edit global templates unless you're the creator
+      if (template.isGlobal && template.userId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          messageKey: 'reports.templates.errors.cannotEditGlobal'
+        });
+      }
+
+      // Delete from Cloudinary if exists
+      if (template.logo) {
+        try {
+          const publicId = template.logo.split('/').slice(-2).join('/').split('.')[0];
+          await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+          // Ignore errors deleting logo
+        }
+      }
+
+      await template.update({ logo: null });
+
+      // Fetch with associations
+      const updatedTemplate = await ReportTemplate.findByPk(template.id, {
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: Client, as: 'client', attributes: ['id', 'name'] }
+        ]
+      });
+
+      res.json({
+        success: true,
+        data: updatedTemplate,
+        messageKey: 'reports.templates.logoDeleted'
       });
     } catch (error) {
       next(error);

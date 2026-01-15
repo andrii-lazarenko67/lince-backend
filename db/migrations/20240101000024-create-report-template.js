@@ -37,6 +37,11 @@ module.exports = {
         type: Sequelize.STRING(255),
         allowNull: true
       },
+      logo: {
+        type: Sequelize.STRING(500),
+        allowNull: true,
+        comment: 'URL of the template logo stored in Cloudinary'
+      },
       type: {
         type: Sequelize.ENUM('service_provider', 'end_customer', 'both'),
         allowNull: false,

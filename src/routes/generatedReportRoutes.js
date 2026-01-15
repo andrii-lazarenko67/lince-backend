@@ -24,6 +24,9 @@ router.post('/:id/upload-pdf', upload.single('pdf'), generatedReportController.u
 // Download/get PDF URL
 router.get('/:id/download', generatedReportController.download);
 
+// Download Word document
+router.get('/:id/download-word', generatedReportController.downloadWord);
+
 // Delete a generated report
 router.delete('/:id', generatedReportController.delete);
 

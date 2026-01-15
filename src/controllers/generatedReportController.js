@@ -2,6 +2,7 @@ const { GeneratedReport, ReportTemplate, User, Client, System, SystemType, Daily
 const { Op } = require('sequelize');
 const cloudinary = require('../config/cloudinary');
 const chartDataService = require('../services/chartDataService');
+const { generateWordDocument } = require('../services/wordDocumentService');
 
 const generatedReportController = {
   // Get all generated reports (history)
@@ -631,6 +632,215 @@ const generatedReportController = {
         }
       });
     } catch (error) {
+      next(error);
+    }
+  },
+
+  // Generate and download Word document
+  async downloadWord(req, res, next) {
+    try {
+      const report = await GeneratedReport.findOne({
+        where: { id: req.params.id, userId: req.user.id },
+        include: [
+          { model: ReportTemplate, as: 'template' },
+          { model: Client, as: 'client' }
+        ]
+      });
+
+      if (!report) {
+        return res.status(404).json({
+          success: false,
+          messageKey: 'reports.history.errors.notFound'
+        });
+      }
+
+      // Get period from report
+      const period = report.period || {};
+      const start = period.start ? new Date(period.start) : new Date();
+      const end = period.end ? new Date(period.end) : new Date();
+
+      // Get system IDs from report
+      const systemIds = report.systemIds || [];
+
+      // Build system filter for parent systems
+      const systemFilter = systemIds.length > 0
+        ? { id: { [Op.in]: systemIds }, clientId: report.clientId, parentId: { [Op.is]: null } }
+        : { clientId: report.clientId, parentId: { [Op.is]: null } };
+
+      // Fetch systems with children
+      const systems = await System.findAll({
+        where: systemFilter,
+        include: [
+          { model: SystemPhoto, as: 'photos' },
+          { model: SystemType, as: 'systemType', attributes: ['id', 'name'] },
+          {
+            model: System,
+            as: 'children',
+            attributes: ['id', 'name', 'status', 'description'],
+            include: [{ model: SystemType, as: 'systemType', attributes: ['id', 'name'] }]
+          }
+        ]
+      });
+
+      // Build list of all system IDs including children
+      const allSystemIds = [...systemIds];
+      systems.forEach(s => {
+        if (s.children && s.children.length > 0) {
+          allSystemIds.push(...s.children.map(c => c.id));
+        }
+      });
+
+      // Fetch daily logs
+      const dailyLogs = await DailyLog.findAll({
+        where: {
+          clientId: report.clientId,
+          date: { [Op.between]: [start.toISOString().split('T')[0], end.toISOString().split('T')[0]] },
+          ...(allSystemIds.length > 0 && { systemId: { [Op.in]: allSystemIds } })
+        },
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: System, as: 'system', attributes: ['id', 'name'] },
+          {
+            model: DailyLogEntry,
+            as: 'entries',
+            include: [{ model: MonitoringPoint, as: 'monitoringPoint' }]
+          }
+        ],
+        order: [['date', 'DESC']]
+      });
+
+      // Fetch inspections
+      const inspectionStartDate = new Date(start);
+      inspectionStartDate.setHours(0, 0, 0, 0);
+      const inspectionEndDate = new Date(end);
+      inspectionEndDate.setHours(23, 59, 59, 999);
+
+      const inspections = await Inspection.findAll({
+        where: {
+          clientId: report.clientId,
+          date: { [Op.between]: [inspectionStartDate, inspectionEndDate] },
+          ...(allSystemIds.length > 0 && { systemId: { [Op.in]: allSystemIds } })
+        },
+        include: [
+          { model: User, as: 'user', attributes: ['id', 'name'] },
+          { model: System, as: 'system', attributes: ['id', 'name'] },
+          {
+            model: InspectionItem,
+            as: 'items',
+            include: [{ model: ChecklistItem, as: 'checklistItem' }]
+          },
+          { model: InspectionPhoto, as: 'photos' }
+        ],
+        order: [['date', 'DESC']]
+      });
+
+      // Fetch incidents
+      const incidentStartDate = new Date(start);
+      incidentStartDate.setHours(0, 0, 0, 0);
+      const incidentEndDate = new Date(end);
+      incidentEndDate.setHours(23, 59, 59, 999);
+
+      const incidents = await Incident.findAll({
+        where: {
+          clientId: report.clientId,
+          createdAt: { [Op.between]: [incidentStartDate, incidentEndDate] },
+          ...(allSystemIds.length > 0 && { systemId: { [Op.in]: allSystemIds } })
+        },
+        include: [
+          { model: User, as: 'reporter', attributes: ['id', 'name'] },
+          { model: User, as: 'assignee', attributes: ['id', 'name'] },
+          { model: System, as: 'system', attributes: ['id', 'name'] },
+          { model: IncidentPhoto, as: 'photos' },
+          {
+            model: IncidentComment,
+            as: 'comments',
+            include: [{ model: User, as: 'user', attributes: ['id', 'name'] }]
+          }
+        ],
+        order: [['createdAt', 'DESC']]
+      });
+
+      // Calculate summary statistics
+      let totalReadings = 0;
+      let outOfRangeCount = 0;
+      dailyLogs.forEach(log => {
+        totalReadings += log.entries?.length || 0;
+        outOfRangeCount += log.entries?.filter(e => e.isOutOfRange).length || 0;
+      });
+
+      // Build report data structure
+      const reportData = {
+        client: {
+          id: report.client?.id,
+          name: report.client?.name,
+          address: report.client?.address,
+          contact: report.client?.contact,
+          phone: report.client?.phone,
+          email: report.client?.email,
+          logo: report.client?.logo,
+          brandColor: report.client?.brandColor
+        },
+        period: {
+          type: period.type || 'custom',
+          startDate: start.toISOString().split('T')[0],
+          endDate: end.toISOString().split('T')[0]
+        },
+        systems,
+        dailyLogs,
+        inspections,
+        incidents,
+        summary: {
+          totalSystems: systems.length,
+          totalReadings,
+          outOfRangeCount,
+          totalInspections: inspections.length,
+          totalIncidents: incidents.length,
+          openIncidents: incidents.filter(i => i.status === 'open').length
+        },
+        conclusion: report.filters?.conclusion || '',
+        signature: report.filters?.signature || null,
+        generatedAt: report.generatedAt || new Date().toISOString(),
+        generatedBy: {
+          id: req.user.id,
+          name: req.user.name
+        },
+        isServiceProvider: req.user.isServiceProvider || false
+      };
+
+      // Get config from report or template
+      const config = report.config || report.template?.config || {
+        blocks: [
+          { type: 'identification', enabled: true, order: 1 },
+          { type: 'scope', enabled: true, order: 2 },
+          { type: 'systems', enabled: true, order: 3 },
+          { type: 'analyses', enabled: true, order: 4 },
+          { type: 'inspections', enabled: true, order: 5 },
+          { type: 'occurrences', enabled: true, order: 6 },
+          { type: 'conclusion', enabled: true, order: 7 },
+          { type: 'signature', enabled: true, order: 8 }
+        ],
+        branding: {
+          showHeader: true,
+          headerText: 'Technical Report',
+          showFooter: true
+        }
+      };
+
+      // Generate Word document (pass template logo if available)
+      const templateLogo = report.template?.logo || null;
+      const docBuffer = await generateWordDocument(reportData, config, report.name, templateLogo);
+
+      // Set response headers for file download
+      const filename = `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', docBuffer.length);
+
+      // Send the buffer
+      res.send(docBuffer);
+
+    } catch (error) {
+      console.error('Error generating Word document:', error);
       next(error);
     }
   }

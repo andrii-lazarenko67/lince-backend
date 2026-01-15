@@ -26,6 +26,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(255),
       allowNull: true
     },
+    logo: {
+      type: DataTypes.STRING(500),
+      allowNull: true
+    },
     type: {
       type: DataTypes.ENUM('service_provider', 'end_customer', 'both'),
       allowNull: false,

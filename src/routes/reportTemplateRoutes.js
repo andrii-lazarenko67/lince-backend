@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const reportTemplateController = require('../controllers/reportTemplateController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const upload = require('../middlewares/upload');
 
 router.use(authMiddleware);
 
@@ -21,5 +22,9 @@ router.delete('/:id', reportTemplateController.delete);
 // Template actions
 router.post('/:id/set-default', reportTemplateController.setDefault);
 router.post('/:id/duplicate', reportTemplateController.duplicate);
+
+// Logo management
+router.post('/:id/logo', upload.single('logo'), reportTemplateController.uploadLogo);
+router.delete('/:id/logo', reportTemplateController.deleteLogo);
 
 module.exports = router;
