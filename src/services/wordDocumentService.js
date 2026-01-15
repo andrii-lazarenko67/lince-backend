@@ -24,6 +24,7 @@ const {
 } = require('docx');
 const https = require('https');
 const http = require('http');
+const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 
 /**
  * Fetch image from URL and return as Buffer
@@ -43,6 +44,104 @@ async function fetchImageBuffer(url) {
       response.on('error', reject);
     }).on('error', reject);
   });
+}
+
+/**
+ * Chart renderer instance (reusable)
+ */
+const chartRenderer = new ChartJSNodeCanvas({
+  width: 600,
+  height: 300,
+  backgroundColour: 'white'
+});
+
+/**
+ * Generate a chart image buffer from chart data
+ * @param {Object} chartSeries - Chart series data from chartDataService
+ * @param {Object} chartConfig - Chart configuration (colors, type, etc.)
+ * @returns {Promise<Buffer>} PNG image buffer
+ */
+async function generateChartImage(chartSeries, chartConfig = {}) {
+  const { chartType = 'bar', colors = {} } = chartConfig;
+  const primaryColor = chartSeries.color || colors.primary || '#1976d2';
+
+  // Prepare data
+  const labels = chartSeries.data.map(d => d.label);
+  const values = chartSeries.data.map(d => d.value);
+
+  // Prepare min/max reference lines if available
+  const datasets = [{
+    label: chartSeries.parameterName || chartSeries.monitoringPointName,
+    data: values,
+    backgroundColor: chartType === 'bar' ? primaryColor + '80' : 'transparent',
+    borderColor: primaryColor,
+    borderWidth: chartType === 'line' ? 2 : 1,
+    fill: chartType === 'line' ? false : undefined,
+    tension: chartType === 'line' ? 0.3 : undefined
+  }];
+
+  // Add min/max reference lines
+  if (chartSeries.minValue !== null && chartSeries.minValue !== undefined) {
+    datasets.push({
+      label: 'Min',
+      data: Array(labels.length).fill(chartSeries.minValue),
+      borderColor: '#f44336',
+      borderWidth: 1,
+      borderDash: [5, 5],
+      pointRadius: 0,
+      fill: false,
+      type: 'line'
+    });
+  }
+
+  if (chartSeries.maxValue !== null && chartSeries.maxValue !== undefined) {
+    datasets.push({
+      label: 'Max',
+      data: Array(labels.length).fill(chartSeries.maxValue),
+      borderColor: '#f44336',
+      borderWidth: 1,
+      borderDash: [5, 5],
+      pointRadius: 0,
+      fill: false,
+      type: 'line'
+    });
+  }
+
+  const configuration = {
+    type: chartType,
+    data: {
+      labels,
+      datasets
+    },
+    options: {
+      responsive: false,
+      animation: false,
+      plugins: {
+        title: {
+          display: true,
+          text: `${chartSeries.parameterName || chartSeries.monitoringPointName}${chartSeries.unit ? ` (${chartSeries.unit})` : ''}`,
+          font: { size: 14, weight: 'bold' }
+        },
+        legend: {
+          display: datasets.length > 1,
+          position: 'bottom',
+          labels: { font: { size: 10 } }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10 } }
+        },
+        y: {
+          beginAtZero: false,
+          ticks: { font: { size: 10 } }
+        }
+      }
+    }
+  };
+
+  return await chartRenderer.renderToBuffer(configuration);
 }
 
 /**
@@ -198,8 +297,11 @@ function buildScopeSection(data) {
 
 /**
  * Build Systems section
+ * @param {Object} data - Report data
+ * @param {boolean} includePhotos - Whether to include photos
+ * @param {Map<number, Buffer>} systemPhotoBuffers - Pre-fetched photo buffers
  */
-function buildSystemsSection(data, includePhotos) {
+function buildSystemsSection(data, includePhotos, systemPhotoBuffers = new Map()) {
   const sections = [
     createHeading('Systems', HeadingLevel.HEADING_2)
   ];
@@ -235,14 +337,59 @@ function buildSystemsSection(data, includePhotos) {
     });
   }
 
+  // System Photos
+  if (includePhotos && systemPhotoBuffers.size > 0) {
+    sections.push(createHeading('System Photos', HeadingLevel.HEADING_3));
+
+    data.systems.forEach(system => {
+      if (system.photos && system.photos.length > 0) {
+        sections.push(new Paragraph({
+          children: [new TextRun({ text: `${system.name}:`, bold: true })],
+          spacing: { before: 200, after: 100 }
+        }));
+
+        system.photos.forEach(photo => {
+          const photoBuffer = systemPhotoBuffers.get(photo.id);
+          if (photoBuffer) {
+            sections.push(new Paragraph({
+              children: [
+                new ImageRun({
+                  data: photoBuffer,
+                  transformation: {
+                    width: 400,
+                    height: 300
+                  }
+                })
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 80 }
+            }));
+
+            // Photo caption
+            if (photo.caption || photo.description) {
+              sections.push(new Paragraph({
+                children: [new TextRun({ text: photo.caption || photo.description, italics: true, color: '666666', size: 18 })],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 150 }
+              }));
+            }
+          }
+        });
+      }
+    });
+  }
+
   sections.push(new Paragraph({ text: '', spacing: { after: 200 } }));
   return sections;
 }
 
 /**
  * Build Analyses section
+ * @param {Object} data - Report data
+ * @param {Object} block - Block configuration
+ * @param {Object} chartBuffers - Pre-generated chart buffers { field: Buffer[], laboratory: Buffer[] }
  */
-function buildAnalysesSection(data, block) {
+function buildAnalysesSection(data, block, chartBuffers = { field: [], laboratory: [] }) {
   const sections = [];
   const fieldLogs = data.dailyLogs?.filter(log => log.recordType === 'field') || [];
   const laboratoryLogs = data.dailyLogs?.filter(log => log.recordType === 'laboratory') || [];
@@ -251,6 +398,7 @@ function buildAnalysesSection(data, block) {
   const showFieldDetailed = block.showFieldDetailed === true;
   const showLaboratoryOverview = block.showLaboratoryOverview !== false;
   const showLaboratoryDetailed = block.showLaboratoryDetailed === true;
+  const includeCharts = block.includeCharts === true;
 
   // Field Overview
   if (showFieldOverview) {
@@ -274,6 +422,26 @@ function buildAnalysesSection(data, block) {
       });
       sections.push(createTable(headers, rows));
     }
+  }
+
+  // Field Charts
+  if (includeCharts && chartBuffers.field && chartBuffers.field.length > 0) {
+    sections.push(createHeading('Field Monitoring Charts', HeadingLevel.HEADING_3));
+    chartBuffers.field.forEach(chartBuffer => {
+      sections.push(new Paragraph({
+        children: [
+          new ImageRun({
+            data: chartBuffer,
+            transformation: {
+              width: 500,
+              height: 250
+            }
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 150, after: 200 }
+      }));
+    });
   }
 
   // Field Detailed
@@ -304,6 +472,26 @@ function buildAnalysesSection(data, block) {
       });
       sections.push(createTable(headers, rows));
     }
+  }
+
+  // Laboratory Charts
+  if (includeCharts && chartBuffers.laboratory && chartBuffers.laboratory.length > 0) {
+    sections.push(createHeading('Laboratory Monitoring Charts', HeadingLevel.HEADING_3));
+    chartBuffers.laboratory.forEach(chartBuffer => {
+      sections.push(new Paragraph({
+        children: [
+          new ImageRun({
+            data: chartBuffer,
+            transformation: {
+              width: 500,
+              height: 250
+            }
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 150, after: 200 }
+      }));
+    });
   }
 
   // Laboratory Detailed
@@ -718,8 +906,9 @@ function buildSignatureSection(data) {
  * @param {object} config - The template configuration
  * @param {string} reportName - The report name
  * @param {string|null} templateLogo - Optional template logo URL (overrides client logo)
+ * @param {object|null} chartData - Chart data for generating chart images { fieldCharts, laboratoryCharts, fieldChartConfig, laboratoryChartConfig }
  */
-async function generateWordDocument(reportData, config, reportName, templateLogo = null) {
+async function generateWordDocument(reportData, config, reportName, templateLogo = null, chartData = null) {
   const { blocks = [], branding = {} } = config || {};
   const isServiceProvider = reportData.isServiceProvider || false;
 
@@ -730,6 +919,74 @@ async function generateWordDocument(reportData, config, reportName, templateLogo
   const enabledBlocks = blocks
     .filter(block => block.enabled)
     .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Pre-fetch system photos if needed
+  const systemsBlock = enabledBlocks.find(b => b.type === 'systems');
+  const systemPhotoBuffers = new Map();
+
+  if (systemsBlock?.includePhotos && reportData.systems) {
+    const photoPromises = [];
+    reportData.systems.forEach(system => {
+      if (system.photos && system.photos.length > 0) {
+        system.photos.forEach(photo => {
+          if (photo.url) {
+            photoPromises.push(
+              fetchImageBuffer(photo.url)
+                .then(buffer => ({ id: photo.id, buffer }))
+                .catch(err => {
+                  console.warn(`Failed to fetch system photo ${photo.id}:`, err.message);
+                  return null;
+                })
+            );
+          }
+        });
+      }
+    });
+
+    const photoResults = await Promise.all(photoPromises);
+    photoResults.forEach(result => {
+      if (result) {
+        systemPhotoBuffers.set(result.id, result.buffer);
+      }
+    });
+  }
+
+  // Generate chart images if needed
+  const analysesBlock = enabledBlocks.find(b => b.type === 'analyses');
+  const chartBuffers = { field: [], laboratory: [] };
+
+  if (analysesBlock?.includeCharts && chartData) {
+    const fieldChartConfig = chartData.fieldChartConfig || {};
+    const labChartConfig = chartData.laboratoryChartConfig || {};
+
+    // Generate field chart images
+    if (chartData.fieldCharts && chartData.fieldCharts.length > 0) {
+      for (const chartSeries of chartData.fieldCharts) {
+        if (chartSeries.data && chartSeries.data.length > 0) {
+          try {
+            const chartBuffer = await generateChartImage(chartSeries, fieldChartConfig);
+            chartBuffers.field.push(chartBuffer);
+          } catch (err) {
+            console.warn(`Failed to generate field chart for ${chartSeries.monitoringPointName}:`, err.message);
+          }
+        }
+      }
+    }
+
+    // Generate laboratory chart images
+    if (chartData.laboratoryCharts && chartData.laboratoryCharts.length > 0) {
+      for (const chartSeries of chartData.laboratoryCharts) {
+        if (chartSeries.data && chartSeries.data.length > 0) {
+          try {
+            const chartBuffer = await generateChartImage(chartSeries, labChartConfig);
+            chartBuffers.laboratory.push(chartBuffer);
+          } catch (err) {
+            console.warn(`Failed to generate laboratory chart for ${chartSeries.monitoringPointName}:`, err.message);
+          }
+        }
+      }
+    }
+  }
 
   // Build document sections
   const children = [];
@@ -743,10 +1000,10 @@ async function generateWordDocument(reportData, config, reportName, templateLogo
         children.push(...buildScopeSection(reportData));
         break;
       case 'systems':
-        children.push(...buildSystemsSection(reportData, block.includePhotos));
+        children.push(...buildSystemsSection(reportData, block.includePhotos, systemPhotoBuffers));
         break;
       case 'analyses':
-        children.push(...buildAnalysesSection(reportData, block));
+        children.push(...buildAnalysesSection(reportData, block, chartBuffers));
         break;
       case 'inspections':
         children.push(...buildInspectionsSection(reportData, block));

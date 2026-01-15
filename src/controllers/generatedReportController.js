@@ -826,9 +826,95 @@ const generatedReportController = {
         }
       };
 
-      // Generate Word document (pass template logo if available)
+      // Prepare chart data if charts are enabled
+      let chartData = null;
+      const analysesBlock = config.blocks?.find(b => b.type === 'analyses');
+
+      // Check for charts - support both old chartConfig.enabled and new fieldChartConfig/laboratoryChartConfig structure
+      const hasFieldChartConfig = analysesBlock?.fieldChartConfig;
+      const hasLabChartConfig = analysesBlock?.laboratoryChartConfig;
+      const hasOldChartConfig = analysesBlock?.chartConfig?.enabled;
+      const shouldIncludeCharts = analysesBlock?.includeCharts && (hasFieldChartConfig || hasLabChartConfig || hasOldChartConfig);
+
+      if (shouldIncludeCharts) {
+        // Use fieldChartConfig, laboratoryChartConfig, or fallback to old chartConfig
+        const fieldChartCfg = analysesBlock.fieldChartConfig || analysesBlock.chartConfig || {};
+        const labChartCfg = analysesBlock.laboratoryChartConfig || analysesBlock.chartConfig || {};
+
+        // Get monitoring point IDs from config, or use all from the systems
+        let chartMonitoringPointIds = fieldChartCfg.parameters?.map(p => p.monitoringPointId) || [];
+
+        // If no specific monitoring points selected, get top 5 by data volume
+        if (chartMonitoringPointIds.length === 0) {
+          const { MonitoringPoint } = require('../../db/models');
+          const allMps = await MonitoringPoint.findAll({
+            where: allSystemIds.length > 0 ? { systemId: { [Op.in]: allSystemIds } } : {},
+            attributes: ['id'],
+            limit: 5
+          });
+          chartMonitoringPointIds = allMps.map(mp => mp.id);
+        }
+
+        // Prepare field charts
+        const fieldCharts = await chartDataService.prepareChartData({
+          clientId: report.clientId,
+          systemIds: allSystemIds,
+          startDate: start.toISOString().split('T')[0],
+          endDate: end.toISOString().split('T')[0],
+          monitoringPointIds: chartMonitoringPointIds,
+          aggregation: fieldChartCfg.aggregation || 'daily',
+          recordType: 'field'
+        });
+
+        // Prepare laboratory charts
+        const laboratoryCharts = await chartDataService.prepareChartData({
+          clientId: report.clientId,
+          systemIds: allSystemIds,
+          startDate: start.toISOString().split('T')[0],
+          endDate: end.toISOString().split('T')[0],
+          monitoringPointIds: chartMonitoringPointIds,
+          aggregation: labChartCfg.aggregation || 'daily',
+          recordType: 'laboratory'
+        });
+
+        // Apply colors from config - separate for field and laboratory
+        const applyFieldColors = (charts) => {
+          const defaultColors = ['#1976d2', '#dc004e', '#ff9800', '#4caf50', '#9c27b0', '#00bcd4'];
+          return charts.map((chart, index) => {
+            const paramConfig = fieldChartCfg.parameters?.find(p => p.monitoringPointId === chart.monitoringPointId);
+            return {
+              ...chart,
+              color: paramConfig?.color || fieldChartCfg.colors?.primary || defaultColors[index % defaultColors.length],
+              showSpecLimit: paramConfig?.showSpecLimit !== false,
+              chartType: fieldChartCfg.chartType || 'bar'
+            };
+          });
+        };
+
+        const applyLabColors = (charts) => {
+          const defaultColors = ['#1976d2', '#dc004e', '#ff9800', '#4caf50', '#9c27b0', '#00bcd4'];
+          return charts.map((chart, index) => {
+            const paramConfig = labChartCfg.parameters?.find(p => p.monitoringPointId === chart.monitoringPointId);
+            return {
+              ...chart,
+              color: paramConfig?.color || labChartCfg.colors?.primary || defaultColors[index % defaultColors.length],
+              showSpecLimit: paramConfig?.showSpecLimit !== false,
+              chartType: labChartCfg.chartType || 'bar'
+            };
+          });
+        };
+
+        chartData = {
+          fieldCharts: applyFieldColors(fieldCharts),
+          laboratoryCharts: applyLabColors(laboratoryCharts),
+          fieldChartConfig: fieldChartCfg,
+          laboratoryChartConfig: labChartCfg
+        };
+      }
+
+      // Generate Word document (pass template logo and chart data if available)
       const templateLogo = report.template?.logo || null;
-      const docBuffer = await generateWordDocument(reportData, config, report.name, templateLogo);
+      const docBuffer = await generateWordDocument(reportData, config, report.name, templateLogo, chartData);
 
       // Set response headers for file download
       const filename = `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
