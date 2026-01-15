@@ -104,13 +104,16 @@ const generatedReportController = {
         templateId,
         name,
         systemIds,
-        periodType,
-        startDate,
-        endDate,
+        period,
         config,
         conclusion,
         signature
       } = req.body;
+
+      // Support both nested period object and flat fields for backwards compatibility
+      const periodType = period?.type || req.body.periodType;
+      const startDate = period?.startDate || req.body.startDate;
+      const endDate = period?.endDate || req.body.endDate;
 
       const clientId = req.clientId || req.body.clientId;
 
@@ -122,37 +125,41 @@ const generatedReportController = {
       }
 
       // Calculate date range based on period type
+      // IMPORTANT: If user provides explicit startDate and endDate, ALWAYS use those dates
+      // The periodType only affects the default when no dates are provided
       let start, end;
       const now = new Date();
 
-      switch (periodType) {
-        case 'daily':
-          start = new Date(now.toISOString().split('T')[0]);
-          end = new Date(start);
-          end.setDate(end.getDate() + 1);
-          break;
-        case 'weekly':
-          start = new Date(now);
-          start.setDate(start.getDate() - 7);
-          end = new Date(now);
-          break;
-        case 'monthly':
-          start = new Date(now.getFullYear(), now.getMonth(), 1);
-          end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-          break;
-        case 'custom':
-          if (!startDate || !endDate) {
+      // If explicit dates are provided, use them regardless of periodType
+      if (startDate && endDate) {
+        start = new Date(startDate);
+        end = new Date(endDate);
+      } else {
+        // Fall back to periodType-based defaults when no dates provided
+        switch (periodType) {
+          case 'daily':
+            start = new Date(now.toISOString().split('T')[0]);
+            end = new Date(start);
+            end.setDate(end.getDate() + 1);
+            break;
+          case 'weekly':
+            start = new Date(now);
+            start.setDate(start.getDate() - 7);
+            end = new Date(now);
+            break;
+          case 'monthly':
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            break;
+          case 'custom':
             return res.status(400).json({
               success: false,
               messageKey: 'reports.errors.datesRequired'
             });
-          }
-          start = new Date(startDate);
-          end = new Date(endDate);
-          break;
-        default:
-          start = new Date(now.getFullYear(), now.getMonth(), 1);
-          end = new Date(now);
+          default:
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            end = new Date(now);
+        }
       }
 
       // Fetch template if provided
@@ -334,11 +341,19 @@ const generatedReportController = {
       let chartData = null;
       const analysesBlock = reportConfig.blocks?.find(b => b.type === 'analyses');
 
-      if (analysesBlock?.includeCharts && analysesBlock?.chartConfig?.enabled) {
-        const chartConfig = analysesBlock.chartConfig;
+      // Check for charts - support both old chartConfig.enabled and new fieldChartConfig/laboratoryChartConfig structure
+      const hasFieldChartConfig = analysesBlock?.fieldChartConfig;
+      const hasLabChartConfig = analysesBlock?.laboratoryChartConfig;
+      const hasOldChartConfig = analysesBlock?.chartConfig?.enabled;
+      const shouldIncludeCharts = analysesBlock?.includeCharts && (hasFieldChartConfig || hasLabChartConfig || hasOldChartConfig);
+
+      if (shouldIncludeCharts) {
+        // Use fieldChartConfig, laboratoryChartConfig, or fallback to old chartConfig
+        const fieldChartCfg = analysesBlock.fieldChartConfig || analysesBlock.chartConfig || {};
+        const labChartCfg = analysesBlock.laboratoryChartConfig || analysesBlock.chartConfig || {};
 
         // Get monitoring point IDs from config, or use all from the systems
-        let chartMonitoringPointIds = chartConfig.parameters?.map(p => p.monitoringPointId) || [];
+        let chartMonitoringPointIds = fieldChartCfg.parameters?.map(p => p.monitoringPointId) || [];
 
         // If no specific monitoring points selected, get top 5 by data volume
         if (chartMonitoringPointIds.length === 0) {
@@ -357,7 +372,7 @@ const generatedReportController = {
           startDate: start.toISOString().split('T')[0],
           endDate: end.toISOString().split('T')[0],
           monitoringPointIds: chartMonitoringPointIds,
-          aggregation: chartConfig.aggregation || 'daily',
+          aggregation: fieldChartCfg.aggregation || 'daily',
           recordType: 'field'
         });
 
@@ -368,26 +383,42 @@ const generatedReportController = {
           startDate: start.toISOString().split('T')[0],
           endDate: end.toISOString().split('T')[0],
           monitoringPointIds: chartMonitoringPointIds,
-          aggregation: chartConfig.aggregation || 'daily',
+          aggregation: labChartCfg.aggregation || 'daily',
           recordType: 'laboratory'
         });
 
-        // Apply colors from config
-        const applyColors = (charts) => {
+        // Apply colors from config - separate for field and laboratory
+        const applyFieldColors = (charts) => {
           const defaultColors = ['#1976d2', '#dc004e', '#ff9800', '#4caf50', '#9c27b0', '#00bcd4'];
           return charts.map((chart, index) => {
-            const paramConfig = chartConfig.parameters?.find(p => p.monitoringPointId === chart.monitoringPointId);
+            const paramConfig = fieldChartCfg.parameters?.find(p => p.monitoringPointId === chart.monitoringPointId);
             return {
               ...chart,
-              color: paramConfig?.color || chartConfig.colors?.primary || defaultColors[index % defaultColors.length],
-              showSpecLimit: paramConfig?.showSpecLimit !== false
+              color: paramConfig?.color || fieldChartCfg.colors?.primary || defaultColors[index % defaultColors.length],
+              showSpecLimit: paramConfig?.showSpecLimit !== false,
+              chartType: fieldChartCfg.chartType || 'bar'
+            };
+          });
+        };
+
+        const applyLabColors = (charts) => {
+          const defaultColors = ['#1976d2', '#dc004e', '#ff9800', '#4caf50', '#9c27b0', '#00bcd4'];
+          return charts.map((chart, index) => {
+            const paramConfig = labChartCfg.parameters?.find(p => p.monitoringPointId === chart.monitoringPointId);
+            return {
+              ...chart,
+              color: paramConfig?.color || labChartCfg.colors?.primary || defaultColors[index % defaultColors.length],
+              showSpecLimit: paramConfig?.showSpecLimit !== false,
+              chartType: labChartCfg.chartType || 'bar'
             };
           });
         };
 
         chartData = {
-          fieldCharts: applyColors(fieldCharts),
-          laboratoryCharts: applyColors(laboratoryCharts)
+          fieldCharts: applyFieldColors(fieldCharts),
+          laboratoryCharts: applyLabColors(laboratoryCharts),
+          fieldChartConfig: fieldChartCfg,
+          laboratoryChartConfig: labChartCfg
         };
       }
 

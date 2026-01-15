@@ -2,6 +2,16 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Define chart color palettes for different system types
+    const chartColors = {
+      ete: { primary: '#607D8B', secondary: '#90A4AE' },           // Blue-grey for ETE
+      eta: { primary: '#2196F3', secondary: '#64B5F6' },           // Blue for ETA
+      piscina: { primary: '#0288d1', secondary: '#4FC3F7' },       // Light blue for Pool
+      torre: { primary: '#ff5722', secondary: '#FF8A65' },         // Orange for Cooling Tower
+      caldeira: { primary: '#d32f2f', secondary: '#E57373' },      // Red for Boiler
+      default: { primary: '#1976d2', secondary: '#42a5f5' }        // Default blue
+    };
+
     await queryInterface.bulkInsert('ReportTemplates', [
       // Global templates (isGlobal: true, clientId: null)
       {
@@ -16,7 +26,35 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, showFieldOverview: true, showFieldDetailed: false, showLaboratoryOverview: true, showLaboratoryDetailed: false },
+            {
+              type: 'analyses',
+              enabled: true,
+              order: 4,
+              includeCharts: true,
+              highlightAlerts: true,
+              showFieldOverview: true,
+              showFieldDetailed: true,
+              showLaboratoryOverview: true,
+              showLaboratoryDetailed: false,
+              // Field chart config - AREA chart for DBO/DQO trends
+              fieldChartConfig: {
+                chartType: 'area',
+                aggregation: 'weekly',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.ete
+              },
+              // Laboratory chart config - BAR chart for comparison
+              laboratoryChartConfig: {
+                chartType: 'bar',
+                aggregation: 'weekly',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.ete
+              }
+            },
             { type: 'inspections', enabled: true, order: 5, includePhotos: true },
             { type: 'conclusion', enabled: true, order: 6 },
             { type: 'signature', enabled: true, order: 7 }
@@ -49,7 +87,35 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, showFieldOverview: true, showFieldDetailed: false, showLaboratoryOverview: true, showLaboratoryDetailed: false },
+            {
+              type: 'analyses',
+              enabled: true,
+              order: 4,
+              includeCharts: true,
+              highlightAlerts: true,
+              showFieldOverview: true,
+              showFieldDetailed: true,
+              showLaboratoryOverview: true,
+              showLaboratoryDetailed: true,
+              // Field chart config - LINE chart for turbidity/chlorine trends
+              fieldChartConfig: {
+                chartType: 'line',
+                aggregation: 'daily',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.eta
+              },
+              // Laboratory chart config - LINE chart for potability analysis
+              laboratoryChartConfig: {
+                chartType: 'line',
+                aggregation: 'weekly',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.eta
+              }
+            },
             { type: 'inspections', enabled: true, order: 5, includePhotos: true },
             { type: 'conclusion', enabled: true, order: 6 },
             { type: 'signature', enabled: true, order: 7 }
@@ -82,7 +148,35 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, showFieldOverview: true, showFieldDetailed: false, showLaboratoryOverview: true, showLaboratoryDetailed: false },
+            {
+              type: 'analyses',
+              enabled: true,
+              order: 4,
+              includeCharts: true,
+              highlightAlerts: true,
+              showFieldOverview: true,
+              showFieldDetailed: true,
+              showLaboratoryOverview: true,
+              showLaboratoryDetailed: false,
+              // Field chart config - BAR chart for daily pool measurements
+              fieldChartConfig: {
+                chartType: 'bar',
+                aggregation: 'daily',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.piscina
+              },
+              // Laboratory chart config - LINE chart for lab analysis trends
+              laboratoryChartConfig: {
+                chartType: 'line',
+                aggregation: 'weekly',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.piscina
+              }
+            },
             { type: 'inspections', enabled: true, order: 5, includePhotos: true },
             { type: 'conclusion', enabled: true, order: 6 },
             { type: 'signature', enabled: true, order: 7 }
@@ -115,7 +209,35 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, showFieldOverview: true, showFieldDetailed: false, showLaboratoryOverview: true, showLaboratoryDetailed: false },
+            {
+              type: 'analyses',
+              enabled: true,
+              order: 4,
+              includeCharts: true,
+              highlightAlerts: true,
+              showFieldOverview: true,
+              showFieldDetailed: true,
+              showLaboratoryOverview: true,
+              showLaboratoryDetailed: false,
+              // Field chart config - AREA chart for temperature/conductivity trends
+              fieldChartConfig: {
+                chartType: 'area',
+                aggregation: 'daily',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.torre
+              },
+              // Laboratory chart config - BAR chart for Legionella/biocide analysis
+              laboratoryChartConfig: {
+                chartType: 'bar',
+                aggregation: 'weekly',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.torre
+              }
+            },
             { type: 'occurrences', enabled: true, order: 5, includeTimeline: true },
             { type: 'conclusion', enabled: true, order: 6 }
           ],
@@ -147,7 +269,35 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, showFieldOverview: true, showFieldDetailed: false, showLaboratoryOverview: true, showLaboratoryDetailed: false },
+            {
+              type: 'analyses',
+              enabled: true,
+              order: 4,
+              includeCharts: true,
+              highlightAlerts: true,
+              showFieldOverview: true,
+              showFieldDetailed: true,
+              showLaboratoryOverview: true,
+              showLaboratoryDetailed: false,
+              // Field chart config - BAR chart for daily boiler parameters
+              fieldChartConfig: {
+                chartType: 'bar',
+                aggregation: 'daily',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.caldeira
+              },
+              // Laboratory chart config - AREA chart for trend analysis
+              laboratoryChartConfig: {
+                chartType: 'area',
+                aggregation: 'weekly',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.caldeira
+              }
+            },
             { type: 'inspections', enabled: true, order: 5, includePhotos: true },
             { type: 'conclusion', enabled: true, order: 6 }
           ],
@@ -179,7 +329,35 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: false, showFieldOverview: true, showFieldDetailed: false, showLaboratoryOverview: true, showLaboratoryDetailed: false },
+            {
+              type: 'analyses',
+              enabled: true,
+              order: 4,
+              includeCharts: true,
+              highlightAlerts: true,
+              showFieldOverview: true,
+              showFieldDetailed: false,
+              showLaboratoryOverview: true,
+              showLaboratoryDetailed: false,
+              // Field chart config - LINE chart for maintenance trends
+              fieldChartConfig: {
+                chartType: 'line',
+                aggregation: 'daily',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.piscina
+              },
+              // Laboratory chart config - BAR chart for water quality comparison
+              laboratoryChartConfig: {
+                chartType: 'bar',
+                aggregation: 'weekly',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.piscina
+              }
+            },
             { type: 'occurrences', enabled: true, order: 5, includeTimeline: true },
             { type: 'conclusion', enabled: true, order: 6 }
           ],
@@ -210,7 +388,35 @@ module.exports = {
           blocks: [
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
-            { type: 'analyses', enabled: true, order: 3, includeCharts: true, highlightAlerts: false, showFieldOverview: true, showFieldDetailed: false, showLaboratoryOverview: true, showLaboratoryDetailed: false },
+            {
+              type: 'analyses',
+              enabled: true,
+              order: 3,
+              includeCharts: true,
+              highlightAlerts: true,
+              showFieldOverview: true,
+              showFieldDetailed: false,
+              showLaboratoryOverview: true,
+              showLaboratoryDetailed: true,
+              // Field chart config - AREA chart for temperature trends (heated pool)
+              fieldChartConfig: {
+                chartType: 'area',
+                aggregation: 'daily',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.piscina
+              },
+              // Laboratory chart config - LINE chart for analysis trends
+              laboratoryChartConfig: {
+                chartType: 'line',
+                aggregation: 'weekly',
+                showLegend: true,
+                showSpecLimits: true,
+                highlightOutOfRange: true,
+                colors: chartColors.piscina
+              }
+            },
             { type: 'conclusion', enabled: true, order: 4 }
           ],
           branding: {

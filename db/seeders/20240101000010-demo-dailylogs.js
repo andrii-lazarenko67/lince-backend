@@ -2,10 +2,18 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Generate historical data from February 2024 to today
+    // This provides approximately 2 years of data for chart testing
     const today = new Date();
-    const getDate = (daysAgo) => {
-      const date = new Date(today);
-      date.setDate(date.getDate() - daysAgo);
+    const startDate = new Date('2024-02-01'); // Start from Feb 2024
+
+    // Calculate total days from startDate to today
+    const totalDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24));
+
+    const getDate = (dayIndex) => {
+      // dayIndex 0 = startDate, dayIndex increases forward in time
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + dayIndex);
       return date.toISOString().split('T')[0]; // DATEONLY format
     };
 
@@ -50,12 +58,60 @@ module.exports = {
       else if (system.name === 'ETE - Corporativa') systemMap.eteClient4 = { id: system.id, clientId: system.clientId };
     });
 
-    // Create daily logs for the past 30 days across ALL client systems
+    // Create daily logs from Feb 2024 to today across ALL client systems
+    // This creates approximately 2 years of historical data for chart testing
     const dailyLogs = [];
 
+    // Helper to generate varied notes based on day patterns
+    const getFieldNotes = (systemType, dayIndex) => {
+      const notePatterns = {
+        piscina: [
+          'Operação normal. Todos os parâmetros dentro das especificações.',
+          'Níveis de cloro ligeiramente abaixo do ideal. Realizado ajuste de dosagem.',
+          'Sistema operando normalmente. Água cristalina.',
+          'pH elevado detectado. Aplicado corretor de pH conforme procedimento.',
+          'Manutenção preventiva realizada. Filtros retrolavados.'
+        ],
+        torre: [
+          'Operação estável. Delta T dentro do esperado.',
+          'Ciclos de concentração ajustados. Purga aumentada temporariamente.',
+          'Torre operando em condições normais. Sistema de resfriamento eficiente.',
+          'Ajuste de purga realizado. Condutividade normalizada.',
+          'ATENÇÃO: Contagem bacteriana elevada detectada. Iniciado tratamento de choque com biocida.'
+        ],
+        caldeira: [
+          'Caldeira operando em capacidade nominal. Qualidade do vapor dentro das especificações.',
+          'Dureza residual detectada na água de alimentação. Verificar regeneração do abrandador.',
+          'Descarga de fundo realizada. Sólidos totais dentro do limite.',
+          'Pressão de operação estável. Sem vazamentos detectados.'
+        ],
+        eta: [
+          'Produção de água tratada normal. Todos os parâmetros conforme Portaria de Potabilidade.',
+          'Turbidez da água bruta elevada devido às chuvas. Ajustada dosagem de coagulante.',
+          'Filtros retrolavados. Qualidade do filtrado excelente.',
+          'Cloro residual ajustado. Dosagem otimizada.'
+        ],
+        ete: [
+          'Efluente final dentro dos parâmetros de lançamento. Sistema biológico estável.',
+          'DQO de entrada acima do normal. Verificar fontes de efluentes na indústria.',
+          'Aeradores funcionando normalmente. OD adequado no tanque de aeração.',
+          'Lodo descartado. Idade do lodo mantida conforme projeto.'
+        ],
+        efluente: [
+          'Linha 1 operando normalmente. Vazão constante.',
+          'pH ajustado antes do tratamento. Efluente dentro dos padrões.',
+          'Temperatura dentro da faixa operacional.',
+          'Sistema de equalização funcionando corretamente.'
+        ]
+      };
+
+      const patterns = notePatterns[systemType] || notePatterns.piscina;
+      return patterns[dayIndex % patterns.length];
+    };
+
     // ===== CLIENT 1: Hotel Praia Azul =====
-    // System 1: Piscina Principal (userId: Pedro technician)
-    for (let i = 0; i < 30; i++) {
+    // System 1: Piscina Principal (userId: Pedro technician) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.piscina.id,
         clientId: systemMap.piscina.clientId,
@@ -70,16 +126,14 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i % 10 === 0
-          ? 'Níveis de cloro ligeiramente abaixo do ideal. Realizado ajuste de dosagem.'
-          : 'Operação normal. Todos os parâmetros dentro das especificações.',
+        notes: getFieldNotes('piscina', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
 
-    // System 2: Piscina Infantil (userId: Maria technician)
-    for (let i = 0; i < 30; i++) {
+    // System 2: Piscina Infantil (userId: Maria technician) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.infantil.id,
         clientId: systemMap.infantil.clientId,
@@ -94,17 +148,15 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i % 15 === 0
-          ? 'pH elevado detectado. Aplicado corretor de pH conforme procedimento.'
-          : 'Sistema operando normalmente. Água cristalina.',
+        notes: getFieldNotes('piscina', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
 
     // ===== CLIENT 2: Condomínio Solar das Palmeiras =====
-    // System 3: Torre de Resfriamento 1 (userId: Pedro)
-    for (let i = 0; i < 30; i++) {
+    // System 3: Torre de Resfriamento 1 (userId: Pedro) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.torre.id,
         clientId: systemMap.torre.clientId,
@@ -119,18 +171,14 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i === 5
-          ? 'ATENÇÃO: Contagem bacteriana elevada detectada. Iniciado tratamento de choque com biocida.'
-          : (i % 7 === 0
-            ? 'Ciclos de concentração ajustados. Purga aumentada temporariamente.'
-            : 'Operação estável. Delta T dentro do esperado.'),
+        notes: getFieldNotes('torre', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
 
-    // System 4: Torre de Resfriamento 2 (userId: Maria)
-    for (let i = 0; i < 30; i++) {
+    // System 4: Torre de Resfriamento 2 (userId: Maria) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.torre2.id,
         clientId: systemMap.torre2.clientId,
@@ -145,17 +193,15 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i % 8 === 0
-          ? 'Ajuste de purga realizado. Condutividade normalizada.'
-          : 'Torre operando em condições normais. Sistema de resfriamento eficiente.',
+        notes: getFieldNotes('torre', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
 
     // ===== CLIENT 3: Indústria Metalúrgica Norte =====
-    // System 5: Caldeira (userId: João technician)
-    for (let i = 0; i < 30; i++) {
+    // System 5: Caldeira (userId: João technician) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.caldeira.id,
         clientId: systemMap.caldeira.clientId,
@@ -170,16 +216,14 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i === 12
-          ? 'Dureza residual detectada na água de alimentação. Verificar regeneração do abrandador.'
-          : 'Caldeira operando em capacidade nominal. Qualidade do vapor dentro das especificações.',
+        notes: getFieldNotes('caldeira', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
 
-    // System 6: ETA (userId: Pedro)
-    for (let i = 0; i < 30; i++) {
+    // System 6: ETA (userId: Pedro) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.eta.id,
         clientId: systemMap.eta.clientId,
@@ -194,16 +238,14 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i === 20
-          ? 'Turbidez da água bruta elevada devido às chuvas. Ajustada dosagem de coagulante.'
-          : 'Produção de água tratada normal. Todos os parâmetros conforme Portaria de Potabilidade.',
+        notes: getFieldNotes('eta', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
 
-    // System 7: ETE (userId: Maria)
-    for (let i = 0; i < 30; i++) {
+    // System 7: ETE (userId: Maria) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.ete.id,
         clientId: systemMap.ete.clientId,
@@ -218,16 +260,14 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i === 8
-          ? 'DQO de entrada acima do normal. Verificar fontes de efluentes na indústria.'
-          : 'Efluente final dentro dos parâmetros de lançamento. Sistema biológico estável.',
+        notes: getFieldNotes('ete', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
 
-    // System 8: Sistema de Efluentes Linha 1 (userId: João)
-    for (let i = 0; i < 30; i++) {
+    // System 8: Sistema de Efluentes Linha 1 (userId: João) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.efluente.id,
         clientId: systemMap.efluente.clientId,
@@ -242,17 +282,15 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i % 12 === 0
-          ? 'pH ajustado antes do tratamento. Efluente dentro dos padrões.'
-          : 'Linha 1 operando normalmente. Vazão constante.',
+        notes: getFieldNotes('efluente', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
 
     // ===== CLIENT 4: Empresa Cliente Final =====
-    // System 9: Piscina Aquecida (userId: End customer admin - end customer does self-service)
-    for (let i = 0; i < 20; i++) {
+    // System 9: Piscina Aquecida (userId: End customer admin) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.piscinaClient4.id,
         clientId: systemMap.piscinaClient4.clientId,
@@ -267,16 +305,14 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i % 5 === 0
-          ? 'Temperatura ajustada para conforto dos usuários. Sistema de aquecimento funcionando perfeitamente.'
-          : 'Piscina em condições ideais. Água aquecida e cristalina.',
+        notes: getFieldNotes('piscina', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
 
-    // System 10: Torre de Resfriamento Data Center (userId: Carlos - service provider manager)
-    for (let i = 0; i < 25; i++) {
+    // System 10: Torre de Resfriamento Data Center (userId: Carlos) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.torreClient4.id,
         clientId: systemMap.torreClient4.clientId,
@@ -291,18 +327,14 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i === 10
-          ? 'CRÍTICO: Temperatura do data center ligeiramente elevada. Verificado sistema de resfriamento e ajustada vazão.'
-          : (i % 6 === 0
-            ? 'Manutenção preventiva realizada. Sistema funcionando perfeitamente.'
-            : 'Data center mantendo temperatura ideal. Resfriamento eficiente.'),
+        notes: getFieldNotes('torre', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
     }
 
-    // System 11: ETE Corporativa (userId: End customer admin)
-    for (let i = 0; i < 20; i++) {
+    // System 11: ETE Corporativa (userId: End customer admin) - Daily records
+    for (let i = 0; i < totalDays; i++) {
       dailyLogs.push({
         systemId: systemMap.eteClient4.id,
         clientId: systemMap.eteClient4.clientId,
@@ -317,9 +349,7 @@ module.exports = {
         collectionDate: null,
         collectionTime: null,
         collectionTimeMode: null,
-        notes: i % 7 === 0
-          ? 'Efluente final analisado. Todos os parâmetros dentro dos limites de lançamento.'
-          : 'ETE operando normalmente. Tratamento biológico estável.',
+        notes: getFieldNotes('ete', i),
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -327,24 +357,28 @@ module.exports = {
 
     // ===== LABORATORY RECORDS =====
     // Add laboratory analysis records for various systems (weekly frequency)
+    // Calculate total weeks from start to today
+    const totalWeeks = Math.ceil(totalDays / 7);
 
     // Laboratory records for Piscina Principal - Client 1 (weekly)
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < totalWeeks; i++) {
+      const dayIndex = i * 7;
+      if (dayIndex >= totalDays) break;
       dailyLogs.push({
         systemId: systemMap.piscina.id,
         clientId: systemMap.piscina.clientId,
         userId: userMap.pedro,
-        date: getDate(i * 7), // Weekly: 0, 7, 14, 21, 28 days ago
+        date: getDate(dayIndex),
         recordType: 'laboratory',
         stageId: null,
         period: null,
         time: null,
         timeMode: null,
         laboratory: 'Laboratório Central de Análises',
-        collectionDate: getDate(i * 7 + 1),
+        collectionDate: getDate(Math.min(dayIndex + 1, totalDays - 1)),
         collectionTime: '09:00',
         collectionTimeMode: 'manual',
-        notes: i === 2
+        notes: i % 4 === 0
           ? 'Análise microbiológica: Coliformes totais dentro do limite. Amostra coletada conforme protocolo.'
           : 'Análise laboratorial completa realizada. Resultados dentro dos padrões da ABNT NBR.',
         createdAt: new Date(),
@@ -353,22 +387,24 @@ module.exports = {
     }
 
     // Laboratory records for Torre de Resfriamento - Client 2 (weekly)
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < totalWeeks; i++) {
+      const dayIndex = i * 7;
+      if (dayIndex >= totalDays) break;
       dailyLogs.push({
         systemId: systemMap.torre.id,
         clientId: systemMap.torre.clientId,
         userId: userMap.maria,
-        date: getDate(i * 7),
+        date: getDate(dayIndex),
         recordType: 'laboratory',
         stageId: null,
         period: null,
         time: null,
         timeMode: null,
         laboratory: 'AquaLab Análises Industriais',
-        collectionDate: getDate(i * 7 + 1),
+        collectionDate: getDate(Math.min(dayIndex + 1, totalDays - 1)),
         collectionTime: '10:30',
         collectionTimeMode: 'manual',
-        notes: i === 1
+        notes: i % 4 === 1
           ? 'Análise de Legionella: Resultado negativo. Sistema em conformidade com normas de segurança.'
           : 'Análise de corrosão e incrustação realizada. Índices de Langelier e Ryznar calculados.',
         createdAt: new Date(),
@@ -377,22 +413,24 @@ module.exports = {
     }
 
     // Laboratory records for ETA - Client 3 (weekly)
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < totalWeeks; i++) {
+      const dayIndex = i * 7;
+      if (dayIndex >= totalDays) break;
       dailyLogs.push({
         systemId: systemMap.eta.id,
         clientId: systemMap.eta.clientId,
         userId: userMap.joao,
-        date: getDate(i * 7),
+        date: getDate(dayIndex),
         recordType: 'laboratory',
         stageId: null,
         period: null,
         time: null,
         timeMode: null,
         laboratory: 'Laboratório de Potabilidade SANASA',
-        collectionDate: getDate(i * 7 + 1),
+        collectionDate: getDate(Math.min(dayIndex + 1, totalDays - 1)),
         collectionTime: '08:00',
         collectionTimeMode: 'manual',
-        notes: i === 3
+        notes: i % 4 === 2
           ? 'Análise de potabilidade completa conforme Portaria GM/MS 888/2021. Todos os parâmetros aprovados.'
           : 'Análise de metais pesados e compostos orgânicos. Resultados dentro dos limites permitidos.',
         createdAt: new Date(),
@@ -401,22 +439,24 @@ module.exports = {
     }
 
     // Laboratory records for ETE - Client 3 (weekly)
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < totalWeeks; i++) {
+      const dayIndex = i * 7;
+      if (dayIndex >= totalDays) break;
       dailyLogs.push({
         systemId: systemMap.ete.id,
         clientId: systemMap.ete.clientId,
         userId: userMap.maria,
-        date: getDate(i * 7),
+        date: getDate(dayIndex),
         recordType: 'laboratory',
         stageId: null,
         period: null,
         time: null,
         timeMode: null,
         laboratory: 'EcoLab Análises Ambientais',
-        collectionDate: getDate(i * 7 + 1),
+        collectionDate: getDate(Math.min(dayIndex + 1, totalDays - 1)),
         collectionTime: '14:00',
         collectionTimeMode: 'manual',
-        notes: i === 0
+        notes: i % 4 === 3
           ? 'DBO5 e DQO analisados. Eficiência de remoção acima de 90%. Sistema em excelente condição.'
           : 'Análise de lançamento conforme CONAMA 430. Efluente aprovado para descarte.',
         createdAt: new Date(),
@@ -425,22 +465,25 @@ module.exports = {
     }
 
     // Laboratory records for Caldeira - Client 3 (bi-weekly)
-    for (let i = 0; i < 3; i++) {
+    const totalBiweeks = Math.ceil(totalDays / 14);
+    for (let i = 0; i < totalBiweeks; i++) {
+      const dayIndex = i * 14;
+      if (dayIndex >= totalDays) break;
       dailyLogs.push({
         systemId: systemMap.caldeira.id,
         clientId: systemMap.caldeira.clientId,
         userId: userMap.joao,
-        date: getDate(i * 14),
+        date: getDate(dayIndex),
         recordType: 'laboratory',
         stageId: null,
         period: null,
         time: null,
         timeMode: null,
         laboratory: 'ThermoLab Análises Térmicas',
-        collectionDate: getDate(i * 14 + 1),
+        collectionDate: getDate(Math.min(dayIndex + 1, totalDays - 1)),
         collectionTime: '07:30',
         collectionTimeMode: 'manual',
-        notes: i === 1
+        notes: i % 2 === 1
           ? 'Análise de sílica e alcalinidade. Necessário ajuste no tratamento de água de make-up.'
           : 'Análise completa de água de caldeira. Fosfato e sulfito dentro dos limites operacionais.',
         createdAt: new Date(),
@@ -456,29 +499,114 @@ module.exports = {
       { type: Sequelize.QueryTypes.SELECT }
     );
 
-    // Get monitoring points
-    const monitoringPoints = await queryInterface.sequelize.query(
-      'SELECT id, "systemId" FROM "MonitoringPoints" ORDER BY id',
+    // Get full monitoring point data including min/max values
+    const monitoringPointsFull = await queryInterface.sequelize.query(
+      'SELECT id, "systemId", name, "minValue", "maxValue" FROM "MonitoringPoints" ORDER BY id',
       { type: Sequelize.QueryTypes.SELECT }
     );
 
     const dailyLogEntries = [];
 
+    // Helper function to generate realistic value within or near specification range
+    const generateRealisticValue = (minValue, maxValue, dayIndex, shouldBeOutOfRange = false) => {
+      // Parse values as floats (they come as strings from database)
+      const min = minValue !== null ? parseFloat(minValue) : 0;
+      const max = maxValue !== null ? parseFloat(maxValue) : 100;
+      const range = max - min || 1; // Prevent division by zero
+
+      if (shouldBeOutOfRange) {
+        // Generate value outside the range (either below min or above max)
+        const aboveOrBelow = Math.random() > 0.5;
+        if (aboveOrBelow) {
+          // Above max by 10-30% of range
+          return max + (range * (0.1 + Math.random() * 0.2));
+        } else {
+          // Below min by 10-30% of range (but not negative for most parameters)
+          const belowValue = min - (range * (0.1 + Math.random() * 0.2));
+          return Math.max(0, belowValue); // Ensure non-negative
+        }
+      }
+
+      // Generate value within range with some natural variation
+      // Add slight trends based on day index to make charts more interesting
+      const trendFactor = Math.sin(dayIndex / 5) * 0.1; // Creates wave pattern
+      const basePosition = 0.3 + Math.random() * 0.4; // 30-70% of range (centered)
+      const position = Math.max(0, Math.min(1, basePosition + trendFactor));
+
+      return min + (range * position);
+    };
+
+    // Define out-of-range patterns for each system type (using modular arithmetic for long periods)
+    // These patterns create realistic scenarios where issues occur periodically
+    const outOfRangePatterns = {
+      piscina: { period: 30, problemDays: [5, 15, 22] },   // Pool issues repeat every ~30 days
+      torre: { period: 30, problemDays: [3, 8, 18, 25] },  // Cooling tower issues
+      caldeira: { period: 30, problemDays: [7, 14, 21] },  // Boiler issues
+      eta: { period: 30, problemDays: [10, 20, 28] },      // Water treatment issues
+      ete: { period: 30, problemDays: [6, 12, 20, 26] },   // Wastewater treatment issues
+    };
+
+    // Get system name to determine out-of-range pattern
+    const getSystemCategory = (systemId) => {
+      const system = systems.find(s => s.id === systemId);
+      if (!system) return 'default';
+      const name = system.name.toLowerCase();
+      if (name.includes('piscina')) return 'piscina';
+      if (name.includes('torre')) return 'torre';
+      if (name.includes('caldeira')) return 'caldeira';
+      if (name.includes('eta')) return 'eta';
+      if (name.includes('ete') || name.includes('efluente')) return 'ete';
+      return 'default';
+    };
+
+    // Track log index per system to determine day offset
+    const logIndexBySystem = {};
+
     for (const log of insertedLogs) {
+      // Initialize counter for this system
+      if (!logIndexBySystem[log.systemId]) {
+        logIndexBySystem[log.systemId] = 0;
+      }
+      const dayIndex = logIndexBySystem[log.systemId]++;
+
       // Get monitoring points for this system
-      const systemPoints = monitoringPoints.filter(mp => mp.systemId === log.systemId);
+      const systemPoints = monitoringPointsFull.filter(mp => mp.systemId === log.systemId);
+      const systemCategory = getSystemCategory(log.systemId);
+      const pattern = outOfRangePatterns[systemCategory] || { period: 30, problemDays: [10, 20] };
 
       for (const point of systemPoints) {
-        // Generate realistic values (random between 50-150)
-        const value = (50 + Math.random() * 100).toFixed(2);
-        const isOutOfRange = Math.random() > 0.9; // 10% out of range
+        // Determine if this day should have out-of-range values
+        // Use modular arithmetic so problems recur periodically (realistic for long-term data)
+        const dayInCycle = dayIndex % pattern.period;
+        const isProblemDay = pattern.problemDays.includes(dayInCycle);
+        // ~8% base chance of out-of-range, ~70% chance on problem days
+        const shouldBeOutOfRange = isProblemDay ? Math.random() > 0.3 : Math.random() > 0.92;
+
+        // Generate realistic value based on monitoring point specifications
+        const value = generateRealisticValue(
+          point.minValue,
+          point.maxValue,
+          dayIndex,
+          shouldBeOutOfRange
+        );
+
+        // Parse limits for comparison
+        const minLimit = point.minValue !== null ? parseFloat(point.minValue) : null;
+        const maxLimit = point.maxValue !== null ? parseFloat(point.maxValue) : null;
+
+        // Determine if actually out of range based on value vs limits
+        const isOutOfRange = minLimit !== null && maxLimit !== null
+          ? (value < minLimit || value > maxLimit)
+          : shouldBeOutOfRange;
 
         dailyLogEntries.push({
           dailyLogId: log.id,
           monitoringPointId: point.id,
-          value: parseFloat(value),
+          value: parseFloat(value.toFixed(2)),
           isOutOfRange: isOutOfRange,
-          notes: isOutOfRange ? 'Valor fora da faixa esperada. Verificar condições operacionais.' : null,
+          notes: isOutOfRange
+            ? `Valor ${maxLimit !== null && value > maxLimit ? 'acima do máximo' : 'abaixo do mínimo'} permitido. Verificar condições operacionais.`
+            : null,
           createdAt: new Date(),
           updatedAt: new Date()
         });
