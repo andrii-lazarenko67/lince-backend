@@ -322,12 +322,14 @@ const productController = {
     try {
       const { name, typeId, unitId, supplier, currentStock, minStockAlert, description, recommendedDosage, isActive } = req.body;
 
-      const where = { id: req.params.id };
-
-      // Client filtering
-      if (req.clientId) {
-        where.clientId = req.clientId;
-      }
+      // Client filtering - include both shared products (clientId = NULL) and client-specific products
+      const where = {
+        id: req.params.id,
+        [Op.or]: req.clientId ? [
+          { clientId: null },           // Shared products
+          { clientId: req.clientId }    // Client-specific products
+        ] : undefined
+      };
 
       const product = await Product.findOne({ where });
 
@@ -372,12 +374,14 @@ const productController = {
       const { type, quantity, systemId, notes, date } = req.body;
       const userId = req.user.id;
 
-      const where = { id: req.params.id };
-
-      // Client filtering
-      if (req.clientId) {
-        where.clientId = req.clientId;
-      }
+      // Client filtering - include both shared products (clientId = NULL) and client-specific products
+      const where = {
+        id: req.params.id,
+        [Op.or]: req.clientId ? [
+          { clientId: null },           // Shared products
+          { clientId: req.clientId }    // Client-specific products
+        ] : undefined
+      };
 
       const product = await Product.findOne({ where });
 
@@ -463,12 +467,14 @@ const productController = {
       const { quantity, type, notes } = req.body;
       const userId = req.user.id;
 
-      const where = { id: req.params.id };
-
-      // Client filtering
-      if (req.clientId) {
-        where.clientId = req.clientId;
-      }
+      // Client filtering - include both shared products (clientId = NULL) and client-specific products
+      const where = {
+        id: req.params.id,
+        [Op.or]: req.clientId ? [
+          { clientId: null },           // Shared products
+          { clientId: req.clientId }    // Client-specific products
+        ] : undefined
+      };
 
       const product = await Product.findOne({ where });
 
@@ -543,12 +549,14 @@ const productController = {
 
   async delete(req, res, next) {
     try {
-      const where = { id: req.params.id };
-
-      // Client filtering
-      if (req.clientId) {
-        where.clientId = req.clientId;
-      }
+      // Client filtering - include both shared products (clientId = NULL) and client-specific products
+      const where = {
+        id: req.params.id,
+        [Op.or]: req.clientId ? [
+          { clientId: null },           // Shared products
+          { clientId: req.clientId }    // Client-specific products
+        ] : undefined
+      };
 
       const product = await Product.findOne({ where });
 
