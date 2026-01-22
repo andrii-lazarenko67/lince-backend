@@ -379,8 +379,26 @@ const generatedReportController = {
         const fieldChartCfg = analysesBlock.fieldChartConfig || analysesBlock.chartConfig || {};
         const labChartCfg = analysesBlock.laboratoryChartConfig || analysesBlock.chartConfig || {};
 
-        // Get monitoring point IDs from config, or use all from the systems
-        let chartMonitoringPointIds = fieldChartCfg.parameters?.map(p => p.monitoringPointId) || [];
+        // Determine aggregation level based on report period type
+        const determineAggregation = (periodType, startDate, endDate) => {
+          if (periodType === 'daily') return 'daily';
+          if (periodType === 'weekly') return 'weekly';
+          if (periodType === 'monthly') return 'monthly';
+
+          // For custom periods, determine based on date range
+          const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+          if (daysDiff <= 14) return 'daily';
+          if (daysDiff <= 90) return 'weekly';
+          return 'monthly';
+        };
+
+        const aggregation = determineAggregation(periodType, start, end);
+
+        // Get monitoring point IDs from filters (user selection) or config, or use all from the systems
+        const filters = req.body.filters || {};
+        let chartMonitoringPointIds = filters.selectedMonitoringPointIds ||
+                                      fieldChartCfg.parameters?.map(p => p.monitoringPointId) ||
+                                      [];
 
         // If no specific monitoring points selected, get top 5 by data volume
         if (chartMonitoringPointIds.length === 0) {
@@ -392,25 +410,25 @@ const generatedReportController = {
           chartMonitoringPointIds = allMps.map(mp => mp.id);
         }
 
-        // Prepare field charts
+        // Prepare field charts with period-based aggregation
         const fieldCharts = await chartDataService.prepareChartData({
           clientId,
           systemIds: allSystemIds,
           startDate: start.toISOString().split('T')[0],
           endDate: end.toISOString().split('T')[0],
           monitoringPointIds: chartMonitoringPointIds,
-          aggregation: fieldChartCfg.aggregation || 'daily',
+          aggregation: aggregation,
           recordType: 'field'
         });
 
-        // Prepare laboratory charts
+        // Prepare laboratory charts with period-based aggregation
         const laboratoryCharts = await chartDataService.prepareChartData({
           clientId,
           systemIds: allSystemIds,
           startDate: start.toISOString().split('T')[0],
           endDate: end.toISOString().split('T')[0],
           monitoringPointIds: chartMonitoringPointIds,
-          aggregation: labChartCfg.aggregation || 'daily',
+          aggregation: aggregation,
           recordType: 'laboratory'
         });
 
@@ -456,14 +474,20 @@ const generatedReportController = {
       const reportName = name || `Report - ${client.name} - ${start.toISOString().split('T')[0]} to ${end.toISOString().split('T')[0]}`;
 
       // Save to history (PDF generation happens on frontend with react-pdf)
+      const filters = req.body.filters || {};
       const generatedReport = await GeneratedReport.create({
         templateId: templateId || null,
         userId: req.user.id,
         clientId,
         name: reportName,
         systemIds: allSystemIds,
-        period: { start: start.toISOString(), end: end.toISOString() },
+        period: {
+          type: periodType,
+          start: start.toISOString(),
+          end: end.toISOString()
+        },
         filters: {
+          ...filters,
           periodType,
           systemIds,
           config: reportConfig,
@@ -859,6 +883,21 @@ const generatedReportController = {
         const fieldChartCfg = analysesBlock.fieldChartConfig || analysesBlock.chartConfig || {};
         const labChartCfg = analysesBlock.laboratoryChartConfig || analysesBlock.chartConfig || {};
 
+        // Determine aggregation level based on report period type
+        const determineAggregation = (periodType, startDate, endDate) => {
+          if (periodType === 'daily') return 'daily';
+          if (periodType === 'weekly') return 'weekly';
+          if (periodType === 'monthly') return 'monthly';
+
+          // For custom periods, determine based on date range
+          const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+          if (daysDiff <= 14) return 'daily';
+          if (daysDiff <= 90) return 'weekly';
+          return 'monthly';
+        };
+
+        const aggregation = determineAggregation(period.type, start, end);
+
         // Get monitoring point IDs from filters (user selection) or config, or use all from the systems
         let chartMonitoringPointIds = report.filters?.selectedMonitoringPointIds ||
                                       fieldChartCfg.parameters?.map(p => p.monitoringPointId) ||
@@ -875,25 +914,25 @@ const generatedReportController = {
           chartMonitoringPointIds = allMps.map(mp => mp.id);
         }
 
-        // Prepare field charts
+        // Prepare field charts with period-based aggregation
         const fieldCharts = await chartDataService.prepareChartData({
           clientId: report.clientId,
           systemIds: allSystemIds,
           startDate: start.toISOString().split('T')[0],
           endDate: end.toISOString().split('T')[0],
           monitoringPointIds: chartMonitoringPointIds,
-          aggregation: fieldChartCfg.aggregation || 'daily',
+          aggregation: aggregation,
           recordType: 'field'
         });
 
-        // Prepare laboratory charts
+        // Prepare laboratory charts with period-based aggregation
         const laboratoryCharts = await chartDataService.prepareChartData({
           clientId: report.clientId,
           systemIds: allSystemIds,
           startDate: start.toISOString().split('T')[0],
           endDate: end.toISOString().split('T')[0],
           monitoringPointIds: chartMonitoringPointIds,
-          aggregation: labChartCfg.aggregation || 'daily',
+          aggregation: aggregation,
           recordType: 'laboratory'
         });
 
@@ -953,3 +992,4 @@ const generatedReportController = {
 };
 
 module.exports = generatedReportController;
+// Fixed chart aggregation to respect report period type
