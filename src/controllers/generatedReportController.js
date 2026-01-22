@@ -667,6 +667,9 @@ const generatedReportController = {
         });
       }
 
+      // Get language from query parameter or default to 'pt'
+      const language = req.query.language || 'pt';
+
       // Get period from report
       const period = report.period || {};
       const start = period.start ? new Date(period.start) : new Date();
@@ -927,9 +930,9 @@ const generatedReportController = {
         };
       }
 
-      // Generate Word document (pass template logo and chart data if available)
+      // Generate Word document (pass template logo, chart data, and language if available)
       const templateLogo = report.template?.logo || null;
-      const docBuffer = await generateWordDocument(reportData, config, report.name, templateLogo, chartData);
+      const docBuffer = await generateWordDocument(reportData, config, report.name, templateLogo, chartData, language);
 
       // Set response headers for file download
       const filename = `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
