@@ -859,8 +859,10 @@ const generatedReportController = {
         const fieldChartCfg = analysesBlock.fieldChartConfig || analysesBlock.chartConfig || {};
         const labChartCfg = analysesBlock.laboratoryChartConfig || analysesBlock.chartConfig || {};
 
-        // Get monitoring point IDs from config, or use all from the systems
-        let chartMonitoringPointIds = fieldChartCfg.parameters?.map(p => p.monitoringPointId) || [];
+        // Get monitoring point IDs from filters (user selection) or config, or use all from the systems
+        let chartMonitoringPointIds = report.filters?.selectedMonitoringPointIds ||
+                                      fieldChartCfg.parameters?.map(p => p.monitoringPointId) ||
+                                      [];
 
         // If no specific monitoring points selected, get top 5 by data volume
         if (chartMonitoringPointIds.length === 0) {
