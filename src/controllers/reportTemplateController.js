@@ -50,10 +50,44 @@ const reportTemplateController = {
         order: [['isDefault', 'DESC'], ['isGlobal', 'DESC'], ['name', 'ASC']]
       });
 
-      res.json({
-        success: true,
-        data: templates
-      });
+      // Filter templates by client's system types
+      if (clientId) {
+        const { System } = require('../../db/models');
+
+        // Get unique system types for this client
+        const systems = await System.findAll({
+          where: { clientId },
+          attributes: ['systemTypeId'],
+          group: ['systemTypeId']
+        });
+
+        const clientSystemTypeIds = systems.map(s => s.systemTypeId);
+
+        // Filter templates:
+        // - Include if systemTypeIds is null/empty (general template)
+        // - Include if any systemTypeId matches client's system types
+        const filteredTemplates = templates.filter(template => {
+          if (!template.systemTypeIds || template.systemTypeIds.length === 0) {
+            return true; // General template - show for all clients
+          }
+
+          // Check if any template systemTypeId exists in client's system types
+          return template.systemTypeIds.some(typeId =>
+            clientSystemTypeIds.includes(typeId)
+          );
+        });
+
+        res.json({
+          success: true,
+          data: filteredTemplates
+        });
+      } else {
+        // No client selected - return all templates
+        res.json({
+          success: true,
+          data: templates
+        });
+      }
     } catch (error) {
       next(error);
     }

@@ -11,6 +11,7 @@ module.exports = {
         name: 'Monthly WWTP Report',
         description: 'Standard template for monthly Wastewater Treatment Plant reports',
         type: 'both',
+        systemTypeIds: JSON.stringify([5]), // WWTP only
         config: JSON.stringify({
           blocks: [
             { type: 'identification', enabled: true, order: 1 },
@@ -45,6 +46,7 @@ module.exports = {
         name: 'Monthly WTP Report',
         description: 'Standard template for monthly Water Treatment Plant reports',
         type: 'both',
+        systemTypeIds: JSON.stringify([4]), // WTP only
         config: JSON.stringify({
           blocks: [
             { type: 'identification', enabled: true, order: 1 },
@@ -78,6 +80,7 @@ module.exports = {
         name: 'Pool Visit Report',
         description: 'Template for swimming pool technical visit reports',
         type: 'service_provider',
+        systemTypeIds: JSON.stringify([1]), // Pool only
         config: JSON.stringify({
           blocks: [
             { type: 'identification', enabled: true, order: 1 },
@@ -111,6 +114,7 @@ module.exports = {
         name: 'Cooling Tower Report',
         description: 'Template for industrial cooling tower reports',
         type: 'both',
+        systemTypeIds: JSON.stringify([2]), // Cooling Tower only
         config: JSON.stringify({
           blocks: [
             { type: 'identification', enabled: true, order: 1 },
@@ -143,6 +147,7 @@ module.exports = {
         name: 'Boiler Report',
         description: 'Template for industrial boiler reports',
         type: 'both',
+        systemTypeIds: JSON.stringify([3]), // Boiler only
         config: JSON.stringify({
           blocks: [
             { type: 'identification', enabled: true, order: 1 },
@@ -175,6 +180,7 @@ module.exports = {
         name: 'Incident Report',
         description: 'Template focused on incidents and occurrences',
         type: 'both',
+        systemTypeIds: null, // General template - show for all clients
         config: JSON.stringify({
           blocks: [
             { type: 'identification', enabled: true, order: 1 },

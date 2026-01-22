@@ -63,6 +63,11 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         defaultValue: true
       },
+      systemTypeIds: {
+        type: Sequelize.JSON,
+        allowNull: true,
+        comment: 'Array of system type IDs that this template is designed for. If null or empty, template is shown for all clients.'
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

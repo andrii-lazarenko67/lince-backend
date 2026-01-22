@@ -73,6 +73,13 @@ module.exports = (sequelize, DataTypes) => {
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    systemTypeIds: {
+      type: DataTypes.JSON,
+      allowNull: true
+      // Array of system type IDs that this template is designed for
+      // If null or empty, template is shown for all clients
+      // Example: [1, 2, 3] means template is for system types 1, 2, and 3
     }
   }, {
     tableName: 'ReportTemplates',
