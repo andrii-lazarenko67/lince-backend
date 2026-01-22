@@ -27,6 +27,9 @@ router.get('/:id/download', generatedReportController.download);
 // Download Word document
 router.get('/:id/download-word', generatedReportController.downloadWord);
 
+// Send report via email
+router.post('/:id/send-email', generatedReportController.sendReportEmail);
+
 // Delete a generated report
 router.delete('/:id', generatedReportController.delete);
 
