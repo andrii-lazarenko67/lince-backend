@@ -13,9 +13,39 @@ const anthropic = new Anthropic({
  */
 const aiService = {
   /**
-   * System context for AI assistant
+   * Get system context in specified language
+   * @param {string} language - User language (pt or en)
+   * @returns {string} System context
    */
-  SYSTEM_CONTEXT: `You are LINCE AI Assistant, an expert in water treatment systems, pool maintenance, and water quality management.
+  getSystemContext(language = 'pt') {
+    if (language === 'pt') {
+      return `Você é o Assistente IA LINCE, um especialista em sistemas de tratamento de água, manutenção de piscinas e gestão de qualidade da água.
+
+Seu papel é ajudar os usuários a:
+- Entender e usar o sistema de gestão de tratamento de água LINCE
+- Configurar sistemas (piscinas, estações de tratamento de água, estações de distribuição)
+- Interpretar resultados de análises de qualidade da água
+- Responder a alertas e anomalias
+- Manter conformidade com padrões de qualidade da água
+- Solucionar problemas
+
+Conceitos-chave:
+- SISTEMAS: Instalações de tratamento de água (piscinas, ETAs, estações)
+- PONTOS DE MONITORAMENTO: Parâmetros específicos medidos (pH, cloro, turbidez, etc.)
+- REGISTROS DIÁRIOS: Medições regulares de qualidade da água
+- INSPEÇÕES: Verificações rotineiras das instalações
+- INCIDENTES: Problemas ou anomalias que requerem atenção
+- ALERTAS: Medições fora dos limites que exigem ação
+
+Estilo de comunicação:
+- Seja prestativo, claro e conciso
+- Use linguagem simples (usuários podem não ser técnicos)
+- Forneça recomendações acionáveis
+- Referencie normas brasileiras de qualidade da água (CONAMA, Portaria 2914) quando relevante
+- Sempre responda em português brasileiro
+- Seja encorajador e solidário`;
+    } else {
+      return `You are LINCE AI Assistant, an expert in water treatment systems, pool maintenance, and water quality management.
 
 Your role is to help users:
 - Understand and use the LINCE water treatment management system
@@ -37,9 +67,11 @@ Communication style:
 - Be helpful, clear, and concise
 - Use simple language (users may not be technical)
 - Provide actionable recommendations
-- Reference Brazilian water quality standards (CONAMA, Portaria 2914) when relevant
-- Support both Portuguese and English
-- Be encouraging and supportive`,
+- Reference water quality standards (CONAMA, Portaria 2914) when relevant
+- Always respond in English
+- Be encouraging and supportive`;
+    }
+  },
 
   /**
    * Send a chat message to AI assistant
@@ -55,16 +87,16 @@ Communication style:
       // Build context message
       let contextMessage = '';
       if (context.page) {
-        contextMessage += `\nUser is currently on: ${context.page}`;
+        const pageLabel = language === 'pt' ? 'Usuário está atualmente em' : 'User is currently on';
+        contextMessage += `\n${pageLabel}: ${context.page}`;
       }
       if (context.systemType) {
-        contextMessage += `\nCurrent system type: ${context.systemType}`;
+        const typeLabel = language === 'pt' ? 'Tipo de sistema atual' : 'Current system type';
+        contextMessage += `\n${typeLabel}: ${context.systemType}`;
       }
       if (context.data) {
-        contextMessage += `\nCurrent data: ${JSON.stringify(context.data, null, 2)}`;
-      }
-      if (language) {
-        contextMessage += `\nUser language: ${language} (respond in this language)`;
+        const dataLabel = language === 'pt' ? 'Dados atuais' : 'Current data';
+        contextMessage += `\n${dataLabel}: ${JSON.stringify(context.data, null, 2)}`;
       }
 
       // Build messages array
@@ -79,8 +111,9 @@ Communication style:
       });
 
       // Add current message with context
+      const questionLabel = language === 'pt' ? 'Pergunta do usuário' : 'User question';
       const currentMessage = contextMessage
-        ? `${contextMessage}\n\nUser question: ${message}`
+        ? `${contextMessage}\n\n${questionLabel}: ${message}`
         : message;
 
       messages.push({
@@ -88,11 +121,11 @@ Communication style:
         content: currentMessage
       });
 
-      // Call Claude API
+      // Call Claude API with language-specific system context
       const response = await anthropic.messages.create({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
-        system: this.SYSTEM_CONTEXT,
+        system: this.getSystemContext(language),
         messages: messages
       });
 
@@ -147,7 +180,7 @@ Be concise and practical.`;
       const response = await anthropic.messages.create({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
-        system: this.SYSTEM_CONTEXT,
+        system: this.getSystemContext(language),
         messages: [{ role: 'user', content: prompt }]
       });
 
@@ -200,7 +233,7 @@ Return in structured JSON format.`;
       const response = await anthropic.messages.create({
         model: 'claude-3-haiku-20240307',
         max_tokens: 2048,
-        system: this.SYSTEM_CONTEXT,
+        system: this.getSystemContext(language),
         messages: [{ role: 'user', content: prompt }]
       });
 
@@ -258,7 +291,7 @@ Be direct and practical.`;
       const response = await anthropic.messages.create({
         model: 'claude-3-haiku-20240307',
         max_tokens: 512,
-        system: this.SYSTEM_CONTEXT,
+        system: this.getSystemContext(language),
         messages: [{ role: 'user', content: prompt }]
       });
 
@@ -316,7 +349,7 @@ Be clear and practical.`;
       const response = await anthropic.messages.create({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
-        system: this.SYSTEM_CONTEXT,
+        system: this.getSystemContext(language),
         messages: [{ role: 'user', content: prompt }]
       });
 
