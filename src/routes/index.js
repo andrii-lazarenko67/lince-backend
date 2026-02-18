@@ -24,11 +24,15 @@ const systemPhotoRoutes = require('./systemPhotoRoutes');
 const clientRoutes = require('./clientRoutes');
 const reportTemplateRoutes = require('./reportTemplateRoutes');
 const generatedReportRoutes = require('./generatedReportRoutes');
+const aiRoutes = require('./aiRoutes');
 
 // Auth routes (no client context needed)
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/clients', clientRoutes);
+
+// AI assistant routes (auth required, no client context)
+router.use('/ai', aiRoutes);
 
 // Apply auth + client context middleware for data routes
 router.use('/systems', authMiddleware, clientContextMiddleware, systemRoutes);
