@@ -90,7 +90,7 @@ Communication style:
 
       // Call Claude API
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
         system: this.SYSTEM_CONTEXT,
         messages: messages
@@ -145,7 +145,7 @@ Provide:
 Be concise and practical.`;
 
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
         system: this.SYSTEM_CONTEXT,
         messages: [{ role: 'user', content: prompt }]
@@ -198,7 +198,7 @@ Provide:
 Return in structured JSON format.`;
 
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 2048,
         system: this.SYSTEM_CONTEXT,
         messages: [{ role: 'user', content: prompt }]
@@ -256,7 +256,7 @@ Provide a brief explanation (2-3 sentences) about:
 Be direct and practical.`;
 
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 512,
         system: this.SYSTEM_CONTEXT,
         messages: [{ role: 'user', content: prompt }]
@@ -314,7 +314,7 @@ Explain:
 Be clear and practical.`;
 
       const response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
         system: this.SYSTEM_CONTEXT,
         messages: [{ role: 'user', content: prompt }]
