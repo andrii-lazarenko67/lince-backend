@@ -123,7 +123,7 @@ Communication style:
 
       // Call Claude API with language-specific system context
       const response = await anthropic.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         system: this.getSystemContext(language),
         messages: messages
@@ -178,7 +178,7 @@ Provide:
 Be concise and practical.`;
 
       const response = await anthropic.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         system: this.getSystemContext(language),
         messages: [{ role: 'user', content: prompt }]
@@ -231,7 +231,7 @@ Provide:
 Return in structured JSON format.`;
 
       const response = await anthropic.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 2048,
         system: this.getSystemContext(language),
         messages: [{ role: 'user', content: prompt }]
@@ -289,7 +289,7 @@ Provide a brief explanation (2-3 sentences) about:
 Be direct and practical.`;
 
       const response = await anthropic.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 512,
         system: this.getSystemContext(language),
         messages: [{ role: 'user', content: prompt }]
@@ -347,7 +347,7 @@ Explain:
 Be clear and practical.`;
 
       const response = await anthropic.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         system: this.getSystemContext(language),
         messages: [{ role: 'user', content: prompt }]
@@ -362,6 +362,310 @@ Be clear and practical.`;
       console.error('AI Alert Interpretation Error:', error);
       throw new Error(`AI alert interpretation error: ${error.message}`);
     }
+  },
+
+  /**
+   * Extract lab report values from an uploaded image or PDF
+   */
+  async extractLabReport({ fileBuffer, mimeType, monitoringPoints, language = 'pt' }) {
+    const mpList = monitoringPoints.map((mp, i) =>
+      `${i + 1}. ID:${mp.id} | Parâmetro: ${mp.parameterName || mp.name} | Unidade: ${mp.unit || 'N/A'}`
+    ).join('\n');
+
+    const prompt = language === 'pt'
+      ? `Você é um especialista em análise de relatórios laboratoriais de qualidade da água.\n\nAnalise este relatório e extraia os valores numéricos medidos para os seguintes pontos de monitoramento:\n\n${mpList}\n\nRegras:\n- Retorne SOMENTE um JSON válido, sem texto adicional\n- Use o ID do ponto de monitoramento como chave\n- Inclua apenas parâmetros encontrados no relatório\n- Os valores devem ser numéricos\n\nFormato: {"values":{"ID":VALOR},"found":["nomes encontrados"],"notFound":["nomes não encontrados"]}`
+      : `You are an expert in analyzing water quality laboratory reports.\n\nAnalyze this report and extract the numeric measurement values for the following monitoring points:\n\n${mpList}\n\nRules:\n- Return ONLY valid JSON, no additional text\n- Use the monitoring point ID as the key\n- Include only parameters found in the report\n- Values must be numeric\n\nFormat: {"values":{"ID":VALUE},"found":["found names"],"notFound":["not found names"]}`;
+
+    const isImage = mimeType.startsWith('image/');
+    const isPdf = mimeType === 'application/pdf';
+    const base64 = fileBuffer.toString('base64');
+
+    let content;
+    let model;
+
+    if (isImage) {
+      model = 'claude-haiku-4-5-20251001';
+      content = [
+        { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } },
+        { type: 'text', text: prompt }
+      ];
+    } else if (isPdf) {
+      model = 'claude-haiku-4-5-20251001';
+      content = [
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+        { type: 'text', text: prompt }
+      ];
+    } else {
+      throw new Error('Unsupported file type. Use images (PNG, JPG, WEBP) or PDF.');
+    }
+
+    const response = await anthropic.messages.create({
+      model,
+      max_tokens: 1024,
+      messages: [{ role: 'user', content }]
+    });
+
+    const text = response.content[0].text;
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Could not parse AI response as JSON');
+
+    return JSON.parse(jsonMatch[0]);
+  },
+
+  /**
+   * Generate an advanced custom AI report based on a free-form prompt and real monitoring data
+   * @param {Object} params
+   * @param {string} params.prompt - User's custom prompt / instruction
+   * @param {Object} params.reportContext - Full monitoring data context
+   * @param {string} params.language - 'pt' or 'en'
+   */
+  async generateAdvancedReport({ prompt, reportContext, language = 'pt' }) {
+    const {
+      clientName,
+      systems,
+      period,
+      dailyLogsData,
+      inspectionsData,
+      incidentsData,
+      summary
+    } = reportContext;
+
+    // Build detailed monitoring readings section
+    const buildReadingsSection = () => {
+      if (!dailyLogsData || dailyLogsData.length === 0) {
+        return language === 'pt' ? 'Nenhum registro encontrado para o período.' : 'No records found for this period.';
+      }
+
+      return dailyLogsData.map(log => {
+        const dateStr = log.date;
+        const type = log.recordType === 'laboratory'
+          ? (language === 'pt' ? 'Análise Laboratorial' : 'Laboratory Analysis')
+          : (language === 'pt' ? 'Medição em Campo' : 'Field Measurement');
+        const systemName = log.systemName || '';
+        const labName = log.laboratory ? ` | ${language === 'pt' ? 'Laboratório' : 'Lab'}: ${log.laboratory}` : '';
+        const period = log.period ? ` | ${language === 'pt' ? 'Período' : 'Period'}: ${log.period}` : '';
+
+        const entries = (log.entries || []).map(entry => {
+          const status = entry.isOutOfRange
+            ? (language === 'pt' ? '⚠ FORA DA ESPECIFICAÇÃO' : '⚠ OUT OF SPEC')
+            : (language === 'pt' ? '✓ DENTRO DA ESPECIFICAÇÃO' : '✓ WITHIN SPEC');
+          const range = (entry.minValue !== null && entry.maxValue !== null)
+            ? `[${language === 'pt' ? 'Especif' : 'Spec'}: ${entry.minValue} – ${entry.maxValue} ${entry.unit}]`
+            : '';
+          const notes = entry.notes ? ` | ${language === 'pt' ? 'Obs' : 'Notes'}: "${entry.notes}"` : '';
+          return `    • ${entry.parameter} (${entry.systemName || systemName}): ${entry.value} ${entry.unit} ${range} ${status}${notes}`;
+        }).join('\n');
+
+        return `[${dateStr}] ${type} – ${systemName}${period}${labName}\n${entries || (language === 'pt' ? '    (sem leituras)' : '    (no readings)')}`;
+      }).join('\n\n');
+    };
+
+    const buildInspectionsSection = () => {
+      if (!inspectionsData || inspectionsData.length === 0) {
+        return language === 'pt' ? 'Nenhuma inspeção no período.' : 'No inspections in this period.';
+      }
+      return inspectionsData.map(ins => {
+        const nc = ins.nonConformities > 0
+          ? ` | ${language === 'pt' ? 'Não conformidades' : 'Non-conformities'}: ${ins.nonConformities}`
+          : '';
+        return `  • [${ins.date}] ${ins.title} – ${language === 'pt' ? 'Resultado' : 'Result'}: ${ins.result || ins.status}${nc}`;
+      }).join('\n');
+    };
+
+    const buildIncidentsSection = () => {
+      if (!incidentsData || incidentsData.length === 0) {
+        return language === 'pt' ? 'Nenhuma ocorrência no período.' : 'No incidents in this period.';
+      }
+      return incidentsData.map(inc => {
+        const comments = (inc.comments || []).length > 0
+          ? '\n' + inc.comments.map(c => `      - "${c.content}"`).join('\n')
+          : '';
+        return `  • [${inc.date}] ${inc.title} | ${language === 'pt' ? 'Criticidade' : 'Severity'}: ${inc.severity} | ${language === 'pt' ? 'Status' : 'Status'}: ${inc.status}${comments}`;
+      }).join('\n');
+    };
+
+    const systemsList = (systems || []).map(s => `  • ${s.name} (${s.systemType || ''})`).join('\n');
+
+    const contextBlock = language === 'pt'
+      ? `=== DADOS COMPLETOS DO SISTEMA LINCE ===
+Cliente: ${clientName || 'N/A'}
+Período analisado: ${period.startDate} a ${period.endDate}
+
+SISTEMAS:
+${systemsList}
+
+RESUMO ESTATÍSTICO:
+  • Total de leituras: ${summary.totalReadings}
+  • Leituras dentro da especificação: ${summary.withinRangeCount}
+  • Leituras FORA da especificação: ${summary.outOfRangeCount}
+  • Total de inspeções: ${summary.totalInspections}
+  • Total de ocorrências: ${summary.totalIncidents} (${summary.openIncidents} em aberto)
+
+--- REGISTROS DE MONITORAMENTO ---
+${buildReadingsSection()}
+
+--- INSPEÇÕES ---
+${buildInspectionsSection()}
+
+--- OCORRÊNCIAS / INCIDENTES ---
+${buildIncidentsSection()}
+=== FIM DOS DADOS ===`
+      : `=== COMPLETE LINCE SYSTEM DATA ===
+Client: ${clientName || 'N/A'}
+Analysis period: ${period.startDate} to ${period.endDate}
+
+SYSTEMS:
+${systemsList}
+
+STATISTICAL SUMMARY:
+  • Total readings: ${summary.totalReadings}
+  • Within specification: ${summary.withinRangeCount}
+  • OUT OF SPECIFICATION: ${summary.outOfRangeCount}
+  • Total inspections: ${summary.totalInspections}
+  • Total incidents: ${summary.totalIncidents} (${summary.openIncidents} open)
+
+--- MONITORING RECORDS ---
+${buildReadingsSection()}
+
+--- INSPECTIONS ---
+${buildInspectionsSection()}
+
+--- INCIDENTS / OCCURRENCES ---
+${buildIncidentsSection()}
+=== END OF DATA ===`;
+
+    const systemPrompt = language === 'pt'
+      ? `Você é um especialista sênior em qualidade da água e gestão de sistemas hídricos, com ampla experiência em redação de relatórios técnicos e gerenciais. Você recebe dados reais de monitoramento de um sistema de gestão de tratamento de água e gera relatórios completos, coesos e profissionais conforme solicitado. Use formatação clara com títulos, seções e marcadores quando apropriado. Responda sempre em português brasileiro com linguagem técnica mas acessível ao perfil solicitado pelo usuário (gerencial, operacional, técnico, etc.).`
+      : `You are a senior expert in water quality and water system management, with extensive experience writing technical and management reports. You receive real monitoring data from a water treatment management system and generate complete, cohesive, and professional reports as requested. Use clear formatting with headings, sections, and bullet points where appropriate. Always use professional language adapted to the audience profile requested by the user (management, operational, technical, etc.).`;
+
+    const userPrompt = language === 'pt'
+      ? `${contextBlock}\n\n=== SOLICITAÇÃO DO USUÁRIO ===\n${prompt}\n\nGere o relatório completo conforme solicitado acima, utilizando exclusivamente os dados reais fornecidos. O relatório deve ser coeso, bem estruturado e adequado ao perfil solicitado.`
+      : `${contextBlock}\n\n=== USER REQUEST ===\n${prompt}\n\nGenerate the complete report as requested above, using exclusively the real data provided. The report should be cohesive, well-structured, and appropriate for the requested audience.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    });
+
+    return {
+      success: true,
+      report: response.content[0].text,
+      usage: {
+        inputTokens: response.usage.input_tokens,
+        outputTokens: response.usage.output_tokens
+      }
+    };
+  },
+
+  /**
+   * Generate a comprehensive report conclusion based on real monitoring data
+   * @param {Object} params
+   * @param {string} params.instruction - User's specific instruction / command
+   * @param {Object} params.reportContext - Context object with all monitoring data
+   * @param {string} params.language - 'pt' or 'en'
+   */
+  async generateReportConclusion({ instruction, reportContext, language = 'pt' }) {
+    const {
+      clientName,
+      systems,
+      period,
+      outOfRangeItems,
+      withinRangeCount,
+      totalReadings,
+      inspections,
+      incidents,
+      summary
+    } = reportContext;
+
+    // Build the context block
+    const periodStr = language === 'pt'
+      ? `Período: ${period.startDate} a ${period.endDate}`
+      : `Period: ${period.startDate} to ${period.endDate}`;
+
+    const systemsList = (systems || []).map(s => `- ${s.name} (${s.systemType || ''})`).join('\n') || (language === 'pt' ? '(não especificado)' : '(not specified)');
+
+    const outOfRangeList = (outOfRangeItems || []).length > 0
+      ? (outOfRangeItems || []).map(item => {
+          if (language === 'pt') {
+            return `• ${item.parameter} (${item.systemName}): valor medido = ${item.value} ${item.unit} | limite: ${item.min !== null ? item.min : '–'} – ${item.max !== null ? item.max : '–'} ${item.unit} | FORA DA ESPECIFICAÇÃO`;
+          }
+          return `• ${item.parameter} (${item.systemName}): measured = ${item.value} ${item.unit} | limit: ${item.min !== null ? item.min : '–'} – ${item.max !== null ? item.max : '–'} ${item.unit} | OUT OF SPEC`;
+        }).join('\n')
+      : (language === 'pt' ? 'Nenhum resultado fora da especificação.' : 'No out-of-specification results.');
+
+    const inspSummary = (inspections || []).length > 0
+      ? (inspections || []).slice(0, 5).map(i => `- ${i.title || i.type || ''}: ${i.result || i.status || ''}`).join('\n')
+      : '';
+
+    const incSummary = (incidents || []).length > 0
+      ? (incidents || []).slice(0, 5).map(i => `- ${i.title || ''}: ${i.status || ''} (${i.severity || ''})`).join('\n')
+      : '';
+
+    const contextBlock = language === 'pt'
+      ? `=== DADOS DO RELATÓRIO ===
+Cliente: ${clientName || 'N/A'}
+${periodStr}
+
+SISTEMAS ANALISADOS:
+${systemsList}
+
+RESUMO DAS MEDIÇÕES:
+- Total de leituras: ${totalReadings || 0}
+- Leituras dentro da especificação: ${withinRangeCount || 0}
+- Leituras FORA da especificação: ${(outOfRangeItems || []).length}
+- Total de inspeções: ${summary?.totalInspections || 0}
+- Total de ocorrências/incidentes: ${summary?.totalIncidents || 0}${summary?.openIncidents ? ` (${summary.openIncidents} em aberto)` : ''}
+
+RESULTADOS FORA DA ESPECIFICAÇÃO:
+${outOfRangeList}
+${inspSummary ? `\nRESUMO DAS INSPEÇÕES:\n${inspSummary}` : ''}
+${incSummary ? `\nOCORRÊNCIAS REGISTRADAS:\n${incSummary}` : ''}
+=== FIM DOS DADOS ===`
+      : `=== REPORT DATA ===
+Client: ${clientName || 'N/A'}
+${periodStr}
+
+SYSTEMS ANALYZED:
+${systemsList}
+
+MEASUREMENT SUMMARY:
+- Total readings: ${totalReadings || 0}
+- Within specification: ${withinRangeCount || 0}
+- OUT OF SPECIFICATION: ${(outOfRangeItems || []).length}
+- Total inspections: ${summary?.totalInspections || 0}
+- Total incidents: ${summary?.totalIncidents || 0}${summary?.openIncidents ? ` (${summary.openIncidents} open)` : ''}
+
+OUT-OF-SPECIFICATION RESULTS:
+${outOfRangeList}
+${inspSummary ? `\nINSPECTION SUMMARY:\n${inspSummary}` : ''}
+${incSummary ? `\nINCIDENTS RECORDED:\n${incSummary}` : ''}
+=== END OF DATA ===`;
+
+    const userPrompt = language === 'pt'
+      ? `${contextBlock}\n\nINSTRUÇÃO DO USUÁRIO:\n${instruction}\n\nGere a conclusão do relatório técnico seguindo exatamente a instrução acima, usando os dados fornecidos. A conclusão deve ser profissional, clara e baseada nos dados reais.`
+      : `${contextBlock}\n\nUSER INSTRUCTION:\n${instruction}\n\nGenerate the technical report conclusion following exactly the instruction above, using the provided data. The conclusion should be professional, clear and based on the actual data.`;
+
+    const systemPrompt = language === 'pt'
+      ? `Você é um especialista técnico em qualidade da água e tratamento de sistemas hídricos com experiência em redação de relatórios técnicos profissionais. Você analisa dados reais de monitoramento e escreve conclusões precisas, técnicas e acionáveis. Responda SOMENTE com o texto da conclusão, sem prefácios ou explicações adicionais. Use linguagem técnica profissional em português brasileiro.`
+      : `You are a technical expert in water quality and water treatment systems with experience in writing professional technical reports. You analyze real monitoring data and write precise, technical, and actionable conclusions. Respond ONLY with the conclusion text, no preambles or additional explanations. Use professional technical language.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    });
+
+    return {
+      success: true,
+      conclusion: response.content[0].text,
+      usage: {
+        inputTokens: response.usage.input_tokens,
+        outputTokens: response.usage.output_tokens
+      }
+    };
   },
 
   /**

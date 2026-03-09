@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/aiController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const upload = require('../middlewares/upload');
 
 // All AI routes require authentication
 router.use(authMiddleware);
@@ -22,6 +23,15 @@ router.post('/contextual-help', aiController.getContextualHelp);
 
 // Interpret alerts
 router.post('/interpret-alert', aiController.interpretAlert);
+
+// Extract values from a lab report (image or PDF)
+router.post('/extract-lab-report', upload.single('file'), aiController.extractLabReport);
+
+// Generate comprehensive report conclusion with real monitoring data
+router.post('/report-conclusion', aiController.generateReportConclusion);
+
+// Generate advanced custom AI report from free-form prompt
+router.post('/advanced-report', aiController.generateAdvancedReport);
 
 // Check AI service status
 router.get('/status', aiController.getStatus);

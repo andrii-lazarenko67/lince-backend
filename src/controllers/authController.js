@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { User, Client, UserClient } = require('../../db/models');
 const uploadService = require('../services/uploadService');
+const emailService = require('../services/emailService');
 
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -298,6 +299,72 @@ const authController = {
         success: true,
         data: user.toJSON()
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async forgotPassword(req, res, next) {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ success: false, messageKey: 'login.forgotPassword.errors.emailRequired' });
+      }
+      const user = await User.findOne({ where: { email } });
+      // Always return success to prevent email enumeration
+      if (!user || !user.isActive) {
+        return res.json({ success: true, messageKey: 'login.forgotPassword.emailSent' });
+      }
+      // Stateless JWT: signed with JWT_SECRET + current password hash
+      // Token is auto-invalidated once password changes
+      const resetToken = jwt.sign(
+        { userId: user.id, type: 'password-reset' },
+        process.env.JWT_SECRET + user.password,
+        { expiresIn: '1h' }
+      );
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const resetUrl = frontendUrl + '/reset-password?token=' + resetToken;
+      if (emailService.isConfigured()) {
+        try {
+          await emailService.sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl });
+        } catch (emailError) {
+          console.error('Failed to send password reset email:', emailError.message);
+        }
+      }
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DEV] Password reset URL:', resetUrl);
+      }
+      res.json({ success: true, messageKey: 'login.forgotPassword.emailSent' });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async resetPassword(req, res, next) {
+    try {
+      const { token, password } = req.body;
+      if (!token || !password) {
+        return res.status(400).json({ success: false, messageKey: 'login.resetPassword.errors.required' });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({ success: false, messageKey: 'login.resetPassword.errors.passwordTooShort' });
+      }
+      let decoded;
+      try { decoded = jwt.decode(token); } catch { decoded = null; }
+      if (!decoded || decoded.type !== 'password-reset') {
+        return res.status(400).json({ success: false, messageKey: 'login.resetPassword.errors.invalidToken' });
+      }
+      const user = await User.findByPk(decoded.userId);
+      if (!user || !user.isActive) {
+        return res.status(400).json({ success: false, messageKey: 'login.resetPassword.errors.invalidToken' });
+      }
+      try {
+        jwt.verify(token, process.env.JWT_SECRET + user.password);
+      } catch {
+        return res.status(400).json({ success: false, messageKey: 'login.resetPassword.errors.tokenExpired' });
+      }
+      await user.update({ password });
+      res.json({ success: true, messageKey: 'login.resetPassword.success' });
     } catch (error) {
       next(error);
     }

@@ -386,6 +386,45 @@ const emailService = {
   },
 
   /**
+   * Send password reset email
+   */
+  async sendPasswordResetEmail({ to, name, resetUrl }) {
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@lince.app';
+    const fromName = process.env.SENDGRID_FROM_NAME || 'LINCE';
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;background:#f8fafc;margin:0;padding:32px 16px;">
+  <div style="max-width:480px;margin:0 auto;background:white;border-radius:8px;border:1px solid #e2e8f0;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#3b82f6,#1e40af);padding:24px 32px;">
+      <h1 style="color:white;margin:0;font-size:22px;letter-spacing:2px;">LINCE</h1>
+    </div>
+    <div style="padding:32px;">
+      <h2 style="color:#1e293b;margin:0 0 16px 0;font-size:18px;">Redefinicao de Senha</h2>
+      <p style="color:#475569;margin:0 0 8px 0;">Ola, <strong>${name}</strong>.</p>
+      <p style="color:#475569;margin:0 0 24px 0;">Recebemos uma solicitacao para redefinir sua senha. Clique no botao abaixo para criar uma nova senha. <strong>Este link expira em 1 hora.</strong></p>
+      <a href="${resetUrl}" style="display:inline-block;background:#3b82f6;color:white;text-decoration:none;padding:12px 32px;border-radius:6px;font-weight:600;font-size:15px;margin-bottom:24px;">Redefinir Senha</a>
+      <p style="color:#94a3b8;font-size:13px;margin:0;">Se voce nao solicitou a redefinicao de senha, ignore este e-mail. Sua senha nao sera alterada.</p>
+    </div>
+    <div style="padding:16px 32px;border-top:1px solid #e2e8f0;background:#f8fafc;">
+      <p style="color:#cbd5e1;font-size:12px;margin:0;">LINCE - Plataforma de Monitoramento de Tratamento de Agua</p>
+    </div>
+  </div>
+</body></html>`;
+
+    const msg = {
+      to,
+      from: { email: fromEmail, name: fromName },
+      subject: 'Redefinicao de senha - LINCE',
+      text: `Ola ${name},\n\nRedefina sua senha acessando o link abaixo (expira em 1 hora):\n${resetUrl}\n\nSe voce nao solicitou isso, ignore este e-mail.\n\nLINCE`,
+      html
+    };
+
+    await sgMail.send(msg);
+    console.log('Password reset email sent to', to);
+  },
+
+  /**
    * Verify SendGrid configuration
    * @returns {boolean} True if configured
    */
