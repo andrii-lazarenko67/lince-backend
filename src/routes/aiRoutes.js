@@ -33,6 +33,9 @@ router.post('/report-conclusion', aiController.generateReportConclusion);
 // Generate advanced custom AI report from free-form prompt
 router.post('/advanced-report', aiController.generateAdvancedReport);
 
+// Export AI report as Word document
+router.post('/export-word', aiController.exportWord);
+
 // Check AI service status
 router.get('/status', aiController.getStatus);
 

@@ -306,7 +306,7 @@ const aiController = {
         where: {
           systemId: { [Op.in]: systemIds },
           clientId,
-          date: { [Op.between]: [period.startDate, period.endDate] }
+          createdAt: { [Op.between]: [period.startDate, period.endDate] }
         },
         include: [{
           model: IncidentComment,
@@ -314,8 +314,8 @@ const aiController = {
           attributes: ['content'],
           required: false
         }],
-        attributes: ['id', 'title', 'status', 'severity', 'date'],
-        order: [['date', 'ASC']]
+        attributes: ['id', 'title', 'status', 'severity', 'createdAt'],
+        order: [['createdAt', 'ASC']]
       });
 
       // Build system name map
@@ -430,6 +430,9 @@ const aiController = {
         include: [{ model: SystemType, as: 'systemType', attributes: ['name'] }]
       });
 
+      // Fetch client info
+      const client = clientId ? await Client.findByPk(clientId, { attributes: ['name'] }) : null;
+
       // Fetch daily logs with out-of-range entries for the period
       const dailyLogs = await DailyLog.findAll({
         where: {
@@ -488,14 +491,14 @@ const aiController = {
         where: {
           systemId: { [Op.in]: systemIds },
           clientId,
-          date: { [Op.between]: [period.startDate, period.endDate] }
+          createdAt: { [Op.between]: [period.startDate, period.endDate] }
         },
         attributes: ['id', 'title', 'status', 'severity'],
         limit: 10
       });
 
       const reportContext = {
-        clientId,
+        clientName: client?.name || '',
         systems: systems.map(s => ({ name: s.name, systemType: s.systemType?.name || '' })),
         period,
         outOfRangeItems,
@@ -519,6 +522,81 @@ const aiController = {
       res.json({ success: true, data: result });
     } catch (error) {
       console.error('AI Report Conclusion Error:', error);
+      next(error);
+    }
+  },
+
+  /**
+   * Export AI report as Word document
+   * POST /api/ai/export-word
+   */
+  async exportWord(req, res, next) {
+    try {
+      const { text, filename } = req.body;
+
+      if (!text || !text.trim()) {
+        return res.status(400).json({ success: false, messageKey: 'ai.errors.messageRequired' });
+      }
+
+      const {
+        Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType
+      } = require('docx');
+
+      // Parse markdown lines into docx paragraphs
+      const lines = text.split('\n');
+      const children = [];
+
+      for (const line of lines) {
+        if (line.startsWith('# ')) {
+          children.push(new Paragraph({
+            text: line.slice(2),
+            heading: HeadingLevel.HEADING_1
+          }));
+        } else if (line.startsWith('## ')) {
+          children.push(new Paragraph({
+            text: line.slice(3),
+            heading: HeadingLevel.HEADING_2
+          }));
+        } else if (line.startsWith('### ')) {
+          children.push(new Paragraph({
+            text: line.slice(4),
+            heading: HeadingLevel.HEADING_3
+          }));
+        } else if (line.startsWith('- ') || line.startsWith('• ')) {
+          children.push(new Paragraph({
+            text: line.slice(2),
+            bullet: { level: 0 }
+          }));
+        } else if (line.startsWith('---')) {
+          children.push(new Paragraph({ text: '', border: { bottom: { style: 'single', size: 6 } } }));
+        } else if (line.trim() === '') {
+          children.push(new Paragraph({ text: '' }));
+        } else {
+          // Handle **bold** wrapping the entire line
+          const boldMatch = line.match(/^\*\*(.+)\*\*$/);
+          if (boldMatch) {
+            children.push(new Paragraph({
+              children: [new TextRun({ text: boldMatch[1], bold: true })]
+            }));
+          } else {
+            children.push(new Paragraph({ text: line }));
+          }
+        }
+      }
+
+      const doc = new Document({
+        sections: [{ properties: {}, children }]
+      });
+
+      const buffer = await Packer.toBuffer(doc);
+      const safeFilename = (filename || 'ai-report').replace(/[^a-zA-Z0-9_-]/g, '_');
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}.docx"`);
+      res.setHeader('Content-Length', buffer.length);
+      res.send(buffer);
+    } catch (error) {
+      console.error('AI Export Word Error:', error);
       next(error);
     }
   },

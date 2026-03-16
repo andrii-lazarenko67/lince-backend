@@ -97,7 +97,31 @@ const translations = {
 
     // Attachments section
     attachments: 'Attachments',
-    attachmentsDescription: 'Additional documents and files can be attached here.'
+    attachmentsDescription: 'Additional documents and files can be attached here.',
+
+    // Misc
+    page: 'Page',
+    of: ' of ',
+    unknown: 'Unknown',
+    min: 'Min',
+    max: 'Max',
+
+    // Status values
+    statusPending: 'Pending',
+    statusViewed: 'Viewed',
+    statusCompleted: 'Completed',
+    statusOpen: 'Open',
+    statusInProgress: 'In Progress',
+    statusResolved: 'Resolved',
+    statusClosed: 'Closed',
+    statusActive: 'Active',
+    statusInactive: 'Inactive',
+
+    // Priority values
+    priorityCritical: 'Critical',
+    priorityHigh: 'High',
+    priorityMedium: 'Medium',
+    priorityLow: 'Low'
   },
 
   pt: {
@@ -193,7 +217,31 @@ const translations = {
 
     // Attachments section
     attachments: 'Anexos',
-    attachmentsDescription: 'Documentos e arquivos adicionais podem ser anexados aqui.'
+    attachmentsDescription: 'Documentos e arquivos adicionais podem ser anexados aqui.',
+
+    // Misc
+    page: 'Página',
+    of: ' de ',
+    unknown: 'Desconhecido',
+    min: 'Mín',
+    max: 'Máx',
+
+    // Status values
+    statusPending: 'Pendente',
+    statusViewed: 'Visualizada',
+    statusCompleted: 'Concluída',
+    statusOpen: 'Aberto',
+    statusInProgress: 'Em Andamento',
+    statusResolved: 'Resolvido',
+    statusClosed: 'Fechado',
+    statusActive: 'Ativo',
+    statusInactive: 'Inativo',
+
+    // Priority values
+    priorityCritical: 'Crítica',
+    priorityHigh: 'Alta',
+    priorityMedium: 'Média',
+    priorityLow: 'Baixa'
   }
 };
 

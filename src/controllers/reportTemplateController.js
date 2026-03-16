@@ -128,7 +128,8 @@ const reportTemplateController = {
 
   async create(req, res, next) {
     try {
-      const { name, description, type, config, isDefault, clientId } = req.body;
+      const { name, description, type, config, isDefault, clientId, isGlobal } = req.body;
+      const isAdminUser = req.user.role === 'admin';
 
       if (!name || !name.trim()) {
         return res.status(400).json({
@@ -148,15 +149,17 @@ const reportTemplateController = {
       // Use default config if not provided
       const templateConfig = config || DEFAULT_TEMPLATE_CONFIG;
 
+      const makeGlobal = isAdminUser && isGlobal === true;
+
       const template = await ReportTemplate.create({
         userId: req.user.id,
-        clientId: clientId || req.clientId || null,
+        clientId: makeGlobal ? null : (clientId || req.clientId || null),
         name: name.trim(),
         description: description?.trim() || null,
         type: type || 'both',
         config: templateConfig,
         isDefault: isDefault || false,
-        isGlobal: false
+        isGlobal: makeGlobal
       });
 
       // Fetch with associations
@@ -179,9 +182,14 @@ const reportTemplateController = {
 
   async update(req, res, next) {
     try {
-      const template = await ReportTemplate.findOne({
-        where: { id: req.params.id, userId: req.user.id, isActive: true }
-      });
+      const isAdminUser = req.user.role === 'admin';
+
+      // Admin can edit any template; others can only edit their own
+      const whereClause = isAdminUser
+        ? { id: req.params.id, isActive: true }
+        : { id: req.params.id, userId: req.user.id, isActive: true };
+
+      const template = await ReportTemplate.findOne({ where: whereClause });
 
       if (!template) {
         return res.status(404).json({
@@ -190,15 +198,15 @@ const reportTemplateController = {
         });
       }
 
-      // Cannot edit global templates unless you're the creator
-      if (template.isGlobal && template.userId !== req.user.id) {
+      // Non-admin cannot edit global templates unless they're the creator
+      if (!isAdminUser && template.isGlobal && template.userId !== req.user.id) {
         return res.status(403).json({
           success: false,
           messageKey: 'reports.templates.errors.cannotEditGlobal'
         });
       }
 
-      const { name, description, type, config, isDefault } = req.body;
+      const { name, description, type, config, isDefault, isGlobal } = req.body;
 
       // If setting as default, unset other defaults
       if (isDefault && !template.isDefault) {
@@ -208,13 +216,21 @@ const reportTemplateController = {
         );
       }
 
-      await template.update({
+      const updateData = {
         name: name !== undefined ? name.trim() : template.name,
         description: description !== undefined ? (description?.trim() || null) : template.description,
         type: type !== undefined ? type : template.type,
         config: config !== undefined ? config : template.config,
         isDefault: isDefault !== undefined ? isDefault : template.isDefault
-      });
+      };
+
+      // Admin can toggle isGlobal
+      if (isAdminUser && isGlobal !== undefined) {
+        updateData.isGlobal = isGlobal;
+        if (isGlobal) updateData.clientId = null;
+      }
+
+      await template.update(updateData);
 
       // Fetch with associations
       const updatedTemplate = await ReportTemplate.findByPk(template.id, {
@@ -236,9 +252,14 @@ const reportTemplateController = {
 
   async delete(req, res, next) {
     try {
-      const template = await ReportTemplate.findOne({
-        where: { id: req.params.id, userId: req.user.id, isActive: true }
-      });
+      const isAdminUser = req.user.role === 'admin';
+
+      // Admin can delete any template; others can only delete their own
+      const whereClause = isAdminUser
+        ? { id: req.params.id, isActive: true }
+        : { id: req.params.id, userId: req.user.id, isActive: true };
+
+      const template = await ReportTemplate.findOne({ where: whereClause });
 
       if (!template) {
         return res.status(404).json({
@@ -247,8 +268,8 @@ const reportTemplateController = {
         });
       }
 
-      // Cannot delete global templates unless you're the creator
-      if (template.isGlobal && template.userId !== req.user.id) {
+      // Non-admin cannot delete global templates
+      if (!isAdminUser && template.isGlobal && template.userId !== req.user.id) {
         return res.status(403).json({
           success: false,
           messageKey: 'reports.templates.errors.cannotDeleteGlobal'

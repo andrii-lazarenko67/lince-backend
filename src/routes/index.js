@@ -25,14 +25,16 @@ const clientRoutes = require('./clientRoutes');
 const reportTemplateRoutes = require('./reportTemplateRoutes');
 const generatedReportRoutes = require('./generatedReportRoutes');
 const aiRoutes = require('./aiRoutes');
+const iotRoutes = require('./iotRoutes');
+const iotController = require('../controllers/iotController');
 
 // Auth routes (no client context needed)
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/clients', clientRoutes);
 
-// AI assistant routes (auth required, no client context)
-router.use('/ai', aiRoutes);
+// AI assistant routes (auth + client context required for data-fetching endpoints)
+router.use('/ai', authMiddleware, clientContextMiddleware, aiRoutes);
 
 // Apply auth + client context middleware for data routes
 router.use('/systems', authMiddleware, clientContextMiddleware, systemRoutes);
@@ -53,5 +55,9 @@ router.use('/product-dosages', productDosageRoutes);
 router.use('/system-photos', systemPhotoRoutes);
 router.use('/report-templates', authMiddleware, clientContextMiddleware, reportTemplateRoutes);
 router.use('/generated-reports', authMiddleware, clientContextMiddleware, generatedReportRoutes);
+
+// IoT: ingest is public (device token auth), management routes need auth + client context
+router.post('/iot/ingest', iotController.ingest);
+router.use('/iot', authMiddleware, clientContextMiddleware, iotRoutes);
 
 module.exports = router;

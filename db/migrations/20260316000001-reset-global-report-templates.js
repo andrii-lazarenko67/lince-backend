@@ -1,29 +1,17 @@
 'use strict';
 
+/**
+ * Migration: Reset global report templates to the 4 standard ones.
+ * Deactivates any existing global templates and upserts the 4 required defaults.
+ */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    const defaultInspectionsBlock = {
-      type: 'inspections',
-      enabled: true,
-      order: 5,
-      includePhotos: true,
-      showInspectionOverview: true,
-      showInspectionDetailed: true,
-      highlightOnlyNonConformities: false
-    };
-
-    const defaultOccurrencesBlock = {
-      type: 'occurrences',
-      enabled: true,
-      order: 6,
-      includeTimeline: true,
-      includePhotos: true,
-      includeComments: true,
-      showOccurrenceOverview: true,
-      showOccurrenceDetailed: true,
-      showOnlyHighestCriticality: false,
-      criticalityFilter: 'all'
-    };
+    // Deactivate all current global templates
+    await queryInterface.bulkUpdate(
+      'ReportTemplates',
+      { isActive: false },
+      { isGlobal: true }
+    );
 
     const branding = {
       showLogo: true,
@@ -35,10 +23,32 @@ module.exports = {
       footerText: 'Página {page} de {pages}'
     };
 
+    const defaultInspectionsBlock = {
+      type: 'inspections',
+      enabled: true,
+      includePhotos: true,
+      showInspectionOverview: true,
+      showInspectionDetailed: true,
+      highlightOnlyNonConformities: false
+    };
+
+    const defaultOccurrencesBlock = {
+      type: 'occurrences',
+      enabled: true,
+      includeTimeline: true,
+      includePhotos: true,
+      includeComments: true,
+      showOccurrenceOverview: true,
+      showOccurrenceDetailed: true,
+      showOnlyHighestCriticality: false,
+      criticalityFilter: 'all'
+    };
+
+    const now = new Date();
+
+    // Insert the 4 standard global templates
     await queryInterface.bulkInsert('ReportTemplates', [
-      // 1. Relatório Plus — comprehensive, all sections enabled
       {
-        id: 1,
         userId: 1,
         clientId: null,
         name: 'Relatório Plus',
@@ -49,17 +59,7 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: true },
-            {
-              type: 'analyses',
-              enabled: true,
-              order: 4,
-              includeCharts: true,
-              highlightAlerts: true,
-              showFieldOverview: true,
-              showFieldDetailed: true,
-              showLaboratoryOverview: true,
-              showLaboratoryDetailed: true
-            },
+            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: true, showFieldOverview: true, showFieldDetailed: true, showLaboratoryOverview: true, showLaboratoryDetailed: true },
             { ...defaultInspectionsBlock, order: 5 },
             { ...defaultOccurrencesBlock, order: 6 },
             { type: 'conclusion', enabled: true, order: 7 },
@@ -70,12 +70,10 @@ module.exports = {
         isDefault: true,
         isGlobal: true,
         isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: now,
+        updatedAt: now
       },
-      // 2. Relatório Analítico — analyses-focused
       {
-        id: 2,
         userId: 1,
         clientId: null,
         name: 'Relatório Analítico',
@@ -86,17 +84,7 @@ module.exports = {
             { type: 'identification', enabled: true, order: 1 },
             { type: 'scope', enabled: true, order: 2 },
             { type: 'systems', enabled: true, order: 3, includePhotos: false },
-            {
-              type: 'analyses',
-              enabled: true,
-              order: 4,
-              includeCharts: true,
-              highlightAlerts: true,
-              showFieldOverview: true,
-              showFieldDetailed: true,
-              showLaboratoryOverview: true,
-              showLaboratoryDetailed: true
-            },
+            { type: 'analyses', enabled: true, order: 4, includeCharts: true, highlightAlerts: true, showFieldOverview: true, showFieldDetailed: true, showLaboratoryOverview: true, showLaboratoryDetailed: true },
             { type: 'inspections', enabled: false, order: 5 },
             { type: 'occurrences', enabled: false, order: 6 },
             { type: 'conclusion', enabled: true, order: 7 },
@@ -107,12 +95,10 @@ module.exports = {
         isDefault: false,
         isGlobal: true,
         isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: now,
+        updatedAt: now
       },
-      // 3. Relatório de Inspeções — inspections-focused
       {
-        id: 3,
         userId: 1,
         clientId: null,
         name: 'Relatório de Inspeções',
@@ -134,12 +120,10 @@ module.exports = {
         isDefault: false,
         isGlobal: true,
         isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: now,
+        updatedAt: now
       },
-      // 4. Relatório de Ocorrências — occurrences-focused
       {
-        id: 4,
         userId: 1,
         clientId: null,
         name: 'Relatório de Ocorrências',
@@ -161,8 +145,8 @@ module.exports = {
         isDefault: false,
         isGlobal: true,
         isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: now,
+        updatedAt: now
       }
     ], {});
 
@@ -177,6 +161,14 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.bulkDelete('ReportTemplates', null, {});
+    // Deactivate the 4 templates added by this migration
+    await queryInterface.bulkUpdate(
+      'ReportTemplates',
+      { isActive: false },
+      {
+        isGlobal: true,
+        name: ['Relatório Plus', 'Relatório Analítico', 'Relatório de Inspeções', 'Relatório de Ocorrências']
+      }
+    );
   }
 };

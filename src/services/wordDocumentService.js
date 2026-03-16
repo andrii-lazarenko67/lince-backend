@@ -62,7 +62,7 @@ const chartRenderer = new ChartJSNodeCanvas({
  * @param {Object} chartConfig - Chart configuration (colors, type, etc.)
  * @returns {Promise<Buffer>} PNG image buffer
  */
-async function generateChartImage(chartSeries, chartConfig = {}) {
+async function generateChartImage(chartSeries, chartConfig = {}, language = 'pt') {
   const { chartType = 'bar', colors = {} } = chartConfig;
   const primaryColor = chartSeries.color || colors.primary || '#1976d2';
 
@@ -84,7 +84,7 @@ async function generateChartImage(chartSeries, chartConfig = {}) {
   // Add min/max reference lines
   if (chartSeries.minValue !== null && chartSeries.minValue !== undefined) {
     datasets.push({
-      label: 'Min',
+      label: t(language, 'min'),
       data: Array(labels.length).fill(chartSeries.minValue),
       borderColor: '#f44336',
       borderWidth: 1,
@@ -97,7 +97,7 @@ async function generateChartImage(chartSeries, chartConfig = {}) {
 
   if (chartSeries.maxValue !== null && chartSeries.maxValue !== undefined) {
     datasets.push({
-      label: 'Max',
+      label: t(language, 'max'),
       data: Array(labels.length).fill(chartSeries.maxValue),
       borderColor: '#f44336',
       borderWidth: 1,
@@ -146,11 +146,45 @@ async function generateChartImage(chartSeries, chartConfig = {}) {
 }
 
 /**
+ * Translate a status value to the given language
+ */
+function translateStatus(status, language = 'pt') {
+  const map = {
+    pending: 'statusPending',
+    viewed: 'statusViewed',
+    completed: 'statusCompleted',
+    open: 'statusOpen',
+    in_progress: 'statusInProgress',
+    resolved: 'statusResolved',
+    closed: 'statusClosed',
+    active: 'statusActive',
+    inactive: 'statusInactive'
+  };
+  const key = map[status];
+  return key ? t(language, key) : (status || '-');
+}
+
+/**
+ * Translate a priority value to the given language
+ */
+function translatePriority(priority, language = 'pt') {
+  const map = {
+    critical: 'priorityCritical',
+    high: 'priorityHigh',
+    medium: 'priorityMedium',
+    low: 'priorityLow'
+  };
+  const key = map[priority];
+  return key ? t(language, key) : (priority || '-');
+}
+
+/**
  * Format date string to locale date
  */
-function formatDate(dateString) {
+function formatDate(dateString, language = 'pt') {
   try {
-    return new Date(dateString).toLocaleDateString();
+    const locale = language === 'pt' ? 'pt-BR' : 'en-US';
+    return new Date(dateString).toLocaleDateString(locale);
   } catch {
     return dateString || '-';
   }
@@ -159,9 +193,10 @@ function formatDate(dateString) {
 /**
  * Format date time string
  */
-function formatDateTime(dateString) {
+function formatDateTime(dateString, language = 'pt') {
   try {
-    return new Date(dateString).toLocaleString();
+    const locale = language === 'pt' ? 'pt-BR' : 'en-US';
+    return new Date(dateString).toLocaleString(locale);
   } catch {
     return dateString || '-';
   }
@@ -256,7 +291,7 @@ function buildIdentificationSection(data, reportName, isServiceProvider, languag
     new Paragraph({
       children: [
         new TextRun({ text: `${t(language, 'period')}: `, bold: true }),
-        new TextRun({ text: `${formatDate(data.period?.startDate)} - ${formatDate(data.period?.endDate)}` })
+        new TextRun({ text: `${formatDate(data.period?.startDate, language)} - ${formatDate(data.period?.endDate, language)}` })
       ],
       alignment: AlignmentType.CENTER,
       spacing: { after: 300 }
@@ -268,7 +303,7 @@ function buildIdentificationSection(data, reportName, isServiceProvider, languag
     createInfoRow(t(language, 'phone'), data.client?.phone),
     createInfoRow(t(language, 'email'), data.client?.email),
     createInfoRow(t(language, 'generatedBy'), data.generatedBy?.name),
-    createInfoRow(t(language, 'createdOn'), formatDate(data.generatedAt)),
+    createInfoRow(t(language, 'createdOn'), formatDate(data.generatedAt, language)),
     new Paragraph({ text: '', spacing: { after: 200 } })
   ];
 }
@@ -282,8 +317,8 @@ function buildScopeSection(data, language = 'pt') {
     createParagraph(
       t(language, 'scopeDescription', {
         count: data.systems?.length || 0,
-        startDate: formatDate(data.period?.startDate),
-        endDate: formatDate(data.period?.endDate)
+        startDate: formatDate(data.period?.startDate, language),
+        endDate: formatDate(data.period?.endDate, language)
       })
     )
   ];
@@ -327,7 +362,7 @@ function buildSystemsSection(data, includePhotos, systemPhotoBuffers = new Map()
   const rows = data.systems.map(system => [
     system.name || '-',
     system.systemType?.name || '-',
-    system.status || '-',
+    translateStatus(system.status, language),
     system.description || '-'
   ]);
 
@@ -429,7 +464,7 @@ function buildAnalysesSection(data, block, chartBuffers = { field: [], laborator
       const rows = fieldLogs.map(log => {
         const outOfRange = log.entries?.filter(e => e.isOutOfRange).length || 0;
         const row = [
-          formatDate(log.date),
+          formatDate(log.date, language),
           log.system?.name || log.stage?.name || '-',
           log.user?.name || '-',
           log.entries?.length || 0
@@ -484,7 +519,7 @@ function buildAnalysesSection(data, block, chartBuffers = { field: [], laborator
       const rows = laboratoryLogs.map(log => {
         const outOfRange = log.entries?.filter(e => e.isOutOfRange).length || 0;
         const row = [
-          formatDate(log.date),
+          formatDate(log.date, language),
           log.system?.name || log.stage?.name || '-',
           log.user?.name || '-',
           log.entries?.length || 0
@@ -670,10 +705,10 @@ function buildInspectionsSection(data, block, language = 'pt') {
       const c = insp.items?.filter(i => i.status === 'C').length || 0;
       const nc = insp.items?.filter(i => i.status === 'NC').length || 0;
       return [
-        formatDate(insp.date),
+        formatDate(insp.date, language),
         insp.system?.name || '-',
         insp.user?.name || '-',
-        insp.status || '-',
+        translateStatus(insp.status, language),
         c,
         nc
       ];
@@ -687,12 +722,12 @@ function buildInspectionsSection(data, block, language = 'pt') {
 
     displayInspections.forEach(insp => {
       sections.push(new Paragraph({
-        children: [new TextRun({ text: `${t(language, 'inspection')}: ${formatDate(insp.date)} - ${insp.system?.name || 'N/A'}`, bold: true })],
+        children: [new TextRun({ text: `${t(language, 'inspection')}: ${formatDate(insp.date, language)} - ${insp.system?.name || '-'}`, bold: true })],
         spacing: { before: 200, after: 100 }
       }));
 
       sections.push(createInfoRow(t(language, 'inspector'), insp.user?.name));
-      sections.push(createInfoRow(t(language, 'status'), insp.status));
+      sections.push(createInfoRow(t(language, 'status'), translateStatus(insp.status, language)));
 
       if (insp.items && insp.items.length > 0) {
         const itemHeaders = [
@@ -780,9 +815,9 @@ function buildOccurrencesSection(data, block, language = 'pt') {
     const rows = filteredIncidents.map(inc => [
       inc.title || '-',
       inc.system?.name || '-',
-      inc.priority || '-',
-      inc.status || '-',
-      formatDate(inc.createdAt)
+      translatePriority(inc.priority, language),
+      translateStatus(inc.status, language),
+      formatDate(inc.createdAt, language)
     ]);
     sections.push(createTable(headers, rows));
   }
@@ -793,7 +828,7 @@ function buildOccurrencesSection(data, block, language = 'pt') {
     filteredIncidents.slice(0, 5).forEach(inc => {
       sections.push(new Paragraph({
         children: [
-          new TextRun({ text: `${formatDateTime(inc.createdAt)} - `, italics: true, color: '666666' }),
+          new TextRun({ text: `${formatDateTime(inc.createdAt, language)} - `, italics: true, color: '666666' }),
           new TextRun({ text: inc.title })
         ],
         spacing: { after: 80 }
@@ -801,7 +836,7 @@ function buildOccurrencesSection(data, block, language = 'pt') {
       if (inc.resolvedAt) {
         sections.push(new Paragraph({
           children: [
-            new TextRun({ text: `  ${t(language, 'resolved')}: ${formatDateTime(inc.resolvedAt)}`, color: '16A34A' })
+            new TextRun({ text: `  ${t(language, 'resolved')}: ${formatDateTime(inc.resolvedAt, language)}`, color: '16A34A' })
           ],
           spacing: { after: 80 }
         }));
@@ -820,12 +855,12 @@ function buildOccurrencesSection(data, block, language = 'pt') {
       }));
 
       sections.push(createInfoRow(t(language, 'system'), inc.system?.name));
-      sections.push(createInfoRow(t(language, 'priority'), inc.priority));
-      sections.push(createInfoRow(t(language, 'status'), inc.status));
-      sections.push(createInfoRow(t(language, 'created'), formatDateTime(inc.createdAt)));
+      sections.push(createInfoRow(t(language, 'priority'), translatePriority(inc.priority, language)));
+      sections.push(createInfoRow(t(language, 'status'), translateStatus(inc.status, language)));
+      sections.push(createInfoRow(t(language, 'created'), formatDateTime(inc.createdAt, language)));
       if (inc.reporter) sections.push(createInfoRow(t(language, 'reporter'), inc.reporter.name));
       if (inc.assignee) sections.push(createInfoRow(t(language, 'assignedTo'), inc.assignee.name));
-      if (inc.resolvedAt) sections.push(createInfoRow(t(language, 'resolved'), formatDateTime(inc.resolvedAt)));
+      if (inc.resolvedAt) sections.push(createInfoRow(t(language, 'resolved'), formatDateTime(inc.resolvedAt, language)));
       if (inc.description) {
         sections.push(createParagraph(`${t(language, 'description')}: ${inc.description}`));
       }
@@ -838,7 +873,7 @@ function buildOccurrencesSection(data, block, language = 'pt') {
         }));
         inc.comments.forEach(comment => {
           sections.push(createParagraph(
-            `  ${comment.user?.name || 'Unknown'} (${formatDateTime(comment.createdAt)}): ${comment.content}`
+            `  ${comment.user?.name || t(language, 'unknown')} (${formatDateTime(comment.createdAt, language)}): ${comment.content}`
           ));
         });
       }
@@ -907,7 +942,7 @@ function buildConclusionSection(data, language = 'pt') {
 /**
  * Build Signature section
  */
-function buildSignatureSection(data) {
+function buildSignatureSection(data, language = 'pt') {
   const sections = [];
 
   sections.push(new Paragraph({ text: '', spacing: { after: 400 } }));
@@ -941,7 +976,7 @@ function buildSignatureSection(data) {
   }
 
   sections.push(new Paragraph({
-    children: [new TextRun({ text: formatDate(data.generatedAt), color: '666666' })],
+    children: [new TextRun({ text: formatDate(data.generatedAt, language), color: '666666' })],
     alignment: AlignmentType.CENTER
   }));
 
@@ -1013,7 +1048,7 @@ async function generateWordDocument(reportData, config, reportName, templateLogo
       for (const chartSeries of chartData.fieldCharts) {
         if (chartSeries.data && chartSeries.data.length > 0) {
           try {
-            const chartBuffer = await generateChartImage(chartSeries, fieldChartConfig);
+            const chartBuffer = await generateChartImage(chartSeries, fieldChartConfig, language);
             chartBuffers.field.push(chartBuffer);
           } catch (err) {
             console.warn(`Failed to generate field chart for ${chartSeries.monitoringPointName}:`, err.message);
@@ -1027,7 +1062,7 @@ async function generateWordDocument(reportData, config, reportName, templateLogo
       for (const chartSeries of chartData.laboratoryCharts) {
         if (chartSeries.data && chartSeries.data.length > 0) {
           try {
-            const chartBuffer = await generateChartImage(chartSeries, labChartConfig);
+            const chartBuffer = await generateChartImage(chartSeries, labChartConfig, language);
             chartBuffers.laboratory.push(chartBuffer);
           } catch (err) {
             console.warn(`Failed to generate laboratory chart for ${chartSeries.monitoringPointName}:`, err.message);
@@ -1064,7 +1099,7 @@ async function generateWordDocument(reportData, config, reportName, templateLogo
         children.push(...buildConclusionSection(reportData, language));
         break;
       case 'signature':
-        children.push(...buildSignatureSection(reportData));
+        children.push(...buildSignatureSection(reportData, language));
         break;
       case 'attachments':
         children.push(createHeading(t(language, 'attachments'), HeadingLevel.HEADING_2));
@@ -1161,13 +1196,13 @@ async function generateWordDocument(reportData, config, reportName, templateLogo
         default: new Footer({
           children: [new Paragraph({
             children: [
-              new TextRun({ text: 'Page ', size: 18, color: '666666' }),
+              new TextRun({ text: `${t(language, 'page')} `, size: 18, color: '666666' }),
               new TextRun({
                 children: [PageNumber.CURRENT],
                 size: 18,
                 color: '666666'
               }),
-              new TextRun({ text: ' of ', size: 18, color: '666666' }),
+              new TextRun({ text: t(language, 'of'), size: 18, color: '666666' }),
               new TextRun({
                 children: [PageNumber.TOTAL_PAGES],
                 size: 18,
