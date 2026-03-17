@@ -297,7 +297,7 @@ const aiController = {
           clientId,
           date: { [Op.between]: [period.startDate, period.endDate] }
         },
-        attributes: ['id', 'title', 'type', 'result', 'status', 'date'],
+        attributes: ['id', 'status', 'conclusion', 'date'],
         order: [['date', 'ASC']]
       });
 
@@ -314,7 +314,7 @@ const aiController = {
           attributes: ['content'],
           required: false
         }],
-        attributes: ['id', 'title', 'status', 'severity', 'createdAt'],
+        attributes: ['id', 'title', 'status', 'priority', 'createdAt'],
         order: [['createdAt', 'ASC']]
       });
 
@@ -356,16 +356,14 @@ const aiController = {
 
       const inspectionsData = inspections.map(ins => ({
         date: ins.date,
-        title: ins.title || ins.type,
-        result: ins.result,
         status: ins.status,
-        nonConformities: 0 // simplified
+        conclusion: ins.conclusion || 'N/A'
       }));
 
       const incidentsData = incidents.map(inc => ({
         date: inc.date,
         title: inc.title,
-        severity: inc.severity,
+        priority: inc.priority,
         status: inc.status,
         comments: (inc.comments || []).map(c => ({ content: c.content }))
       }));
@@ -482,7 +480,7 @@ const aiController = {
           clientId,
           date: { [Op.between]: [period.startDate, period.endDate] }
         },
-        attributes: ['id', 'title', 'type', 'result', 'status'],
+        attributes: ['id', 'status', 'conclusion', 'date'],
         limit: 10
       });
 
@@ -493,7 +491,7 @@ const aiController = {
           clientId,
           createdAt: { [Op.between]: [period.startDate, period.endDate] }
         },
-        attributes: ['id', 'title', 'status', 'severity'],
+        attributes: ['id', 'title', 'status', 'priority'],
         limit: 10
       });
 
@@ -504,8 +502,8 @@ const aiController = {
         outOfRangeItems,
         withinRangeCount: totalReadings - outOfRangeItems.length,
         totalReadings,
-        inspections: inspections.map(i => ({ title: i.title, type: i.type, result: i.result, status: i.status })),
-        incidents: incidents.map(i => ({ title: i.title, status: i.status, severity: i.severity })),
+        inspections: inspections.map(i => ({ status: i.status, conclusion: i.conclusion, date: i.date })),
+        incidents: incidents.map(i => ({ title: i.title, status: i.status, priority: i.priority })),
         summary: {
           totalInspections: inspections.length,
           totalIncidents: incidents.length,
