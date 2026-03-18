@@ -369,11 +369,8 @@ const generatedReportController = {
       let chartData = null;
       const analysesBlock = reportConfig.blocks?.find(b => b.type === 'analyses');
 
-      // Check for charts - support both old chartConfig.enabled and new fieldChartConfig/laboratoryChartConfig structure
-      const hasFieldChartConfig = analysesBlock?.fieldChartConfig;
-      const hasLabChartConfig = analysesBlock?.laboratoryChartConfig;
-      const hasOldChartConfig = analysesBlock?.chartConfig?.enabled;
-      const shouldIncludeCharts = analysesBlock?.includeCharts && (hasFieldChartConfig || hasLabChartConfig || hasOldChartConfig);
+      // Include charts whenever includeCharts is true — no chart config required (all MPs used if none specified)
+      const shouldIncludeCharts = analysesBlock?.includeCharts === true;
 
       if (shouldIncludeCharts) {
         // Use fieldChartConfig, laboratoryChartConfig, or fallback to old chartConfig
@@ -873,11 +870,8 @@ const generatedReportController = {
       let chartData = null;
       const analysesBlock = config.blocks?.find(b => b.type === 'analyses');
 
-      // Check for charts - support both old chartConfig.enabled and new fieldChartConfig/laboratoryChartConfig structure
-      const hasFieldChartConfig = analysesBlock?.fieldChartConfig;
-      const hasLabChartConfig = analysesBlock?.laboratoryChartConfig;
-      const hasOldChartConfig = analysesBlock?.chartConfig?.enabled;
-      const shouldIncludeCharts = analysesBlock?.includeCharts && (hasFieldChartConfig || hasLabChartConfig || hasOldChartConfig);
+      // Include charts whenever includeCharts is true — no chart config required (all MPs used if none specified)
+      const shouldIncludeCharts = analysesBlock?.includeCharts === true;
 
       if (shouldIncludeCharts) {
         // Use fieldChartConfig, laboratoryChartConfig, or fallback to old chartConfig

@@ -183,8 +183,11 @@ function translatePriority(priority, language = 'pt') {
  */
 function formatDate(dateString, language = 'pt') {
   try {
-    const locale = language === 'pt' ? 'pt-BR' : 'en-US';
-    return new Date(dateString).toLocaleDateString(locale);
+    const date = new Date(dateString);
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    return language === 'pt' ? `${day}/${month}/${year}` : `${month}/${day}/${year}`;
   } catch {
     return dateString || '-';
   }
@@ -195,8 +198,14 @@ function formatDate(dateString, language = 'pt') {
  */
 function formatDateTime(dateString, language = 'pt') {
   try {
-    const locale = language === 'pt' ? 'pt-BR' : 'en-US';
-    return new Date(dateString).toLocaleString(locale);
+    const date = new Date(dateString);
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const datePart = language === 'pt' ? `${day}/${month}/${year}` : `${month}/${day}/${year}`;
+    return `${datePart} ${hours}:${minutes}`;
   } catch {
     return dateString || '-';
   }
