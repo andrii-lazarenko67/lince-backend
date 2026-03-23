@@ -84,7 +84,7 @@ async function generateChartImage(chartSeries, chartConfig = {}, language = 'pt'
   // Add min/max reference lines
   if (chartSeries.minValue !== null && chartSeries.minValue !== undefined) {
     datasets.push({
-      label: t(language, 'min'),
+      label: `${t(language, 'min')}: ${chartSeries.minValue}${chartSeries.unit ? ` ${chartSeries.unit}` : ''}`,
       data: Array(labels.length).fill(chartSeries.minValue),
       borderColor: '#f44336',
       borderWidth: 1,
@@ -97,7 +97,7 @@ async function generateChartImage(chartSeries, chartConfig = {}, language = 'pt'
 
   if (chartSeries.maxValue !== null && chartSeries.maxValue !== undefined) {
     datasets.push({
-      label: t(language, 'max'),
+      label: `${t(language, 'max')}: ${chartSeries.maxValue}${chartSeries.unit ? ` ${chartSeries.unit}` : ''}`,
       data: Array(labels.length).fill(chartSeries.maxValue),
       borderColor: '#f44336',
       borderWidth: 1,

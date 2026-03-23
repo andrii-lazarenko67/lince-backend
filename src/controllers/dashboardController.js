@@ -35,7 +35,7 @@ const dashboardController = {
       const clientFilter = await getClientFilter(req);
 
       // Get counts filtered by clientId
-      const totalSystems = await System.count({ where: { status: 'active', clientId: clientFilter } });
+      const totalSystems = await System.count({ where: { status: 'active', clientId: clientFilter, parentId: null } });
       const totalUsers = await User.count({ where: { isActive: true } });
 
       const todayLogs = await DailyLog.count({ where: { date: today, clientId: clientFilter } });

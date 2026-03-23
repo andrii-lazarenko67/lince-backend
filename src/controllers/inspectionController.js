@@ -209,8 +209,8 @@ const inspectionController = {
 
       // Send notification to managers if requested
       if (sendNotification === 'true' || sendNotification === true) {
-        const systemName = createdInspection.system?.name || 'Unknown System';
-        const userName = createdInspection.user?.name || 'A user';
+        const systemName = createdInspection.system?.name || 'Sistema';
+        const userName = createdInspection.user?.name || 'Usuário';
 
         await notificationService.notifyManagers({
           type: 'inspection_submitted',

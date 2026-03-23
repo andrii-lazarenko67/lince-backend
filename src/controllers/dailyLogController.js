@@ -316,8 +316,8 @@ const dailyLogController = {
 
           for (const alert of outOfRangeAlerts) {
             const rangeText = alert.monitoringPoint.minValue !== null && alert.monitoringPoint.maxValue !== null
-              ? `Expected: ${alert.monitoringPoint.minValue}-${alert.monitoringPoint.maxValue}`
-              : 'Expected range: N/A';
+              ? `Esperado: ${alert.monitoringPoint.minValue}-${alert.monitoringPoint.maxValue}`
+              : 'Faixa esperada: N/D';
 
             await notificationService.notifyManagers({
               type: 'alert',
