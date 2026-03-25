@@ -75,7 +75,12 @@ const stripeService = {
    */
   async createCheckoutSession({ client, plan, ownerEmail, ownerName, successUrl, cancelUrl }) {
     const priceId = PLAN_PRICE_IDS[plan];
-    if (!priceId) throw new Error(`No Stripe price ID configured for plan: ${plan}`);
+    if (!priceId || !priceId.startsWith('price_')) {
+      const err = new Error(`Stripe price ID not configured for plan: ${plan}. Set STRIPE_PRICE_${plan.toUpperCase()} in .env`);
+      err.statusCode = 503;
+      err.messageKey = 'billing.errors.stripeNotConfigured';
+      throw err;
+    }
 
     const customer = await this.getOrCreateCustomer(client, ownerEmail, ownerName);
 
