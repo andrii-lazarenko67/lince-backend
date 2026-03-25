@@ -130,13 +130,18 @@ const authController = {
       let redirectTo = 'dashboard';
 
       if (!isServiceProvider) {
-        // End customer flow: auto-create their company as a client
+        // End customer flow: auto-create their company as a client with 14-day trial
+        const trialDays = parseInt(process.env.TRIAL_DAYS || '14', 10);
+        const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+
         client = await Client.create({
           ownerId: user.id,
           name: companyName,
           contact: name,
           email: email,
-          phone: phone
+          phone: phone,
+          subscriptionStatus: 'trialing',
+          trialEndsAt
         });
 
         // Link user to their client with admin access

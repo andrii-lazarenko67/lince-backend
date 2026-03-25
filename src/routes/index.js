@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
 const clientContextMiddleware = require('../middlewares/clientContextMiddleware');
+const subscriptionMiddleware = require('../middlewares/subscriptionMiddleware');
 
 const authRoutes = require('./authRoutes');
 const userRoutes = require('./userRoutes');
@@ -34,30 +35,30 @@ router.use('/users', userRoutes);
 router.use('/clients', clientRoutes);
 
 // AI assistant routes (auth + client context required for data-fetching endpoints)
-router.use('/ai', authMiddleware, clientContextMiddleware, aiRoutes);
+router.use('/ai', authMiddleware, subscriptionMiddleware, clientContextMiddleware, aiRoutes);
 
-// Apply auth + client context middleware for data routes
-router.use('/systems', authMiddleware, clientContextMiddleware, systemRoutes);
+// Apply auth + subscription check + client context middleware for data routes
+router.use('/systems', authMiddleware, subscriptionMiddleware, clientContextMiddleware, systemRoutes);
 router.use('/system-types', systemTypeRoutes);
 router.use('/monitoring-points', monitoringPointRoutes);
-router.use('/checklist-items', authMiddleware, clientContextMiddleware, checklistItemRoutes);
-router.use('/daily-logs', authMiddleware, clientContextMiddleware, dailyLogRoutes);
-router.use('/inspections', authMiddleware, clientContextMiddleware, inspectionRoutes);
-router.use('/incidents', authMiddleware, clientContextMiddleware, incidentRoutes);
-router.use('/reports', authMiddleware, clientContextMiddleware, reportRoutes);
-router.use('/products', authMiddleware, clientContextMiddleware, productRoutes);
-router.use('/library', authMiddleware, clientContextMiddleware, libraryRoutes);
-router.use('/notifications', authMiddleware, clientContextMiddleware, notificationRoutes);
-router.use('/dashboard', authMiddleware, clientContextMiddleware, dashboardRoutes);
+router.use('/checklist-items', authMiddleware, subscriptionMiddleware, clientContextMiddleware, checklistItemRoutes);
+router.use('/daily-logs', authMiddleware, subscriptionMiddleware, clientContextMiddleware, dailyLogRoutes);
+router.use('/inspections', authMiddleware, subscriptionMiddleware, clientContextMiddleware, inspectionRoutes);
+router.use('/incidents', authMiddleware, subscriptionMiddleware, clientContextMiddleware, incidentRoutes);
+router.use('/reports', authMiddleware, subscriptionMiddleware, clientContextMiddleware, reportRoutes);
+router.use('/products', authMiddleware, subscriptionMiddleware, clientContextMiddleware, productRoutes);
+router.use('/library', authMiddleware, subscriptionMiddleware, clientContextMiddleware, libraryRoutes);
+router.use('/notifications', authMiddleware, subscriptionMiddleware, clientContextMiddleware, notificationRoutes);
+router.use('/dashboard', authMiddleware, subscriptionMiddleware, clientContextMiddleware, dashboardRoutes);
 router.use('/parameters', parameterRoutes);
 router.use('/units', unitRoutes);
 router.use('/product-dosages', productDosageRoutes);
 router.use('/system-photos', systemPhotoRoutes);
-router.use('/report-templates', authMiddleware, clientContextMiddleware, reportTemplateRoutes);
-router.use('/generated-reports', authMiddleware, clientContextMiddleware, generatedReportRoutes);
+router.use('/report-templates', authMiddleware, subscriptionMiddleware, clientContextMiddleware, reportTemplateRoutes);
+router.use('/generated-reports', authMiddleware, subscriptionMiddleware, clientContextMiddleware, generatedReportRoutes);
 
 // IoT: ingest is public (device token auth), management routes need auth + client context
 router.post('/iot/ingest', iotController.ingest);
-router.use('/iot', authMiddleware, clientContextMiddleware, iotRoutes);
+router.use('/iot', authMiddleware, subscriptionMiddleware, clientContextMiddleware, iotRoutes);
 
 module.exports = router;

@@ -48,6 +48,37 @@ module.exports = (sequelize, DataTypes) => {
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    // Subscription fields
+    plan: {
+      type: DataTypes.ENUM('starter', 'pro', 'enterprise', 'none'),
+      defaultValue: 'none',
+      allowNull: false
+    },
+    subscriptionStatus: {
+      type: DataTypes.ENUM('trialing', 'active', 'past_due', 'cancelled', 'expired', 'none'),
+      defaultValue: 'none',
+      allowNull: false
+    },
+    stripeCustomerId: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      defaultValue: null
+    },
+    stripeSubscriptionId: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      defaultValue: null
+    },
+    trialEndsAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null
+    },
+    currentPeriodEnd: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null
     }
   }, {
     tableName: 'Clients',
@@ -67,6 +98,7 @@ module.exports = (sequelize, DataTypes) => {
     Client.hasMany(models.Notification, { foreignKey: 'clientId', as: 'notifications' });
     Client.hasMany(models.ReportTemplate, { foreignKey: 'clientId', as: 'reportTemplates' });
     Client.hasMany(models.GeneratedReport, { foreignKey: 'clientId', as: 'generatedReports' });
+    Client.hasMany(models.Invoice, { foreignKey: 'clientId', as: 'invoices' });
   };
 
   return Client;

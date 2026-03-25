@@ -425,6 +425,89 @@ const emailService = {
   },
 
   /**
+   * Send subscription lifecycle emails
+   * @param {Object} options
+   * @param {string} options.to - Recipient email
+   * @param {string} options.type - 'activated' | 'payment_failed' | 'cancelled' | 'trial_ending'
+   * @param {string} options.clientName - Client/company name
+   * @param {string} options.plan - Plan name
+   * @param {string} [options.accessUntil] - Access end date (for cancellations)
+   */
+  async sendSubscriptionEmail({ to, type, clientName, plan, accessUntil }) {
+    if (!this.isConfigured()) {
+      console.warn(`[EmailService] SendGrid not configured — skipping subscription email (type: ${type})`);
+      return;
+    }
+
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@lince.app';
+    const fromName = process.env.SENDGRID_FROM_NAME || 'LINCE';
+
+    const templates = {
+      activated: {
+        subject: `Assinatura ativada — Plano ${plan}`,
+        title: 'Assinatura Ativada!',
+        color: '#10b981',
+        body: `Sua assinatura do Plano <strong>${plan}</strong> foi ativada com sucesso. Você agora tem acesso completo à plataforma LINCE.`
+      },
+      payment_failed: {
+        subject: 'Falha no pagamento — LINCE',
+        title: 'Falha no Pagamento',
+        color: '#f59e0b',
+        body: `Não foi possível processar o pagamento do seu Plano <strong>${plan}</strong>. Tentaremos novamente nos próximos dias. Por favor, verifique os dados do seu cartão para evitar a suspensão do acesso.`
+      },
+      cancelled: {
+        subject: 'Assinatura cancelada — LINCE',
+        title: 'Assinatura Cancelada',
+        color: '#ef4444',
+        body: `Sua assinatura do Plano <strong>${plan}</strong> foi cancelada. Você ainda terá acesso à plataforma até <strong>${accessUntil || 'o fim do período atual'}</strong>.`
+      },
+      trial_ending: {
+        subject: 'Seu período de teste está acabando — LINCE',
+        title: 'Período de Teste Encerrando',
+        color: '#3b82f6',
+        body: `Seu período de teste gratuito encerrará em breve. Para continuar usando a plataforma LINCE sem interrupções, assine um dos nossos planos.`
+      }
+    };
+
+    const tpl = templates[type];
+    if (!tpl) return;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;background:#f8fafc;margin:0;padding:32px 16px;">
+  <div style="max-width:520px;margin:0 auto;background:white;border-radius:8px;border:1px solid #e2e8f0;overflow:hidden;">
+    <div style="background:${tpl.color};padding:24px 32px;">
+      <h1 style="color:white;margin:0;font-size:20px;letter-spacing:1px;">LINCE</h1>
+    </div>
+    <div style="padding:32px;">
+      <h2 style="color:#1e293b;margin:0 0 16px 0;font-size:18px;">${tpl.title}</h2>
+      <p style="color:#475569;margin:0 0 8px 0;">Olá, <strong>${clientName}</strong>.</p>
+      <p style="color:#475569;margin:0 0 24px 0;">${tpl.body}</p>
+      <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/billing"
+         style="display:inline-block;background:${tpl.color};color:white;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:600;font-size:14px;">
+        Gerenciar Assinatura
+      </a>
+    </div>
+    <div style="padding:16px 32px;border-top:1px solid #e2e8f0;background:#f8fafc;">
+      <p style="color:#94a3b8;font-size:12px;margin:0;">LINCE — Plataforma de Monitoramento de Tratamento de Água</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const msg = {
+      to,
+      from: { email: fromEmail, name: fromName },
+      subject: tpl.subject,
+      html,
+      text: `${tpl.title}\n\n${tpl.body.replace(/<[^>]+>/g, '')}\n\nAcesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/billing`
+    };
+
+    await sgMail.send(msg);
+  },
+
+  /**
    * Verify SendGrid configuration
    * @returns {boolean} True if configured
    */

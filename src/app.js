@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const { sequelize } = require('../db/models');
 const routes = require('./routes');
+const billingRoutes = require('./routes/billingRoutes');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 
 const app = express();
@@ -11,6 +12,10 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
+
+// Stripe webhook MUST be registered before express.json() because it needs the raw body
+app.use('/api/billing', billingRoutes);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
