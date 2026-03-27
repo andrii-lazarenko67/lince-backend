@@ -161,6 +161,109 @@ const billingController = {
   },
 
   /**
+   * POST /api/billing/sync-session
+   * Verify Stripe checkout session and sync subscription status
+   * Body: { sessionId }
+   */
+  async syncSession(req, res, next) {
+    try {
+      const { sessionId } = req.body;
+
+      if (!sessionId) {
+        return res.status(400).json({ success: false, messageKey: 'billing.errors.sessionIdRequired' });
+      }
+
+      const client = await resolveOwnClient(req);
+
+      // Retrieve the checkout session from Stripe
+      const session = await stripeService.getCheckoutSession(sessionId);
+
+      if (!session || session.payment_status !== 'paid') {
+        return res.status(400).json({ success: false, messageKey: 'billing.errors.paymentNotCompleted' });
+      }
+
+      // Extract subscription details
+      const subscription = session.subscription;
+      if (!subscription || typeof subscription === 'string') {
+        return res.status(400).json({ success: false, messageKey: 'billing.errors.subscriptionNotFound' });
+      }
+
+      const plan = stripeService.planFromPriceId(subscription.items.data[0]?.price?.id);
+      const status = stripeService.mapStripeStatus(subscription.status);
+
+      // Update client subscription
+      await client.update({
+        plan,
+        subscriptionStatus: status,
+        stripeSubscriptionId: subscription.id,
+        stripeCustomerId: session.customer,
+        currentPeriodEnd: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
+        trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null
+      });
+
+      res.json({ success: true, data: { plan, status } });
+    } catch (error) {
+      if (error.message === 'CLIENT_NOT_FOUND') {
+        return res.status(404).json({ success: false, messageKey: 'billing.errors.clientNotFound' });
+      }
+      next(error);
+    }
+  },
+
+  /**
+   * POST /api/billing/sync-invoices
+   * Fetch latest invoices from Stripe and sync to database
+   */
+  async syncInvoices(req, res, next) {
+    try {
+      const { client } = await resolveClientForStatus(req);
+
+      if (!client.stripeCustomerId) {
+        return res.json({ success: true, data: [] });
+      }
+
+      // Fetch invoices from Stripe
+      const stripeInvoices = await stripeService.listInvoices(client.stripeCustomerId, 50);
+
+      // Sync to database
+      const invoices = [];
+      for (const inv of stripeInvoices) {
+        const [invoice, created] = await Invoice.findOrCreate({
+          where: { stripeInvoiceId: inv.id },
+          defaults: {
+            clientId: client.id,
+            stripeInvoiceId: inv.id,
+            amount: inv.amount_paid,
+            currency: inv.currency,
+            status: inv.status,
+            pdfUrl: inv.invoice_pdf,
+            hostedUrl: inv.hosted_invoice_url,
+            createdAt: new Date(inv.created * 1000)
+          }
+        });
+
+        if (!created) {
+          // Update if already exists
+          await invoice.update({
+            status: inv.status,
+            pdfUrl: inv.invoice_pdf,
+            hostedUrl: inv.hosted_invoice_url
+          });
+        }
+
+        invoices.push(invoice);
+      }
+
+      res.json({ success: true, data: invoices });
+    } catch (error) {
+      if (error.message === 'CLIENT_NOT_FOUND') {
+        return res.status(404).json({ success: false, messageKey: 'billing.errors.clientNotFound' });
+      }
+      next(error);
+    }
+  },
+
+  /**
    * POST /api/billing/webhook
    * Stripe webhook handler — processes all subscription lifecycle events
    * This route must be excluded from JSON body parsing (needs raw body)
