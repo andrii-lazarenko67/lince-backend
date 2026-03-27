@@ -138,6 +138,39 @@ const stripeService = {
   },
 
   /**
+   * Change the plan of an active subscription (upgrade or downgrade).
+   * Uses proration: upgrades charge immediately, downgrades credit the next invoice.
+   */
+  async changeSubscriptionPlan(subscriptionId, newPlan) {
+    const priceId = PLAN_PRICE_IDS[newPlan];
+    if (!priceId || !priceId.startsWith('price_')) {
+      const err = new Error(`Stripe price ID not configured for plan: ${newPlan}`);
+      err.statusCode = 503;
+      err.messageKey = 'billing.errors.stripeNotConfigured';
+      throw err;
+    }
+
+    // Fetch current subscription to get the subscription item ID
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ['items.data.price']
+    });
+
+    const existingItemId = subscription.items.data[0]?.id;
+    if (!existingItemId) {
+      throw new Error('No subscription item found');
+    }
+
+    // Update to new price with prorations
+    const updated = await stripe.subscriptions.update(subscriptionId, {
+      items: [{ id: existingItemId, price: priceId }],
+      proration_behavior: 'always_invoice',  // creates + charges an invoice immediately
+      metadata: { plan: newPlan }            // keep metadata in sync for webhook handlers
+    });
+
+    return updated;
+  },
+
+  /**
    * Cancel a subscription immediately
    */
   async cancelSubscription(subscriptionId) {
@@ -151,7 +184,7 @@ const stripeService = {
     const invoices = await stripe.invoices.list({
       customer: stripeCustomerId,
       limit,
-      expand: ['data.payment_intent']
+      expand: ['data.payment_intent', 'data.lines.data.price']
     });
     return invoices.data;
   },

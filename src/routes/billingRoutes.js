@@ -28,6 +28,9 @@ router.get('/status', billingController.getStatus);
 router.post('/create-checkout', billingController.createCheckout);
 router.post('/portal', billingController.createPortal);
 router.get('/invoices', billingController.getInvoices);
+router.post('/sync-session', billingController.syncFromSession);
+router.post('/sync-invoices', billingController.syncInvoices);
+router.post('/change-plan', billingController.changePlan);
 
 // Admin-only routes
 router.get('/admin', roleMiddleware('admin', 'manager'), billingController.adminList);

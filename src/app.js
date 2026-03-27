@@ -6,6 +6,7 @@ const { sequelize } = require('../db/models');
 const routes = require('./routes');
 const billingRoutes = require('./routes/billingRoutes');
 const errorMiddleware = require('./middlewares/errorMiddleware');
+const { startBillingCron } = require('./cron/billingCron');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -38,6 +39,7 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      startBillingCron();
     });
   } catch (error) {
     console.error('Unable to connect to database:', error);

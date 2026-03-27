@@ -433,7 +433,7 @@ const emailService = {
    * @param {string} options.plan - Plan name
    * @param {string} [options.accessUntil] - Access end date (for cancellations)
    */
-  async sendSubscriptionEmail({ to, type, clientName, plan, accessUntil }) {
+  async sendSubscriptionEmail({ to, type, clientName, plan, accessUntil, daysLeft, renewalDate, amount, trialEnd }) {
     if (!this.isConfigured()) {
       console.warn(`[EmailService] SendGrid not configured — skipping subscription email (type: ${type})`);
       return;
@@ -462,10 +462,34 @@ const emailService = {
         body: `Sua assinatura do Plano <strong>${plan}</strong> foi cancelada. Você ainda terá acesso à plataforma até <strong>${accessUntil || 'o fim do período atual'}</strong>.`
       },
       trial_ending: {
-        subject: 'Seu período de teste está acabando — LINCE',
+        subject: `Seu teste encerra em ${daysLeft} dia(s) — LINCE`,
         title: 'Período de Teste Encerrando',
         color: '#3b82f6',
-        body: `Seu período de teste gratuito encerrará em breve. Para continuar usando a plataforma LINCE sem interrupções, assine um dos nossos planos.`
+        body: `Seu período de teste gratuito encerra em <strong>${daysLeft} dia(s)</strong>. Para continuar usando a plataforma LINCE sem interrupções, escolha um dos nossos planos agora.`
+      },
+      trial_ending_final: {
+        subject: 'Último aviso: seu teste encerra amanhã — LINCE',
+        title: 'Teste Encerra Amanhã',
+        color: '#f59e0b',
+        body: `Seu período de teste gratuito encerra ${trialEnd ? `em <strong>${trialEnd}</strong>` : '<strong>amanhã</strong>'}. Assine agora para não perder o acesso à plataforma.`
+      },
+      trial_expired: {
+        subject: 'Seu período de teste expirou — LINCE',
+        title: 'Período de Teste Expirado',
+        color: '#ef4444',
+        body: `Seu período de teste gratuito expirou. Para retomar o acesso à plataforma LINCE, assine um dos nossos planos.`
+      },
+      cancellation_scheduled: {
+        subject: 'Cancelamento agendado — LINCE',
+        title: 'Cancelamento Agendado',
+        color: '#f59e0b',
+        body: `Seu cancelamento foi agendado. Você ainda terá acesso à plataforma até <strong>${accessUntil || 'o fim do período atual'}</strong>. Se mudar de ideia, você pode reativar a assinatura antes dessa data.`
+      },
+      renewal_reminder: {
+        subject: `Renovação automática em breve — Plano ${plan} — LINCE`,
+        title: 'Lembrete de Renovação',
+        color: '#8b5cf6',
+        body: `Sua assinatura do Plano <strong>${plan}</strong> será renovada automaticamente em <strong>${renewalDate}</strong> no valor de <strong>${amount}</strong>. Caso queira fazer alterações, acesse o portal de assinatura.`
       }
     };
 
