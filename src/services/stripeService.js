@@ -5,15 +5,15 @@ const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const PLAN_PRICE_IDS = {
-  starter: process.env.STRIPE_PRICE_STARTER,
+  starter: process.env.STRIPE_PRICE_BASIC,
   pro: process.env.STRIPE_PRICE_PRO
 };
 
 const PLAN_NAMES = {
-  starter: 'Starter',
-  pro: 'Pro',
-  enterprise: 'Enterprise',
-  none: 'Sem Plano'
+  starter: process.env.PLAN_BASIC_NAME || 'Basic Plan',
+  pro: process.env.PLAN_PRO_NAME || 'Professional Plan',
+  enterprise: process.env.PLAN_ADVANCED_NAME || 'Advanced Plan',
+  none: 'No Plan'
 };
 
 /**
@@ -21,7 +21,7 @@ const PLAN_NAMES = {
  */
 function planFromPriceId(priceId) {
   if (!priceId) return 'none';
-  if (priceId === process.env.STRIPE_PRICE_STARTER) return 'starter';
+  if (priceId === process.env.STRIPE_PRICE_BASIC) return 'starter';
   if (priceId === process.env.STRIPE_PRICE_PRO) return 'pro';
   return 'none';
 }
