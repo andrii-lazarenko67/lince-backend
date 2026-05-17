@@ -22,7 +22,7 @@ const DEFAULT_TEMPLATE_CONFIG = {
     showHeader: true,
     headerText: 'Technical Report',
     showFooter: true,
-    footerText: 'Page {page} of {pages}'
+    footerText: ''
   }
 };
 

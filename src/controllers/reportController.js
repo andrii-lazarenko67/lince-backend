@@ -167,36 +167,41 @@ const reportController = {
       const reportData = await generateReportData(type, systemIds, startDate, endDate);
 
       // Create simple HTML for PDF
+      const translateSt = (s) => ({ open:'Aberto',in_progress:'Em Andamento',resolved:'Resolvido',closed:'Fechado',pending:'Pendente',completed:'Concluído',viewed:'Visualizado',active:'Ativo',inactive:'Inativo' }[s] || s || '-');
+      const translatePr = (p) => ({ low:'Baixa',medium:'Média',high:'Alta',critical:'Crítica' }[p] || p || '-');
+      const translateTy = (t) => ({ in:'Entrada',out:'Saída' }[t] || t || '-');
+      const typeLabel = { daily:'Diário',weekly:'Semanal',monthly:'Mensal',system:'Por Sistema' }[type] || type;
+
       const html = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
-          <title>LINCE Report - ${type}</title>
+          <title>LINCE Relatório - ${typeLabel}</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 40px; }
+            body { font-family: Arial, sans-serif; margin: 40px; color: #222; }
             h1 { color: #1a56db; }
             h2 { color: #374151; margin-top: 30px; }
             table { width: 100%; border-collapse: collapse; margin: 20px 0; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f3f4f6; }
+            th { background-color: #f3f4f6; font-weight: 600; }
           </style>
         </head>
         <body>
-          <h1>LINCE Water Treatment Report</h1>
-          <p><strong>Type:</strong> ${type}</p>
-          <p><strong>Period:</strong> ${reportData.period.startDate} to ${reportData.period.endDate}</p>
-          <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+          <h1>LINCE — Relatório de Tratamento de Água</h1>
+          <p><strong>Tipo:</strong> ${typeLabel}</p>
+          <p><strong>Período:</strong> ${reportData.period.startDate} até ${reportData.period.endDate}</p>
+          <p><strong>Gerado em:</strong> ${new Date().toLocaleString('pt-BR')}</p>
 
-          <h2>Summary</h2>
+          <h2>Resumo</h2>
           <table>
             <tr>
-              <th>Total Readings</th>
-              <th>Out of Range</th>
-              <th>Inspections</th>
-              <th>Incidents</th>
-              <th>Products</th>
-              <th>Product Usages</th>
+              <th>Total de Leituras</th>
+              <th>Fora do Limite</th>
+              <th>Inspeções</th>
+              <th>Ocorrências</th>
+              <th>Produtos</th>
+              <th>Uso de Produtos</th>
             </tr>
             <tr>
               <td>${reportData.summary.totalReadings}</td>
@@ -208,18 +213,18 @@ const reportController = {
             </tr>
           </table>
 
-          <h2>Daily Logs (${reportData.dailyLogs.length})</h2>
+          <h2>Registros Diários (${reportData.dailyLogs.length})</h2>
           <table>
             <tr>
-              <th>Date</th>
-              <th>System</th>
-              <th>User</th>
-              <th>Entries</th>
-              <th>Notes</th>
+              <th>Data</th>
+              <th>Sistema</th>
+              <th>Usuário</th>
+              <th>Entradas</th>
+              <th>Observações</th>
             </tr>
             ${reportData.dailyLogs.map(log => `
               <tr>
-                <td>${log.date}</td>
+                <td>${new Date(log.date).toLocaleDateString('pt-BR')}</td>
                 <td>${log.system?.name || '-'}</td>
                 <td>${log.user?.name || '-'}</td>
                 <td>${log.entries?.length || 0}</td>
@@ -228,54 +233,54 @@ const reportController = {
             `).join('')}
           </table>
 
-          <h2>Inspections (${reportData.inspections.length})</h2>
+          <h2>Inspeções (${reportData.inspections.length})</h2>
           <table>
             <tr>
-              <th>Date</th>
-              <th>System</th>
-              <th>User</th>
+              <th>Data</th>
+              <th>Sistema</th>
+              <th>Usuário</th>
               <th>Status</th>
-              <th>Items</th>
+              <th>Itens</th>
             </tr>
             ${reportData.inspections.map(insp => `
               <tr>
-                <td>${new Date(insp.date).toLocaleDateString()}</td>
+                <td>${new Date(insp.date).toLocaleDateString('pt-BR')}</td>
                 <td>${insp.system?.name || '-'}</td>
                 <td>${insp.user?.name || '-'}</td>
-                <td>${insp.status}</td>
+                <td>${translateSt(insp.status)}</td>
                 <td>${insp.items?.length || 0}</td>
               </tr>
             `).join('')}
           </table>
 
-          <h2>Incidents (${reportData.incidents.length})</h2>
+          <h2>Ocorrências (${reportData.incidents.length})</h2>
           <table>
             <tr>
-              <th>Title</th>
-              <th>System</th>
-              <th>Priority</th>
+              <th>Título</th>
+              <th>Sistema</th>
+              <th>Prioridade</th>
               <th>Status</th>
-              <th>Reporter</th>
+              <th>Reportado por</th>
             </tr>
             ${reportData.incidents.map(inc => `
               <tr>
                 <td>${inc.title}</td>
                 <td>${inc.system?.name || '-'}</td>
-                <td>${inc.priority}</td>
-                <td>${inc.status}</td>
+                <td>${translatePr(inc.priority)}</td>
+                <td>${translateSt(inc.status)}</td>
                 <td>${inc.reporter?.name || '-'}</td>
               </tr>
             `).join('')}
           </table>
 
-          <h2>Products (${reportData.products.length})</h2>
+          <h2>Produtos (${reportData.products.length})</h2>
           <table>
             <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Current Stock</th>
-              <th>Unit</th>
-              <th>Min Alert</th>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th>Estoque Atual</th>
+              <th>Unidade</th>
+              <th>Alerta Mínimo</th>
             </tr>
             ${reportData.products.map(prod => `
               <tr>
@@ -288,21 +293,21 @@ const reportController = {
             `).join('')}
           </table>
 
-          <h2>Product Usages (${reportData.productUsages.length})</h2>
+          <h2>Uso de Produtos (${reportData.productUsages.length})</h2>
           <table>
             <tr>
-              <th>Date</th>
-              <th>Product</th>
-              <th>Type</th>
-              <th>Quantity</th>
-              <th>System</th>
-              <th>User</th>
+              <th>Data</th>
+              <th>Produto</th>
+              <th>Tipo</th>
+              <th>Quantidade</th>
+              <th>Sistema</th>
+              <th>Usuário</th>
             </tr>
             ${reportData.productUsages.map(usage => `
               <tr>
-                <td>${new Date(usage.date).toLocaleDateString()}</td>
+                <td>${new Date(usage.date).toLocaleDateString('pt-BR')}</td>
                 <td>${usage.product?.name || '-'}</td>
-                <td>${usage.type}</td>
+                <td>${translateTy(usage.type)}</td>
                 <td>${usage.quantity}</td>
                 <td>${usage.system?.name || '-'}</td>
                 <td>${usage.user?.name || '-'}</td>
@@ -326,47 +331,53 @@ const reportController = {
     try {
       const { type, systemIds, startDate, endDate } = req.body;
 
+      const translateStatus = (s) => ({ open: 'Aberto', in_progress: 'Em Andamento', resolved: 'Resolvido', closed: 'Fechado' }[s] || s);
+      const translatePriority = (p) => ({ critical: 'Crítico', high: 'Alto', medium: 'Médio', low: 'Baixo' }[p] || p);
+      const translateInspStatus = (s) => ({ pending: 'Pendente', completed: 'Concluído', failed: 'Reprovado' }[s] || s);
+      const translateProductType = (t) => ({ chemical: 'Químico', equipment: 'Equipamento', consumable: 'Consumível', other: 'Outro' }[t] || t);
+      const translateUsageType = (t) => ({ stock_in: 'Entrada', stock_out: 'Saída' }[t] || t);
+
       // Generate report data first
       const reportData = await generateReportData(type, systemIds, startDate, endDate);
 
       // Create CSV content
-      let csv = 'LINCE Water Treatment Report\n';
-      csv += `Type,${type}\n`;
-      csv += `Period,${reportData.period.startDate} to ${reportData.period.endDate}\n`;
-      csv += `Generated,${new Date().toISOString()}\n\n`;
+      let csv = 'Relatório LINCE\n';
+      csv += `Tipo,${type}\n`;
+      csv += `Período,${reportData.period.startDate} até ${reportData.period.endDate}\n`;
+      csv += `Gerado,${new Date().toISOString()}\n\n`;
 
-      csv += 'Summary\n';
-      csv += 'Total Readings,Out of Range,Inspections,Incidents,Products,Product Usages\n';
+      csv += 'Resumo\n';
+      csv += 'Total de Leituras,Fora do Intervalo,Inspeções,Ocorrências,Produtos,Uso de Produtos\n';
       csv += `${reportData.summary.totalReadings},${reportData.summary.outOfRangeCount},${reportData.summary.inspectionsCount},${reportData.summary.incidentsCount},${reportData.summary.productsCount},${reportData.summary.productUsagesCount}\n\n`;
 
-      csv += 'Daily Logs\n';
-      csv += 'Date,System,User,Entries Count,Notes\n';
+      csv += 'Registros Diários\n';
+      csv += 'Data,Sistema,Usuário,Entradas,Observações\n';
       reportData.dailyLogs.forEach(log => {
         csv += `"${log.date}","${log.system?.name || ''}","${log.user?.name || ''}",${log.entries?.length || 0},"${(log.notes || '').replace(/"/g, '""')}"\n`;
       });
 
-      csv += '\nInspections\n';
-      csv += 'Date,System,User,Status,Items Count\n';
+      csv += '\nInspeções\n';
+      csv += 'Data,Sistema,Usuário,Status,Itens\n';
       reportData.inspections.forEach(insp => {
-        csv += `"${new Date(insp.date).toLocaleDateString()}","${insp.system?.name || ''}","${insp.user?.name || ''}","${insp.status}",${insp.items?.length || 0}\n`;
+        csv += `"${new Date(insp.date).toLocaleDateString()}","${insp.system?.name || ''}","${insp.user?.name || ''}","${translateInspStatus(insp.status)}",${insp.items?.length || 0}\n`;
       });
 
-      csv += '\nIncidents\n';
-      csv += 'Title,System,Priority,Status,Reporter\n';
+      csv += '\nOcorrências\n';
+      csv += 'Título,Sistema,Prioridade,Status,Reportado Por\n';
       reportData.incidents.forEach(inc => {
-        csv += `"${(inc.title || '').replace(/"/g, '""')}","${inc.system?.name || ''}","${inc.priority}","${inc.status}","${inc.reporter?.name || ''}"\n`;
+        csv += `"${(inc.title || '').replace(/"/g, '""')}","${inc.system?.name || ''}","${translatePriority(inc.priority)}","${translateStatus(inc.status)}","${inc.reporter?.name || ''}"\n`;
       });
 
-      csv += '\nProducts\n';
-      csv += 'Name,Type,Current Stock,Unit,Min Alert\n';
+      csv += '\nProdutos\n';
+      csv += 'Nome,Tipo,Estoque Atual,Unidade,Alerta Mínimo\n';
       reportData.products.forEach(prod => {
-        csv += `"${prod.name}","${prod.type}",${prod.currentStock},"${prod.unit}",${prod.minStockAlert || ''}\n`;
+        csv += `"${prod.name}","${translateProductType(prod.type)}",${prod.currentStock},"${prod.unit}",${prod.minStockAlert || ''}\n`;
       });
 
-      csv += '\nProduct Usages\n';
-      csv += 'Date,Product,Type,Quantity,System,User\n';
+      csv += '\nUso de Produtos\n';
+      csv += 'Data,Produto,Tipo,Quantidade,Sistema,Usuário\n';
       reportData.productUsages.forEach(usage => {
-        csv += `"${new Date(usage.date).toLocaleDateString()}","${usage.product?.name || ''}","${usage.type}",${usage.quantity},"${usage.system?.name || ''}","${usage.user?.name || ''}"\n`;
+        csv += `"${new Date(usage.date).toLocaleDateString()}","${usage.product?.name || ''}","${translateUsageType(usage.type)}",${usage.quantity},"${usage.system?.name || ''}","${usage.user?.name || ''}"\n`;
       });
 
       res.setHeader('Content-Type', 'text/csv');

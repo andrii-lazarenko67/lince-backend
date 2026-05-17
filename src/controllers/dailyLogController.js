@@ -241,23 +241,7 @@ const dailyLogController = {
         });
       }
 
-      // Check if daily log already exists for this user, system, date, and record type
-      const existingLog = await DailyLog.findOne({
-        where: {
-          userId,
-          systemId,
-          stageId: stageId || null,
-          date,
-          recordType: recordType || 'field'
-        }
-      });
-
-      if (existingLog) {
-        return res.status(400).json({
-          success: false,
-          messageKey: 'dailyLogs.errors.alreadyExists'
-        });
-      }
+      // Duplicate date check removed — multiple records per day are allowed
 
       const dailyLog = await DailyLog.create({
         userId,

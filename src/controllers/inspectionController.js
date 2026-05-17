@@ -183,6 +183,8 @@ const inspectionController = {
       if (req.files && req.files.length > 0) {
         for (const file of req.files) {
           const result = await uploadService.uploadImage(file.buffer, 'inspections');
+          await uploadService.incrementStorage(req.clientId, result.bytes);
+          const photoFileSize = result.bytes || 0;
           await InspectionPhoto.create({
             inspectionId: inspection.id,
             url: result.secure_url,
@@ -425,6 +427,7 @@ const inspectionController = {
       for (const photo of inspection.photos) {
         if (photo.publicId) {
           await uploadService.deleteImage(photo.publicId);
+          await uploadService.decrementStorage(req.clientId, photo.fileSize || 0);
         }
       }
 

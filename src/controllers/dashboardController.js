@@ -1,4 +1,4 @@
-const { System, DailyLog, DailyLogEntry, Inspection, Incident, Product, NotificationRecipient, User, MonitoringPoint, UserClient } = require('../../db/models');
+const { System, DailyLog, DailyLogEntry, Inspection, Incident, Product, Unit, NotificationRecipient, User, MonitoringPoint, UserClient } = require('../../db/models');
 const { Op } = require('sequelize');
 
 /**
@@ -36,7 +36,27 @@ const dashboardController = {
 
       // Get counts filtered by clientId
       const totalSystems = await System.count({ where: { status: 'active', clientId: clientFilter, parentId: null } });
-      const totalUsers = await User.count({ where: { isActive: true } });
+      // Tenant-scoped user count: only count users sharing a client with this user
+      let totalUsers = 0;
+      if (req.user.isServiceProvider || ['admin', 'manager'].includes(req.user.role)) {
+        const myClientRows = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const myClientIds = myClientRows.map(uc => uc.clientId);
+        if (myClientIds.length > 0) {
+          const sharedUserRows = await UserClient.findAll({
+            where: { clientId: { [Op.in]: myClientIds } },
+            attributes: ['userId']
+          });
+          const sharedUserIds = [...new Set(sharedUserRows.map(r => r.userId))];
+          totalUsers = await User.count({ where: { isActive: true, id: { [Op.in]: sharedUserIds } } });
+        } else {
+          totalUsers = 1;
+        }
+      } else {
+        totalUsers = await User.count({ where: { isActive: true, id: req.user.id } });
+      }
 
       const todayLogs = await DailyLog.count({ where: { date: today, clientId: clientFilter } });
       const weekLogs = await DailyLog.count({
@@ -77,9 +97,9 @@ const dashboardController = {
           productWhere.clientId = null; // Only shared products
         }
       }
-      const products = await Product.findAll({ where: productWhere });
+      const products = await Product.findAll({ where: productWhere, include: [{ model: Unit, as: 'unit' }] });
       const lowStockProducts = products.filter(p =>
-        p.minStockAlert && parseFloat(p.currentStock) <= parseFloat(p.minStockAlert)
+        p.clientId !== null && p.minStockAlert && parseFloat(p.currentStock) <= parseFloat(p.minStockAlert)
       ).length;
 
       // Unread notifications for current user
@@ -265,7 +285,7 @@ const dashboardController = {
           productWhere.clientId = null; // Only shared products
         }
       }
-      const products = await Product.findAll({ where: productWhere });
+      const products = await Product.findAll({ where: productWhere, include: [{ model: Unit, as: 'unit' }] });
       const lowStockProducts = products.filter(p =>
         p.minStockAlert && parseFloat(p.currentStock) <= parseFloat(p.minStockAlert)
       );
@@ -276,7 +296,7 @@ const dashboardController = {
           priority: 'high',
           titleKey: 'dashboard.alerts.lowStock',
           messageKey: 'dashboard.alerts.lowStockMessage',
-          messageParams: { name: product.name, stock: product.currentStock, unit: product.unit },
+          messageParams: { name: product.name, stock: product.currentStock, unit: product.unit?.abbreviation || '' },
           referenceId: product.id,
           createdAt: new Date()
         });

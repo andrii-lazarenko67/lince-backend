@@ -1,4 +1,4 @@
-const { System, SystemType, MonitoringPoint, ChecklistItem, UserClient } = require('../../db/models');
+const { System, SystemType, MonitoringPoint, ChecklistItem, UserClient, Client } = require('../../db/models');
 const { Op } = require('sequelize');
 
 const systemController = {
@@ -202,6 +202,20 @@ const systemController = {
       let finalLocation = location;
       let finalClientId = req.clientId;
 
+      // Plan limit check — only for root systems (steps share parent's slot)
+      // Applies to ALL users including service providers managing clients
+      if (!parentId) {
+        const clientRecord = await Client.findByPk(req.clientId, {
+          attributes: ['systemsUsed', 'systemsLimit']
+        });
+        if (clientRecord && clientRecord.systemsLimit > 0 && clientRecord.systemsUsed >= clientRecord.systemsLimit) {
+          return res.status(403).json({
+            success: false,
+            messageKey: 'systems.errors.limitReached'
+          });
+        }
+      }
+
       // If creating a step (has parent), inherit location, systemTypeId, and clientId from parent
       if (parentId) {
         const parent = await System.findByPk(parentId);
@@ -252,7 +266,11 @@ const systemController = {
         clientId: finalClientId
       });
 
-      // Fetch with associations for response
+      // Increment systemsUsed counter for root systems
+      if (!parentId) {
+        await Client.increment('systemsUsed', { by: 1, where: { id: finalClientId } });
+      }
+
       const createdSystem = await System.findByPk(system.id, {
         include: [
           {
@@ -401,7 +419,6 @@ const systemController = {
         parentId: parentId !== undefined ? (parentId || null) : system.parentId
       });
 
-      // Fetch with associations for response
       const updatedSystem = await System.findByPk(system.id, {
         include: [
           {
@@ -526,6 +543,11 @@ const systemController = {
 
       // Delete the system
       await system.destroy();
+
+      // Decrement systemsUsed for root systems only
+      if (!system.parentId && system.clientId) {
+        await Client.decrement('systemsUsed', { by: 1, where: { id: system.clientId, systemsUsed: { [Op.gt]: 0 } } });
+      }
 
       res.json({
         success: true,

@@ -13,4 +13,6 @@ router.put('/change-password', authMiddleware, authController.changePassword);
 router.put('/profile', authMiddleware, authController.updateProfile);
 router.put('/avatar', authMiddleware, upload.single('avatar'), authController.uploadAvatar);
 
+router.get('/verify-email', authController.verifyEmail);
+router.post('/resend-verification', authController.resendVerification);
 module.exports = router;

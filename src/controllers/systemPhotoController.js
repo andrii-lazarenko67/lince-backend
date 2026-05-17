@@ -82,6 +82,7 @@ exports.uploadPhoto = async (req, res) => {
 
     // Upload to Cloudinary
     const uploadResult = await uploadService.uploadImage(req.file.buffer, 'system-photos');
+    await uploadService.incrementStorage(req.clientId, uploadResult.bytes);
 
     // Extract filename from public_id or use original name
     const filename = uploadResult.public_id.split('/').pop();
@@ -178,6 +179,7 @@ exports.deletePhoto = async (req, res) => {
 
     try {
       // Delete from Cloudinary
+      await uploadService.decrementStorage(req.clientId, photo.fileSize || 0);
       await uploadService.deleteImage(publicId);
     } catch (cloudinaryError) {
       console.error('Error deleting from Cloudinary:', cloudinaryError);

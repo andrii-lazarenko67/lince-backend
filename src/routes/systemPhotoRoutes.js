@@ -3,6 +3,7 @@ const router = express.Router();
 const systemPhotoController = require('../controllers/systemPhotoController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/upload');
+const storageMiddleware = require('../middlewares/storageMiddleware');
 
 // All routes require authentication
 router.use(authMiddleware);
@@ -14,7 +15,7 @@ router.get('/system/:systemId', systemPhotoController.getPhotosBySystem);
 router.get('/:id', systemPhotoController.getPhotoById);
 
 // Upload photo to system (single file upload)
-router.post('/system/:systemId', upload.single('photo'), systemPhotoController.uploadPhoto);
+router.post('/system/:systemId', upload.single('photo'), storageMiddleware, systemPhotoController.uploadPhoto);
 
 // Update photo description
 router.put('/:id', systemPhotoController.updatePhoto);

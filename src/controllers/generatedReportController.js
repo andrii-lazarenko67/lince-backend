@@ -4,6 +4,7 @@ const cloudinary = require('../config/cloudinary');
 const chartDataService = require('../services/chartDataService');
 const { generateWordDocument } = require('../services/wordDocumentService');
 const emailService = require('../services/emailService');
+const https = require('https');
 
 const generatedReportController = {
   // Get all generated reports (history)
@@ -594,9 +595,10 @@ const generatedReportController = {
         publicId: uploadResult.public_id
       });
 
+      const updatedReport = await report.reload();
       res.json({
         success: true,
-        data: { pdfUrl: uploadResult.secure_url },
+        data: updatedReport,
         messageKey: 'reports.pdfUploaded'
       });
     } catch (error) {
@@ -989,7 +991,7 @@ const generatedReportController = {
   async sendReportEmail(req, res, next) {
     try {
       const { id } = req.params;
-      const { to, cc, bcc, language } = req.body;
+      const { to, cc, bcc, language, format } = req.body;
 
       if (!to || !to.trim()) {
         return res.status(400).json({
@@ -1249,21 +1251,51 @@ const generatedReportController = {
         };
       }
 
-      // Generate Word document
-      const templateLogo = report.template?.logo || null;
-      const docBuffer = await generateWordDocument(reportData, config, report.name, templateLogo, chartData, language || 'pt');
+      // Send email - branch on format (pdf uses Cloudinary URL, word generates fresh)
+      if (format === 'pdf') {
+        if (!report.pdfUrl) {
+          return res.status(404).json({
+            success: false,
+            messageKey: 'reports.errors.pdfNotGenerated'
+          });
+        }
+        const pdfBuffer = await new Promise((resolve, reject) => {
+          https.get(report.pdfUrl, (response) => {
+            if (response.statusCode !== 200) {
+              return reject(new Error('Failed to fetch PDF: HTTP ' + response.statusCode));
+            }
+            const chunks = [];
+            response.on('data', (chunk) => chunks.push(chunk));
+            response.on('end', () => resolve(Buffer.concat(chunks)));
+            response.on('error', reject);
+          }).on('error', reject);
+        });
 
-      // Send email with Word attachment
-      await emailService.sendReportWithWord({
-        to: to.trim(),
-        reportName: report.name,
-        clientName: report.client?.name,
-        period: periodText,
-        docBuffer,
-        language: language || 'pt',
-        cc: cc || [],
-        bcc: bcc || []
-      });
+        await emailService.sendReportWithPdf({
+          to: to.trim(),
+          reportName: report.name,
+          clientName: report.client?.name,
+          period: periodText,
+          pdfBuffer,
+          language: language || 'pt',
+          cc: cc || [],
+          bcc: bcc || []
+        });
+      } else {
+        const templateLogo = report.template?.logo || null;
+        const docBuffer = await generateWordDocument(reportData, config, report.name, templateLogo, chartData, language || 'pt');
+
+        await emailService.sendReportWithWord({
+          to: to.trim(),
+          reportName: report.name,
+          clientName: report.client?.name,
+          period: periodText,
+          docBuffer,
+          language: language || 'pt',
+          cc: cc || [],
+          bcc: bcc || []
+        });
+      }
 
       res.json({
         success: true,

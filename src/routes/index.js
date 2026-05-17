@@ -28,6 +28,7 @@ const generatedReportRoutes = require('./generatedReportRoutes');
 const aiRoutes = require('./aiRoutes');
 const iotRoutes = require('./iotRoutes');
 const iotController = require('../controllers/iotController');
+const planMiddleware = require('../middlewares/planMiddleware');
 
 // Auth routes (no client context needed)
 router.use('/auth', authRoutes);
@@ -59,6 +60,6 @@ router.use('/generated-reports', authMiddleware, subscriptionMiddleware, clientC
 
 // IoT: ingest is public (device token auth), management routes need auth + client context
 router.post('/iot/ingest', iotController.ingest);
-router.use('/iot', authMiddleware, subscriptionMiddleware, clientContextMiddleware, iotRoutes);
+router.use('/iot', authMiddleware, subscriptionMiddleware, clientContextMiddleware, planMiddleware('enterprise'), iotRoutes);
 
 module.exports = router;

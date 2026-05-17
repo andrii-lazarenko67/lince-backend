@@ -1,4 +1,4 @@
-const { User } = require('../../db/models');
+const { User, UserClient, Client } = require('../../db/models');
 const { Op } = require('sequelize');
 const uploadService = require('../services/uploadService');
 
@@ -12,7 +12,7 @@ const userController = {
       const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
       const offset = (pageNum - 1) * limitNum;
 
-      const where = {};
+      const where = { isActive: true };
 
       if (role) where.role = role;
       if (isActive !== undefined) where.isActive = isActive === 'true';
@@ -21,6 +21,20 @@ const userController = {
           { name: { [Op.iLike]: `%${search}%` } },
           { email: { [Op.iLike]: `%${search}%` } }
         ];
+      }
+
+      // Tenant scoping: only show users who share a client with the current admin
+      const { UserClient } = require('../../db/models');
+      const scopedClientId = req.clientId;
+      if (scopedClientId) {
+        const sharedUserRows = await UserClient.findAll({
+          where: { clientId: scopedClientId },
+          attributes: ['userId']
+        });
+        const sharedUserIds = [...new Set(sharedUserRows.map(r => r.userId))];
+        where.id = { [Op.in]: sharedUserIds };
+      } else {
+        where.id = req.user.id;
       }
 
       const { count, rows: users } = await User.findAndCountAll({
@@ -87,7 +101,22 @@ const userController = {
         role: role || 'technician',
         phone
       });
-
+      const adminClientRows = await UserClient.findAll({
+        where: { userId: req.user.id },
+        attributes: ['clientId']
+      });
+      console.log('[createUser] admin', req.user.id, 'clients:', adminClientRows.map(r => r.clientId));
+      if (adminClientRows.length > 0) {
+        await UserClient.bulkCreate(
+          adminClientRows.map(uc => ({ userId: user.id, clientId: uc.clientId })),
+          { ignoreDuplicates: true }
+        );
+        console.log('[createUser] linked user', user.id, 'to clients:', adminClientRows.map(r => r.clientId));
+        // Increment usersUsed counter for each linked client
+        for (const uc of adminClientRows) {
+          await Client.increment('usersUsed', { where: { id: uc.clientId } });
+        }
+      }
       res.status(201).json({
         success: true,
         data: user
@@ -149,6 +178,10 @@ const userController = {
       }
 
       await user.update({ isActive: false });
+      const userClientRows = await UserClient.findAll({ where: { userId: user.id }, attributes: ['clientId'] });
+      for (const uc of userClientRows) {
+        await Client.decrement('usersUsed', { where: { id: uc.clientId, usersUsed: { [Op.gt]: 0 } } });
+      }
 
       res.json({
         success: true,

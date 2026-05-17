@@ -1,4 +1,5 @@
 'use strict';
+const { getLimitsForPlan } = require('../config/planLimits');
 
 const { Client, Invoice, UserClient } = require('../../db/models');
 const stripeService = require('../services/stripeService');
@@ -67,7 +68,15 @@ const billingController = {
           currentPeriodEnd: client.currentPeriodEnd,
           hasStripeCustomer: !!client.stripeCustomerId,
           hasActiveSubscription: !!client.stripeSubscriptionId && (isActive || isPastDue),
-          isOwner
+          isOwner,
+          systemsUsed: client.systemsUsed,
+          systemsLimit: client.systemsLimit,
+          usersUsed: client.usersUsed,
+          usersLimit: client.usersLimit,
+          aiInsightsUsed: client.aiInsightsUsed,
+          aiInsightsLimit: client.aiInsightsLimit,
+          storageUsed: client.storageUsed,
+          storageLimit: client.storageLimit
         }
       });
     } catch (error) {
@@ -161,47 +170,83 @@ const billingController = {
   },
 
   /**
-   * POST /api/billing/sync-session
-   * Verify Stripe checkout session and sync subscription status
-   * Body: { sessionId }
+   * POST /api/billing/change-plan
+   * Upgrade or downgrade — creates a new Stripe Checkout session so the user pays
+   * Body: { plan: 'starter' | 'pro' }
    */
+  async changePlan(req, res, next) {
+    try {
+      const { plan } = req.body;
+      if (!plan || !['starter', 'pro'].includes(plan)) {
+        return res.status(400).json({ success: false, messageKey: 'billing.errors.invalidPlan' });
+      }
+      const client = await resolveOwnClient(req);
+      if (!client.stripeSubscriptionId) {
+        return res.status(400).json({ success: false, messageKey: 'billing.errors.noSubscription' });
+      }
+      if (client.plan === plan) {
+        return res.status(400).json({ success: false, messageKey: 'billing.errors.alreadyOnPlan' });
+      }
+      const subscription = await stripeService.changeSubscriptionPlan(client.stripeSubscriptionId, plan);
+      const periodEndTs = subscription.items?.data?.[0]?.current_period_end || subscription.current_period_end;
+      await client.update({
+        plan,
+        subscriptionStatus: stripeService.mapStripeStatus(subscription.status),
+        currentPeriodEnd: periodEndTs ? new Date(periodEndTs * 1000) : client.currentPeriodEnd
+      });
+      console.log(`[Billing] Plan changed for client ${client.id}: ${client.plan} to ${plan}`);
+      res.json({
+        success: true,
+        data: {
+          plan,
+          planName: stripeService.PLAN_NAMES[plan]
+        }
+      });
+    } catch (error) {
+      if (error.message === 'CLIENT_NOT_FOUND') {
+        return res.status(404).json({ success: false, messageKey: 'billing.errors.clientNotFound' });
+      }
+      if (error.statusCode) {
+        return res.status(error.statusCode).json({ success: false, messageKey: error.messageKey });
+      }
+      next(error);
+    }
+  },
   async syncSession(req, res, next) {
     try {
       const { sessionId } = req.body;
-
       if (!sessionId) {
-        return res.status(400).json({ success: false, messageKey: 'billing.errors.sessionIdRequired' });
+        return res.status(400).json({ success: false, message: 'sessionId required' });
       }
-
       const client = await resolveOwnClient(req);
-
-      // Retrieve the checkout session from Stripe
       const session = await stripeService.getCheckoutSession(sessionId);
-
-      if (!session || session.payment_status !== 'paid') {
-        return res.status(400).json({ success: false, messageKey: 'billing.errors.paymentNotCompleted' });
+      if (session.mode !== 'subscription' || session.status !== 'complete') {
+        return res.json({ success: true, synced: false, message: 'Session not yet complete' });
       }
-
-      // Extract subscription details
-      const subscription = session.subscription;
-      if (!subscription || typeof subscription === 'string') {
-        return res.status(400).json({ success: false, messageKey: 'billing.errors.subscriptionNotFound' });
+      if (session.metadata?.clientId !== String(client.id)) {
+        return res.status(403).json({ success: false, message: 'Session does not belong to this client' });
       }
-
-      const plan = stripeService.planFromPriceId(subscription.items.data[0]?.price?.id);
-      const status = stripeService.mapStripeStatus(subscription.status);
-
-      // Update client subscription
-      await client.update({
-        plan,
-        subscriptionStatus: status,
-        stripeSubscriptionId: subscription.id,
-        stripeCustomerId: session.customer,
-        currentPeriodEnd: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
-        trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null
-      });
-
-      res.json({ success: true, data: { plan, status } });
+      const updates = {};
+      if (session.customer && !client.stripeCustomerId) {
+        updates.stripeCustomerId = session.customer;
+      }
+      if (session.subscription) {
+        const subId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
+        const subscription = await stripeService.getSubscription(subId);
+        const plan = stripeService.planFromPriceId(subscription.items.data[0]?.price?.id);
+        const status = stripeService.mapStripeStatus(subscription.status);
+        const periodEndTs = subscription.items?.data?.[0]?.current_period_end || subscription.current_period_end;
+        updates.plan = plan;
+        updates.subscriptionStatus = status;
+        updates.stripeSubscriptionId = subscription.id;
+        updates.currentPeriodEnd = periodEndTs ? new Date(periodEndTs * 1000) : null;
+        updates.trialEndsAt = null;
+      }
+      if (Object.keys(updates).length > 0) {
+        await client.update(updates);
+      }
+      console.log(`[Billing] syncSession: synced client ${client.id} from session ${sessionId}`);
+      res.json({ success: true, synced: true });
     } catch (error) {
       if (error.message === 'CLIENT_NOT_FOUND') {
         return res.status(404).json({ success: false, messageKey: 'billing.errors.clientNotFound' });
@@ -228,27 +273,29 @@ const billingController = {
       // Sync to database
       const invoices = [];
       for (const inv of stripeInvoices) {
+        const plan = stripeService.planFromPriceId(inv.lines?.data?.[0]?.price?.id) || client.plan || 'none';
+        const defaults = {
+          clientId: client.id,
+          stripeInvoiceId: inv.id,
+          stripePaymentIntentId: inv.payment_intent || null,
+          amount: inv.amount_paid || inv.amount_due || 0,
+          currency: inv.currency || 'brl',
+          status: inv.status || 'open',
+          plan,
+          pdfUrl: inv.invoice_pdf || null,
+          periodStart: inv.period_start ? new Date(inv.period_start * 1000) : null,
+          periodEnd: inv.period_end ? new Date(inv.period_end * 1000) : null,
+          paidAt: inv.status === 'paid' && inv.status_transitions?.paid_at
+            ? new Date(inv.status_transitions.paid_at * 1000) : null
+        };
+
         const [invoice, created] = await Invoice.findOrCreate({
           where: { stripeInvoiceId: inv.id },
-          defaults: {
-            clientId: client.id,
-            stripeInvoiceId: inv.id,
-            amount: inv.amount_paid,
-            currency: inv.currency,
-            status: inv.status,
-            pdfUrl: inv.invoice_pdf,
-            hostedUrl: inv.hosted_invoice_url,
-            createdAt: new Date(inv.created * 1000)
-          }
+          defaults
         });
 
         if (!created) {
-          // Update if already exists
-          await invoice.update({
-            status: inv.status,
-            pdfUrl: inv.invoice_pdf,
-            hostedUrl: inv.hosted_invoice_url
-          });
+          await invoice.update({ status: defaults.status, pdfUrl: defaults.pdfUrl });
         }
 
         invoices.push(invoice);
@@ -289,12 +336,63 @@ const billingController = {
   },
 
   /**
+   * POST /api/billing/create-addon-checkout
+   * Creates a Stripe checkout session for an add-on purchase
+   * Body: { addonType: 'user' | 'storage_10' | 'storage_25' | 'storage_50', quantity: number }
+   */
+  async createAddonCheckout(req, res, next) {
+    try {
+      const { addonType, quantity = 1 } = req.body;
+      const validAddons = ['user', 'storage_10', 'storage_25', 'storage_50'];
+
+      if (!addonType || !validAddons.includes(addonType)) {
+        return res.status(400).json({ success: false, messageKey: 'billing.errors.invalidAddon' });
+      }
+      if (quantity < 1 || quantity > 100) {
+        return res.status(400).json({ success: false, messageKey: 'billing.errors.invalidQuantity' });
+      }
+
+      const client = await resolveOwnClient(req);
+
+      const session = await stripeService.createAddonCheckoutSession({
+        client,
+        addonType,
+        quantity: parseInt(quantity),
+        ownerEmail: req.user.email,
+        ownerName: req.user.name,
+        successUrl: `${FRONTEND_URL}/billing/success`,
+        cancelUrl: `${FRONTEND_URL}/billing`
+      });
+
+      res.json({ success: true, data: { url: session.url, sessionId: session.id } });
+    } catch (error) {
+      if (error.message === 'CLIENT_NOT_FOUND') {
+        return res.status(404).json({ success: false, messageKey: 'billing.errors.clientNotFound' });
+      }
+      next(error);
+    }
+  },
+
+  /**
    * GET /api/billing/admin
    * Admin only — list all clients with subscription info
    */
   async adminList(req, res, next) {
     try {
+      let whereClause = {};
+
+      // Service providers only see their own clients
+      if (req.user.isServiceProvider) {
+        const userClients = await UserClient.findAll({
+          where: { userId: req.user.id },
+          attributes: ['clientId']
+        });
+        const clientIds = userClients.map(uc => uc.clientId);
+        whereClause = { id: clientIds };
+      }
+
       const clients = await Client.findAll({
+        where: whereClause,
         attributes: ['id', 'name', 'email', 'plan', 'subscriptionStatus', 'trialEndsAt', 'currentPeriodEnd', 'stripeCustomerId', 'createdAt'],
         order: [['createdAt', 'DESC']]
       });
@@ -321,7 +419,15 @@ const billingController = {
       }
 
       const updates = {};
-      if (plan) updates.plan = plan;
+      if (plan) {
+        updates.plan = plan;
+        // Apply plan limits when plan is changed manually
+        const limits = getLimitsForPlan(plan);
+        updates.systemsLimit = limits.systemsLimit;
+        updates.usersLimit = limits.usersLimit;
+        updates.aiInsightsLimit = limits.aiInsightsLimit;
+        updates.storageLimit = limits.storageLimit;
+      }
       if (subscriptionStatus) updates.subscriptionStatus = subscriptionStatus;
 
       await client.update(updates);
@@ -356,12 +462,17 @@ async function handleStripeEvent(event) {
       const plan = stripeService.planFromPriceId(subscription.items.data[0]?.price?.id);
       const periodEnd = new Date(subscription.current_period_end * 1000);
 
+      const invoiceLimits = getLimitsForPlan(plan);
       await client.update({
         subscriptionStatus: 'active',
         plan,
         stripeSubscriptionId: subscription.id,
         currentPeriodEnd: periodEnd,
-        trialEndsAt: null
+        trialEndsAt: null,
+        systemsLimit: invoiceLimits.systemsLimit,
+        usersLimit: invoiceLimits.usersLimit,
+        aiInsightsLimit: invoiceLimits.aiInsightsLimit,
+        storageLimit: invoiceLimits.storageLimit
       });
 
       // Record invoice — use findOne + update/create to safely handle webhook retries
@@ -375,8 +486,8 @@ async function handleStripeEvent(event) {
         status: 'paid',
         plan,
         pdfUrl: invoice.invoice_pdf || null,
-        periodStart: new Date(invoice.period_start * 1000),
-        periodEnd: new Date(invoice.period_end * 1000),
+        periodStart: invoice.period_start ? new Date(invoice.period_start * 1000) : null,
+        periodEnd: invoice.period_end ? new Date(invoice.period_end * 1000) : null,
         paidAt: new Date()
       };
       if (existingInvoice) {
@@ -422,8 +533,8 @@ async function handleStripeEvent(event) {
         currency: invoice.currency,
         status: 'open',
         plan,
-        periodStart: new Date(invoice.period_start * 1000),
-        periodEnd: new Date(invoice.period_end * 1000)
+        periodStart: invoice.period_start ? new Date(invoice.period_start * 1000) : null,
+        periodEnd: invoice.period_end ? new Date(invoice.period_end * 1000) : null
       };
       const existingFailedInvoice = await Invoice.findOne({ where: { stripeInvoiceId: invoice.id } });
       if (existingFailedInvoice) {
@@ -479,7 +590,7 @@ async function handleStripeEvent(event) {
 
       const plan = stripeService.planFromPriceId(subscription.items.data[0]?.price?.id);
       const status = stripeService.mapStripeStatus(subscription.status);
-      const periodEnd = new Date(subscription.current_period_end * 1000);
+      const periodEnd = subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null;
 
       await client.update({
         plan,
@@ -500,11 +611,17 @@ async function handleStripeEvent(event) {
 
       const client = await Client.findByPk(clientId);
       if (!client) break;
+      // Only cancel if this is the currently active subscription
+      // Prevents stale old webhooks from overriding a newer active subscription
+      if (client.stripeSubscriptionId && client.stripeSubscriptionId !== subscription.id) {
+        console.log(`[Billing] Ignoring stale cancellation for sub ${subscription.id} — client ${clientId} has active sub ${client.stripeSubscriptionId}`);
+        break;
+      }
 
+      const cancelPeriodEnd = subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null;
       await client.update({
         subscriptionStatus: 'cancelled',
-        stripeSubscriptionId: null,
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+        currentPeriodEnd: cancelPeriodEnd
       });
 
       // Send cancellation email
@@ -514,7 +631,7 @@ async function handleStripeEvent(event) {
           type: 'cancelled',
           clientName: client.name,
           plan: stripeService.PLAN_NAMES[client.plan],
-          accessUntil: new Date(subscription.current_period_end * 1000).toLocaleDateString('pt-BR')
+          accessUntil: cancelPeriodEnd ? cancelPeriodEnd.toLocaleDateString('pt-BR') : ''
         }).catch(err => console.warn('[Billing] Failed to send cancelled email:', err.message));
       }
 

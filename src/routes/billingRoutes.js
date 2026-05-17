@@ -28,11 +28,13 @@ router.get('/status', billingController.getStatus);
 router.post('/create-checkout', billingController.createCheckout);
 router.post('/portal', billingController.createPortal);
 router.get('/invoices', billingController.getInvoices);
+router.post('/change-plan', billingController.changePlan);
+router.post('/create-addon-checkout', billingController.createAddonCheckout);
 router.post('/sync-session', billingController.syncSession);
 router.post('/sync-invoices', billingController.syncInvoices);
 
 // Admin-only routes
 router.get('/admin', roleMiddleware('admin', 'manager'), billingController.adminList);
-router.put('/admin/:clientId', roleMiddleware('admin'), billingController.adminUpdate);
+router.put('/admin/:clientId', roleMiddleware('admin', 'manager'), billingController.adminUpdate);
 
 module.exports = router;

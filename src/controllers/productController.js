@@ -547,7 +547,7 @@ const productController = {
         userId,
         type: type === 'add' ? 'in' : 'out',
         quantity,
-        notes: notes || `Stock ${type === 'add' ? 'added' : 'removed'} manually`,
+        notes: notes || (type === 'add' ? 'Estoque adicionado manualmente' : 'Estoque removido manualmente'),
         date: new Date()
       });
 

@@ -35,7 +35,7 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 'technician'
     },
     phone: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.STRING(30),
       allowNull: true
     },
     avatar: {
@@ -49,6 +49,19 @@ module.exports = (sequelize, DataTypes) => {
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    emailVerified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    verificationToken: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    verificationTokenExpiry: {
+      type: DataTypes.DATE,
+      allowNull: true
     },
     lastLogin: {
       type: DataTypes.DATE,

@@ -1,4 +1,5 @@
 const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinaryUpload');
+const { Client } = require('../../db/models');
 
 /**
  * Upload Service
@@ -16,7 +17,8 @@ const uploadService = {
       const result = await uploadToCloudinary(buffer, folder, 'image');
       return {
         secure_url: result.url,
-        public_id: result.publicId
+        public_id: result.publicId,
+        bytes: result.bytes || 0
       };
     } catch (error) {
       console.error('Error uploading image to Cloudinary:', error);
@@ -37,7 +39,8 @@ const uploadService = {
       const result = await uploadToCloudinary(buffer, folder, 'raw');
       return {
         secure_url: result.url,
-        public_id: result.publicId
+        public_id: result.publicId,
+        bytes: result.bytes || 0
       };
     } catch (error) {
       console.error('Error uploading document to Cloudinary:', error);
@@ -87,12 +90,37 @@ const uploadService = {
       const result = await uploadToCloudinary(buffer, folder, resourceType);
       return {
         secure_url: result.url,
-        public_id: result.publicId
+        public_id: result.publicId,
+        bytes: result.bytes || 0
       };
     } catch (error) {
       console.error('Error uploading file to Cloudinary:', error);
       throw new Error('Failed to upload file');
     }
+  }
+};
+
+/**
+ * Increment storageUsed for a client by bytes
+ */
+uploadService.incrementStorage = async function(clientId, bytes) {
+  if (!clientId || !bytes) return;
+  try {
+    await Client.increment('storageUsed', { by: bytes, where: { id: clientId } });
+  } catch (err) {
+    console.warn('[Storage] Failed to increment storageUsed:', err.message);
+  }
+};
+
+/**
+ * Decrement storageUsed for a client by bytes
+ */
+uploadService.decrementStorage = async function(clientId, bytes) {
+  if (!clientId || !bytes) return;
+  try {
+    await Client.decrement('storageUsed', { by: bytes, where: { id: clientId } });
+  } catch (err) {
+    console.warn('[Storage] Failed to decrement storageUsed:', err.message);
   }
 };
 

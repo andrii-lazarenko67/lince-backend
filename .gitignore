@@ -7,6 +7,15 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 .env
+.env.*
+*.bak
+*.bak_*
+*.backup
+*.backup_*
+*.backup[0-9]*
+*.test_bak
+test_file.txt
+test.txt
 
 node_modules
 dist

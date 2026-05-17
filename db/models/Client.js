@@ -49,7 +49,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
-    // Subscription fields
     plan: {
       type: DataTypes.ENUM('starter', 'pro', 'enterprise', 'none'),
       defaultValue: 'none',
@@ -76,6 +75,51 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: null
     },
     currentPeriodEnd: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null
+    },
+    systemsUsed: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false
+    },
+    systemsLimit: {
+      type: DataTypes.INTEGER,
+      defaultValue: 3,
+      allowNull: false
+    },
+    usersUsed: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false
+    },
+    usersLimit: {
+      type: DataTypes.INTEGER,
+      defaultValue: 5,
+      allowNull: false
+    },
+    aiInsightsUsed: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false
+    },
+    aiInsightsLimit: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false
+    },
+    storageUsed: {
+      type: DataTypes.BIGINT,
+      defaultValue: 0,
+      allowNull: false
+    },
+    storageLimit: {
+      type: DataTypes.BIGINT,
+      defaultValue: 5368709120,
+      allowNull: false
+    },
+    aiInsightsResetDate: {
       type: DataTypes.DATE,
       allowNull: true,
       defaultValue: null

@@ -3,6 +3,7 @@ const router = express.Router();
 const generatedReportController = require('../controllers/generatedReportController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/upload');
+const planMiddleware = require('../middlewares/planMiddleware');
 
 router.use(authMiddleware);
 
@@ -25,7 +26,7 @@ router.post('/:id/upload-pdf', upload.single('pdf'), generatedReportController.u
 router.get('/:id/download', generatedReportController.download);
 
 // Download Word document
-router.get('/:id/download-word', generatedReportController.downloadWord);
+router.get('/:id/download-word', planMiddleware('pro', 'enterprise'), generatedReportController.downloadWord);
 
 // Send report via email
 router.post('/:id/send-email', generatedReportController.sendReportEmail);

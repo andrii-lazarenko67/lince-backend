@@ -1,31 +1,24 @@
 'use strict';
 
-const sgMail = require('@sendgrid/mail');
+const { Resend } = require('resend');
 
-// Initialize SendGrid with API key from environment
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+function getFrom() {
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@lince.app';
+  const fromName = process.env.RESEND_FROM_NAME || 'LINCE';
+  return `${fromName} <${fromEmail}>`;
+}
+
+function getReplyTo() {
+  return process.env.RESEND_REPLY_TO || 'linceresultados@gmail.com';
 }
 
 /**
- * Email Service using SendGrid
- * Handles sending emails with attachments (reports)
+ * Email Service using Resend
+ * Handles sending emails with attachments (reports, password resets, subscription lifecycle)
  */
 const emailService = {
-  /**
-   * Send report via email
-   * @param {Object} options - Email options
-   * @param {string} options.to - Recipient email address
-   * @param {string} options.subject - Email subject
-   * @param {string} options.html - Email HTML content
-   * @param {string} options.text - Email plain text content (optional)
-   * @param {Array} options.attachments - Array of attachments
-   * @param {string} options.attachments[].content - Base64 encoded file content
-   * @param {string} options.attachments[].filename - File name
-   * @param {string} options.attachments[].type - MIME type
-   * @param {string} options.attachments[].disposition - 'attachment' or 'inline'
-   * @returns {Promise<void>}
-   */
   async sendReportEmail(options) {
     const {
       to,
@@ -37,61 +30,37 @@ const emailService = {
       bcc = []
     } = options;
 
-    // Use configured sender email or default
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@lince.app';
-    const fromName = process.env.SENDGRID_FROM_NAME || 'LINCE Reports';
+    if (!resend) {
+      throw new Error('Resend API key not configured');
+    }
 
     const msg = {
-      to,
-      from: {
-        email: fromEmail,
-        name: fromName
-      },
+      from: getFrom(),
+      to: Array.isArray(to) ? to : [to],
       subject,
       text: text || this.stripHtml(html),
       html,
       attachments: attachments.map(att => ({
         content: att.content,
-        filename: att.filename,
-        type: att.type || 'application/pdf',
-        disposition: att.disposition || 'attachment'
-      }))
+        filename: att.filename
+      })),
+      replyTo: getReplyTo()
     };
 
-    // Add CC if provided
-    if (cc && cc.length > 0) {
-      msg.cc = cc;
-    }
-
-    // Add BCC if provided
-    if (bcc && bcc.length > 0) {
-      msg.bcc = bcc;
-    }
+    if (cc && cc.length > 0) msg.cc = cc;
+    if (bcc && bcc.length > 0) msg.bcc = bcc;
 
     try {
-      await sgMail.send(msg);
+      const { data, error } = await resend.emails.send(msg);
+      if (error) throw error;
       console.log(`Email sent successfully to ${to}`);
-      return { success: true };
+      return { success: true, id: data?.id };
     } catch (error) {
-      console.error('SendGrid Error:', error);
-      if (error.response) {
-        console.error('SendGrid Response Error:', error.response.body);
-      }
+      console.error('Resend Error:', error);
       throw new Error(`Failed to send email: ${error.message}`);
     }
   },
 
-  /**
-   * Send report with PDF attachment
-   * @param {Object} options
-   * @param {string} options.to - Recipient email
-   * @param {string} options.reportName - Report name
-   * @param {string} options.clientName - Client name
-   * @param {string} options.period - Period description
-   * @param {Buffer} options.pdfBuffer - PDF file buffer
-   * @param {string} options.language - Language code ('en' or 'pt')
-   * @returns {Promise<void>}
-   */
   async sendReportWithPdf(options) {
     const {
       to,
@@ -104,7 +73,6 @@ const emailService = {
       bcc = []
     } = options;
 
-    // Translate email content based on language
     const translations = {
       pt: {
         subject: `Relatório: ${reportName}`,
@@ -134,109 +102,21 @@ const emailService = {
 
     const t = translations[language] || translations.pt;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-          }
-          .header {
-            background-color: #1976d2;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 5px 5px 0 0;
-          }
-          .content {
-            background-color: #f9f9f9;
-            padding: 30px;
-            border: 1px solid #ddd;
-          }
-          .details {
-            background-color: white;
-            padding: 15px;
-            margin: 20px 0;
-            border-left: 4px solid #1976d2;
-          }
-          .details-row {
-            margin: 10px 0;
-          }
-          .label {
-            font-weight: bold;
-            color: #1976d2;
-          }
-          .footer {
-            background-color: #f5f5f5;
-            padding: 15px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-            border-radius: 0 0 5px 5px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1 style="margin: 0;">LINCE</h1>
-          <p style="margin: 5px 0 0 0;">Sistema de Gestão de Tratamento de Água</p>
-        </div>
-        <div class="content">
-          <p>${t.greeting},</p>
-          <p>${t.intro}</p>
-
-          <div class="details">
-            <h3 style="margin-top: 0;">${t.reportDetails}</h3>
-            ${clientName ? `<div class="details-row"><span class="label">${t.client}:</span> ${clientName}</div>` : ''}
-            <div class="details-row"><span class="label">${t.reportName}:</span> ${reportName}</div>
-            <div class="details-row"><span class="label">${t.period}:</span> ${period}</div>
-          </div>
-
-          <p>${t.thanks},<br>${t.team}</p>
-        </div>
-        <div class="footer">
-          <p>${t.footer}</p>
-        </div>
-      </body>
-      </html>
-    `;
-
-    // Convert PDF buffer to base64
-    const pdfBase64 = pdfBuffer.toString('base64');
+    const html = buildReportHtml(t, clientName, reportName, period);
 
     await this.sendReportEmail({
       to,
       subject: t.subject,
       html,
       attachments: [{
-        content: pdfBase64,
-        filename: `${reportName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
-        type: 'application/pdf',
-        disposition: 'attachment'
+        content: pdfBuffer,
+        filename: `${reportName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
       }],
       cc,
       bcc
     });
   },
 
-  /**
-   * Send report with Word document attachment
-   * @param {Object} options
-   * @param {string} options.to - Recipient email
-   * @param {string} options.reportName - Report name
-   * @param {string} options.clientName - Client name
-   * @param {string} options.period - Period description
-   * @param {Buffer} options.docBuffer - Word document buffer
-   * @param {string} options.language - Language code ('en' or 'pt')
-   * @returns {Promise<void>}
-   */
   async sendReportWithWord(options) {
     const {
       to,
@@ -249,7 +129,6 @@ const emailService = {
       bcc = []
     } = options;
 
-    // Translate email content based on language
     const translations = {
       pt: {
         subject: `Relatório: ${reportName}`,
@@ -279,103 +158,21 @@ const emailService = {
 
     const t = translations[language] || translations.pt;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-          }
-          .header {
-            background-color: #1976d2;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 5px 5px 0 0;
-          }
-          .content {
-            background-color: #f9f9f9;
-            padding: 30px;
-            border: 1px solid #ddd;
-          }
-          .details {
-            background-color: white;
-            padding: 15px;
-            margin: 20px 0;
-            border-left: 4px solid #1976d2;
-          }
-          .details-row {
-            margin: 10px 0;
-          }
-          .label {
-            font-weight: bold;
-            color: #1976d2;
-          }
-          .footer {
-            background-color: #f5f5f5;
-            padding: 15px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-            border-radius: 0 0 5px 5px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1 style="margin: 0;">LINCE</h1>
-          <p style="margin: 5px 0 0 0;">Sistema de Gestão de Tratamento de Água</p>
-        </div>
-        <div class="content">
-          <p>${t.greeting},</p>
-          <p>${t.intro}</p>
-
-          <div class="details">
-            <h3 style="margin-top: 0;">${t.reportDetails}</h3>
-            ${clientName ? `<div class="details-row"><span class="label">${t.client}:</span> ${clientName}</div>` : ''}
-            <div class="details-row"><span class="label">${t.reportName}:</span> ${reportName}</div>
-            <div class="details-row"><span class="label">${t.period}:</span> ${period}</div>
-          </div>
-
-          <p>${t.thanks},<br>${t.team}</p>
-        </div>
-        <div class="footer">
-          <p>${t.footer}</p>
-        </div>
-      </body>
-      </html>
-    `;
-
-    // Convert Word buffer to base64
-    const docBase64 = docBuffer.toString('base64');
+    const html = buildReportHtml(t, clientName, reportName, period);
 
     await this.sendReportEmail({
       to,
       subject: t.subject,
       html,
       attachments: [{
-        content: docBase64,
-        filename: `${reportName.replace(/[^a-zA-Z0-9]/g, '_')}.docx`,
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        disposition: 'attachment'
+        content: docBuffer,
+        filename: `${reportName.replace(/[^a-zA-Z0-9]/g, '_')}.docx`
       }],
       cc,
       bcc
     });
   },
 
-  /**
-   * Strip HTML tags from string (for plain text fallback)
-   * @param {string} html - HTML string
-   * @returns {string} Plain text
-   */
   stripHtml(html) {
     return html
       .replace(/<style[^>]*>.*?<\/style>/gi, '')
@@ -385,12 +182,10 @@ const emailService = {
       .trim();
   },
 
-  /**
-   * Send password reset email
-   */
   async sendPasswordResetEmail({ to, name, resetUrl }) {
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@lince.app';
-    const fromName = process.env.SENDGRID_FROM_NAME || 'LINCE';
+    if (!resend) {
+      throw new Error('Resend API key not configured');
+    }
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"></head>
@@ -412,35 +207,23 @@ const emailService = {
   </div>
 </body></html>`;
 
-    const msg = {
-      to,
-      from: { email: fromEmail, name: fromName },
+    const { error } = await resend.emails.send({
+      from: getFrom(),
+      to: [to],
+      replyTo: getReplyTo(),
       subject: 'Redefinicao de senha - LINCE',
       text: `Ola ${name},\n\nRedefina sua senha acessando o link abaixo (expira em 1 hora):\n${resetUrl}\n\nSe voce nao solicitou isso, ignore este e-mail.\n\nLINCE`,
       html
-    };
-
-    await sgMail.send(msg);
+    });
+    if (error) throw error;
     console.log('Password reset email sent to', to);
   },
 
-  /**
-   * Send subscription lifecycle emails
-   * @param {Object} options
-   * @param {string} options.to - Recipient email
-   * @param {string} options.type - 'activated' | 'payment_failed' | 'cancelled' | 'trial_ending'
-   * @param {string} options.clientName - Client/company name
-   * @param {string} options.plan - Plan name
-   * @param {string} [options.accessUntil] - Access end date (for cancellations)
-   */
   async sendSubscriptionEmail({ to, type, clientName, plan, accessUntil }) {
     if (!this.isConfigured()) {
-      console.warn(`[EmailService] SendGrid not configured — skipping subscription email (type: ${type})`);
+      console.warn(`[EmailService] Resend not configured — skipping subscription email (type: ${type})`);
       return;
     }
-
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@lince.app';
-    const fromName = process.env.SENDGRID_FROM_NAME || 'LINCE';
 
     const templates = {
       activated: {
@@ -496,24 +279,96 @@ const emailService = {
 </body>
 </html>`;
 
-    const msg = {
-      to,
-      from: { email: fromEmail, name: fromName },
+    const { error } = await resend.emails.send({
+      from: getFrom(),
+      to: [to],
+      replyTo: getReplyTo(),
       subject: tpl.subject,
       html,
       text: `${tpl.title}\n\n${tpl.body.replace(/<[^>]+>/g, '')}\n\nAcesse: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/billing`
-    };
-
-    await sgMail.send(msg);
+    });
+    if (error) throw error;
   },
 
-  /**
-   * Verify SendGrid configuration
-   * @returns {boolean} True if configured
-   */
+
+  async sendVerificationEmail({ to, name, verifyUrl }) {
+    if (!resend) throw new Error('Resend API key not configured');
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;background:#f8fafc;margin:0;padding:32px 16px;">
+  <div style="max-width:480px;margin:0 auto;background:white;border-radius:8px;border:1px solid #e2e8f0;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#3b82f6,#1e40af);padding:24px 32px;">
+      <h1 style="color:white;margin:0;font-size:22px;letter-spacing:2px;">LINCE</h1>
+    </div>
+    <div style="padding:32px;">
+      <h2 style="color:#1e293b;margin:0 0 16px 0;font-size:18px;">Confirme seu e-mail</h2>
+      <p style="color:#475569;margin:0 0 8px 0;">Olá, <strong>${name}</strong>.</p>
+      <p style="color:#475569;margin:0 0 24px 0;">Clique no botão abaixo para ativar sua conta LINCE. <strong>Este link expira em 24 horas.</strong></p>
+      <a href="${verifyUrl}" style="display:inline-block;background:#3b82f6;color:white;text-decoration:none;padding:12px 32px;border-radius:6px;font-weight:600;font-size:15px;margin-bottom:24px;">Confirmar E-mail</a>
+      <p style="color:#94a3b8;font-size:13px;margin:0;">Se você não criou esta conta, ignore este e-mail.</p>
+    </div>
+    <div style="padding:16px 32px;border-top:1px solid #e2e8f0;background:#f8fafc;">
+      <p style="color:#cbd5e1;font-size:12px;margin:0;">LINCE - Plataforma de Monitoramento de Tratamento de Água</p>
+    </div>
+  </div>
+</body></html>`;
+
+    const { error } = await resend.emails.send({
+      from: getFrom(),
+      to: [to],
+      replyTo: getReplyTo(),
+      subject: 'Confirme seu e-mail - LINCE',
+      html,
+      text: `Olá ${name},\n\nConfirme seu e-mail acessando o link abaixo (expira em 24h):\n${verifyUrl}\n\nLINCE`
+    });
+    if (error) throw error;
+    console.log('Verification email sent to', to);
+  },
+
   isConfigured() {
-    return !!(process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL);
+    return !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
   }
 };
+
+function buildReportHtml(t, clientName, reportName, period) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #1976d2; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+        .content { background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; }
+        .details { background-color: white; padding: 15px; margin: 20px 0; border-left: 4px solid #1976d2; }
+        .details-row { margin: 10px 0; }
+        .label { font-weight: bold; color: #1976d2; }
+        .footer { background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 5px 5px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1 style="margin: 0;">LINCE</h1>
+        <p style="margin: 5px 0 0 0;">Sistema de Gestão de Tratamento de Água</p>
+      </div>
+      <div class="content">
+        <p>${t.greeting},</p>
+        <p>${t.intro}</p>
+        <div class="details">
+          <h3 style="margin-top: 0;">${t.reportDetails}</h3>
+          ${clientName ? `<div class="details-row"><span class="label">${t.client}:</span> ${clientName}</div>` : ''}
+          <div class="details-row"><span class="label">${t.reportName}:</span> ${reportName}</div>
+          <div class="details-row"><span class="label">${t.period}:</span> ${period}</div>
+        </div>
+        <p>${t.thanks},<br>${t.team}</p>
+      </div>
+      <div class="footer">
+        <p>${t.footer}</p>
+      </div>
+    </body>
+    </html>
+  `;
+}
 
 module.exports = emailService;

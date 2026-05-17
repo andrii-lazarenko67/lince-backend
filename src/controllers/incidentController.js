@@ -171,7 +171,9 @@ const incidentController = {
       if (req.files && req.files.length > 0) {
         for (const file of req.files) {
           const result = await uploadService.uploadImage(file.buffer, 'incidents');
+          await uploadService.incrementStorage(req.clientId, result.bytes);
           await IncidentPhoto.create({
+            fileSize: result.bytes || 0,
             incidentId: incident.id,
             url: result.secure_url,
             publicId: result.public_id,
@@ -290,10 +292,55 @@ const incidentController = {
         }, assignedTo);
       }
 
+      const updatedIncident = await Incident.findByPk(incident.id, {
+        include: [
+          { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
+          { model: User, as: 'assignee', attributes: ['id', 'name', 'email'] },
+          { model: System, as: 'system' },
+          { model: System, as: 'stage' },
+          { model: IncidentPhoto, as: 'photos' },
+          { model: IncidentComment, as: 'comments', include: [{ model: User, as: 'user', attributes: ['id', 'name'] }] }
+        ]
+      });
       res.json({
         success: true,
-        data: incident
+        data: updatedIncident
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateStatus(req, res, next) {
+    try {
+      const { status, resolution } = req.body;
+      const validStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+      if (!status || !validStatuses.includes(status)) {
+        return res.status(400).json({ success: false, messageKey: 'incidents.errors.invalidStatus' });
+      }
+      const where = { id: req.params.id };
+      if (req.clientId) where.clientId = req.clientId;
+      const incident = await Incident.findOne({ where });
+      if (!incident) {
+        return res.status(404).json({ success: false, messageKey: 'incidents.errors.notFound' });
+      }
+      const updates = { status };
+      if (status === 'resolved') {
+        updates.resolution = resolution || incident.resolution;
+        updates.resolvedAt = new Date();
+      }
+      await incident.update(updates);
+      const updatedIncident = await Incident.findByPk(incident.id, {
+        include: [
+          { model: User, as: 'reporter', attributes: ['id', 'name', 'email'] },
+          { model: User, as: 'assignee', attributes: ['id', 'name', 'email'] },
+          { model: System, as: 'system' },
+          { model: System, as: 'stage' },
+          { model: IncidentPhoto, as: 'photos' },
+          { model: IncidentComment, as: 'comments', include: [{ model: User, as: 'user', attributes: ['id', 'name'] }] }
+        ]
+      });
+      res.json({ success: true, data: updatedIncident });
     } catch (error) {
       next(error);
     }
@@ -395,7 +442,9 @@ const incidentController = {
       if (req.files && req.files.length > 0) {
         for (const file of req.files) {
           const result = await uploadService.uploadImage(file.buffer, 'incidents');
+          await uploadService.incrementStorage(req.clientId, result.bytes);
           await IncidentPhoto.create({
+            fileSize: result.bytes || 0,
             incidentId: incident.id,
             url: result.secure_url,
             publicId: result.public_id,
@@ -442,6 +491,7 @@ const incidentController = {
       for (const photo of incident.photos) {
         if (photo.publicId) {
           await uploadService.deleteImage(photo.publicId);
+          await uploadService.decrementStorage(req.clientId, photo.fileSize || 0);
         }
       }
 
@@ -456,6 +506,38 @@ const incidentController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async deletePhoto(req, res, next) {
+    try {
+      const photo = await IncidentPhoto.findByPk(req.params.photoId);
+      if (!photo) return res.status(404).json({ success: false, message: 'Photo not found' });
+      if (photo.publicId) await uploadService.deleteImage(photo.publicId);
+      await uploadService.decrementStorage(req.clientId, photo.fileSize || 0);
+      await photo.destroy();
+      res.json({ success: true });
+    } catch (error) { next(error); }
+  },
+
+  async deleteComment(req, res, next) {
+    try {
+      const comment = await IncidentComment.findByPk(req.params.commentId);
+      if (!comment) return res.status(404).json({ success: false, message: 'Comment not found' });
+      await comment.destroy();
+      res.json({ success: true });
+    } catch (error) { next(error); }
+  },
+
+  async updateComment(req, res, next) {
+    try {
+      const comment = await IncidentComment.findByPk(req.params.commentId);
+      if (!comment) return res.status(404).json({ success: false, message: 'Comment not found' });
+      await comment.update({ content: req.body.content });
+      const updated = await IncidentComment.findByPk(comment.id, {
+        include: [{ model: User, as: 'user', attributes: ['id', 'name'] }]
+      });
+      res.json({ success: true, data: updated });
+    } catch (error) { next(error); }
   },
 
   // Get users that can be assigned to incidents for the current client

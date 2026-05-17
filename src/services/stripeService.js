@@ -9,10 +9,24 @@ const PLAN_PRICE_IDS = {
   pro: process.env.STRIPE_PRICE_PRO
 };
 
+const ADDON_PRICE_IDS = {
+  user: process.env.STRIPE_PRICE_ADDON_USER,
+  storage_10: process.env.STRIPE_PRICE_ADDON_STORAGE_10,
+  storage_25: process.env.STRIPE_PRICE_ADDON_STORAGE_25,
+  storage_50: process.env.STRIPE_PRICE_ADDON_STORAGE_50
+};
+
+const ADDON_NAMES = {
+  user: 'Usuário Adicional',
+  storage_10: '+10 GB Armazenamento',
+  storage_25: '+25 GB Armazenamento',
+  storage_50: '+50 GB Armazenamento'
+};
+
 const PLAN_NAMES = {
-  starter: 'Starter',
-  pro: 'Pro',
-  enterprise: 'Enterprise',
+  starter: 'Iniciante',
+  pro: 'Profissional',
+  enterprise: 'Empresarial Personalizado',
   none: 'Sem Plano'
 };
 
@@ -143,6 +157,29 @@ const stripeService = {
   async cancelSubscription(subscriptionId) {
     return await stripe.subscriptions.cancel(subscriptionId);
   },
+  /**
+   * Change the plan of an active subscription (upgrade or downgrade).
+   */
+  async changeSubscriptionPlan(subscriptionId, newPlan) {
+    const priceId = PLAN_PRICE_IDS[newPlan];
+    if (!priceId || !priceId.startsWith('price_')) {
+      const err = new Error(`Stripe price ID not configured for plan: ${newPlan}`);
+      err.statusCode = 503;
+      err.messageKey = 'billing.errors.stripeNotConfigured';
+      throw err;
+    }
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ['items.data.price']
+    });
+    const existingItemId = subscription.items.data[0]?.id;
+    if (!existingItemId) throw new Error('No subscription item found');
+    const updated = await stripe.subscriptions.update(subscriptionId, {
+      items: [{ id: existingItemId, price: priceId }],
+      proration_behavior: 'always_invoice',
+      metadata: { plan: newPlan }
+    });
+    return updated;
+  },
 
   /**
    * List invoices for a Stripe customer
@@ -167,7 +204,48 @@ const stripeService = {
     );
   },
 
+  /**
+   * Create a Stripe checkout session for an add-on purchase
+   */
+  async createAddonCheckoutSession({ client, addonType, quantity = 1, ownerEmail, ownerName, successUrl, cancelUrl }) {
+    const priceId = ADDON_PRICE_IDS[addonType];
+    if (!priceId || !priceId.startsWith('price_')) {
+      const err = new Error('Stripe price ID not configured for addon: ' + addonType);
+      err.statusCode = 503;
+      err.messageKey = 'billing.errors.stripeNotConfigured';
+      throw err;
+    }
+
+    const customer = await this.getOrCreateCustomer(client, ownerEmail, ownerName);
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customer.id,
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: priceId, quantity }],
+      success_url: successUrl + '?session_id={CHECKOUT_SESSION_ID}&addon=' + addonType,
+      cancel_url: cancelUrl,
+      metadata: {
+        clientId: String(client.id),
+        addonType,
+        quantity: String(quantity)
+      },
+      subscription_data: {
+        metadata: {
+          clientId: String(client.id),
+          addonType,
+          quantity: String(quantity)
+        }
+      },
+      locale: 'pt-BR'
+    });
+
+    return session;
+  },
+
   PLAN_NAMES,
+  ADDON_NAMES,
+  ADDON_PRICE_IDS,
   planFromPriceId,
   mapStripeStatus
 };

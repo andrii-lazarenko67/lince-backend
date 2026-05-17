@@ -19,7 +19,7 @@ const clientController = {
       });
       const clientIds = userClients.map(uc => uc.clientId);
 
-      if (clientIds.length === 0) {
+      if (!['admin', 'manager'].includes(req.user.role) && clientIds.length === 0) {
         return res.json({
           success: true,
           data: [],
@@ -32,8 +32,10 @@ const clientController = {
         });
       }
 
+      // Only true system admins (non-service-provider) bypass client scoping
+      const isSystemAdmin = ['admin', 'manager'].includes(req.user.role) && !req.user.isServiceProvider;
       const where = {
-        id: { [Op.in]: clientIds }
+        ...(isSystemAdmin ? {} : { id: { [Op.in]: clientIds } })
       };
 
       if (isActive !== undefined) {
@@ -82,7 +84,7 @@ const clientController = {
         where: { userId: req.user.id, clientId: req.params.id }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -145,6 +147,20 @@ const clientController = {
         accessLevel: 'admin'
       });
 
+      // Auto-assign all system managers/admins (non-service-providers) to every new client
+      const systemAdmins = await User.findAll({
+        where: {
+          role: ['admin', 'manager'],
+          isServiceProvider: false,
+          id: { [Op.ne]: req.user.id }
+        }
+      });
+      for (const admin of systemAdmins) {
+        await UserClient.findOrCreate({
+          where: { userId: admin.id, clientId: client.id },
+          defaults: { accessLevel: 'admin' }
+        });
+      }
       res.status(201).json({
         success: true,
         data: client,
@@ -166,7 +182,7 @@ const clientController = {
         }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -215,7 +231,7 @@ const clientController = {
         }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -250,7 +266,7 @@ const clientController = {
         where: { userId: req.user.id, clientId: req.params.id }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -267,7 +283,7 @@ const clientController = {
       }
 
       const [systemsCount, dailyLogsCount, inspectionsCount, incidentsCount, productsCount] = await Promise.all([
-        System.count({ where: { clientId: client.id } }),
+        System.count({ where: { clientId: client.id, parentId: null } }),
         DailyLog.count({ where: { clientId: client.id } }),
         Inspection.count({ where: { clientId: client.id } }),
         Incident.count({ where: { clientId: client.id } }),
@@ -301,7 +317,7 @@ const clientController = {
         }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -339,7 +355,7 @@ const clientController = {
         }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -376,11 +392,29 @@ const clientController = {
         });
       }
 
+      // User limit check — skip for service providers
+      if (!req.user.isServiceProvider) {
+        const clientRecord = await Client.findByPk(req.params.id, {
+          attributes: ['usersUsed', 'usersLimit']
+        });
+        if (clientRecord && clientRecord.usersLimit > 0 && clientRecord.usersUsed >= clientRecord.usersLimit) {
+          return res.status(403).json({
+            success: false,
+            messageKey: 'users.errors.limitReached'
+          });
+        }
+      }
+
       const newUserClient = await UserClient.create({
         userId,
         clientId: req.params.id,
         accessLevel: accessLevel || 'view'
       });
+
+      // Increment usersUsed counter
+      if (!req.user.isServiceProvider) {
+        await Client.increment('usersUsed', { by: 1, where: { id: req.params.id } });
+      }
 
       // Fetch with user details
       const createdUserClient = await UserClient.findByPk(newUserClient.id, {
@@ -413,7 +447,7 @@ const clientController = {
         }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -474,7 +508,7 @@ const clientController = {
         }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -531,7 +565,7 @@ const clientController = {
         }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -609,7 +643,7 @@ const clientController = {
         }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -658,7 +692,7 @@ const clientController = {
         }
       });
 
-      if (!userClient) {
+      if (!userClient && !['admin', 'manager'].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
           messageKey: 'errors.noClientAccess'
@@ -672,9 +706,24 @@ const clientController = {
       });
       const excludeIds = existingUserIds.map(uc => uc.userId);
 
+      // Tenant scoping: only show users who already share a client with this admin
+      const myClientRows = await UserClient.findAll({
+        where: { userId: req.user.id },
+        attributes: ['clientId']
+      });
+      const myClientIds = myClientRows.map(uc => uc.clientId);
+      let tenantUserIds = [req.user.id];
+      if (myClientIds.length > 0) {
+        const sharedRows = await UserClient.findAll({
+          where: { clientId: { [Op.in]: myClientIds } },
+          attributes: ['userId']
+        });
+        tenantUserIds = [...new Set(sharedRows.map(r => r.userId))];
+      }
+
       const availableUsers = await User.findAll({
         where: {
-          id: { [Op.notIn]: excludeIds },
+          id: { [Op.in]: tenantUserIds, [Op.notIn]: excludeIds },
           isActive: true
         },
         attributes: ['id', 'name', 'email', 'role', 'avatar'],

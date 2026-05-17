@@ -1,4 +1,6 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const https = require('https');
 const { User, Client, UserClient } = require('../../db/models');
 const uploadService = require('../services/uploadService');
 const emailService = require('../services/emailService');
@@ -6,6 +8,37 @@ const emailService = require('../services/emailService');
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+  });
+};
+
+const verifyHcaptcha = (token) => {
+  return new Promise((resolve, reject) => {
+    const secret = process.env.HCAPTCHA_SECRET;
+    const postData = `response=${encodeURIComponent(token)}&secret=${encodeURIComponent(secret)}`;
+    const options = {
+      hostname: 'hcaptcha.com',
+      path: '/siteverify',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          resolve(parsed.success === true);
+        } catch {
+          resolve(false);
+        }
+      });
+    });
+    req.on('error', () => resolve(false));
+    req.write(postData);
+    req.end();
   });
 };
 
@@ -32,6 +65,14 @@ const authController = {
         });
       }
 
+      if (!user.emailVerified) {
+        return res.status(403).json({
+          success: false,
+          messageKey: 'login.errors.emailNotVerified',
+          email: user.email
+        });
+      }
+
       const isPasswordValid = await user.comparePassword(password);
 
       if (!isPasswordValid) {
@@ -45,7 +86,6 @@ const authController = {
 
       const token = generateToken(user.id);
 
-      // Get user's clients for context
       const userClients = await UserClient.findAll({
         where: { userId: user.id },
         include: [{
@@ -55,19 +95,16 @@ const authController = {
         }]
       });
 
-      // Determine redirect based on user type
       let redirectTo = 'dashboard';
       let selectedClient = null;
 
       if (user.isServiceProvider) {
-        // Service provider: check if they have any clients
         if (userClients.length === 0) {
           redirectTo = 'add-client';
         } else {
           selectedClient = userClients[0].client;
         }
       } else {
-        // End customer: should have exactly one client (their company)
         if (userClients.length > 0) {
           selectedClient = userClients[0].client;
         }
@@ -89,7 +126,7 @@ const authController = {
 
   async register(req, res, next) {
     try {
-      const { name, email, password, isServiceProvider, companyName, phone } = req.body;
+      const { name, email, password, isServiceProvider, companyName, phone, captchaToken } = req.body;
 
       if (!name || !email || !password) {
         return res.status(400).json({
@@ -98,16 +135,52 @@ const authController = {
         });
       }
 
-      // For end customers, company name is required
-      if (!isServiceProvider && !companyName) {
+      if (!companyName) {
         return res.status(400).json({
           success: false,
           messageKey: 'signup.errors.companyNameRequired'
         });
       }
 
-      const existingUser = await User.findOne({ where: { email } });
+      if (!phone) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'signup.errors.phoneRequired'
+        });
+      }
 
+      const e164Regex = /^\+[1-9]\d{7,14}$/;
+      if (!e164Regex.test(phone)) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'signup.errors.phoneInvalid'
+        });
+      }
+
+      const existingPhone = await User.findOne({ where: { phone } });
+      if (existingPhone) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'signup.errors.phoneExists'
+        });
+      }
+
+      // Verify hCaptcha token
+      if (!captchaToken) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'signup.errors.captchaRequired'
+        });
+      }
+      const captchaValid = await verifyHcaptcha(captchaToken);
+      if (!captchaValid) {
+        return res.status(400).json({
+          success: false,
+          messageKey: 'signup.errors.captchaRequired'
+        });
+      }
+
+      const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
         return res.status(400).json({
           success: false,
@@ -115,25 +188,25 @@ const authController = {
         });
       }
 
-      // Create user with admin role (they're the owner of their account)
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
       const user = await User.create({
         name,
         email,
         password,
         role: 'admin',
         phone,
-        isServiceProvider: !!isServiceProvider
+        isServiceProvider: !!isServiceProvider,
+        emailVerified: false,
+        verificationToken,
+        verificationTokenExpiry
       });
 
-      const token = generateToken(user.id);
       let client = null;
-      let redirectTo = 'dashboard';
-
       if (!isServiceProvider) {
-        // End customer flow: auto-create their company as a client with 14-day trial
         const trialDays = parseInt(process.env.TRIAL_DAYS || '14', 10);
         const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
-
         client = await Client.create({
           ownerId: user.id,
           name: companyName,
@@ -143,25 +216,31 @@ const authController = {
           subscriptionStatus: 'trialing',
           trialEndsAt
         });
-
-        // Link user to their client with admin access
         await UserClient.create({
           userId: user.id,
           clientId: client.id,
           accessLevel: 'admin'
         });
-      } else {
-        // Service provider flow: redirect to add first client
-        redirectTo = 'add-client';
+      }
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+      if (emailService.isConfigured()) {
+        try {
+          await emailService.sendVerificationEmail({ to: user.email, name: user.name, verifyUrl });
+        } catch (emailError) {
+          console.error('Failed to send verification email:', emailError.message);
+        }
+      }
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DEV] Email verify URL:', verifyUrl);
       }
 
       res.status(201).json({
         success: true,
         data: {
-          user: user.toJSON(),
-          token,
-          client: client ? { id: client.id, name: client.name } : null,
-          redirectTo
+          requiresVerification: true,
+          email: user.email
         }
       });
     } catch (error) {
@@ -173,7 +252,6 @@ const authController = {
     try {
       const user = await User.findByPk(req.user.id);
 
-      // Get user's clients
       const userClients = await UserClient.findAll({
         where: { userId: user.id },
         include: [{
@@ -238,7 +316,6 @@ const authController = {
       const { name, email, phone } = req.body;
       const userId = req.user.id;
 
-      // Check if email is being changed and if it's already in use
       if (email && email !== req.user.email) {
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
@@ -249,7 +326,6 @@ const authController = {
         }
       }
 
-      // Build update object with only provided fields
       const updateData = {};
       if (name !== undefined) updateData.name = name;
       if (email !== undefined) updateData.email = email;
@@ -280,9 +356,7 @@ const authController = {
 
       const user = await User.findByPk(userId);
 
-      // Delete old avatar from Cloudinary if exists
       if (user.avatar) {
-        // Extract public ID from avatar URL
         const urlParts = user.avatar.split('/');
         const filename = urlParts[urlParts.length - 1];
         const publicId = `lince/avatars/${filename.split('.')[0]}`;
@@ -290,14 +364,10 @@ const authController = {
           await uploadService.deleteImage(publicId);
         } catch (error) {
           console.error('Error deleting old avatar:', error);
-          // Continue even if deletion fails
         }
       }
 
-      // Upload new avatar to Cloudinary
       const result = await uploadService.uploadImage(req.file.buffer, 'avatars');
-
-      // Update user with new avatar URL
       await user.update({ avatar: result.secure_url });
 
       res.json({
@@ -316,12 +386,9 @@ const authController = {
         return res.status(400).json({ success: false, messageKey: 'login.forgotPassword.errors.emailRequired' });
       }
       const user = await User.findOne({ where: { email } });
-      // Always return success to prevent email enumeration
       if (!user || !user.isActive) {
         return res.json({ success: true, messageKey: 'login.forgotPassword.emailSent' });
       }
-      // Stateless JWT: signed with JWT_SECRET + current password hash
-      // Token is auto-invalidated once password changes
       const resetToken = jwt.sign(
         { userId: user.id, type: 'password-reset' },
         process.env.JWT_SECRET + user.password,
@@ -370,6 +437,97 @@ const authController = {
       }
       await user.update({ password });
       res.json({ success: true, messageKey: 'login.resetPassword.success' });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async verifyEmail(req, res, next) {
+    try {
+      const { token } = req.query;
+      if (!token) {
+        return res.status(400).json({ success: false, messageKey: 'verify.errors.tokenRequired' });
+      }
+
+      const { Op } = require('sequelize');
+      const user = await User.findOne({
+        where: {
+          verificationToken: token,
+          verificationTokenExpiry: { [Op.gt]: new Date() }
+        }
+      });
+
+      if (!user) {
+        return res.status(400).json({ success: false, messageKey: 'verify.errors.invalidOrExpired' });
+      }
+
+      await user.update({
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null
+      });
+
+      const jwtToken = generateToken(user.id);
+
+      const userClients = await UserClient.findAll({
+        where: { userId: user.id },
+        include: [{ model: Client, as: 'client', attributes: ['id', 'name'] }]
+      });
+
+      let selectedClient = null;
+      let redirectTo = 'dashboard';
+
+      if (user.isServiceProvider) {
+        redirectTo = userClients.length === 0 ? 'add-client' : 'dashboard';
+        if (userClients.length > 0) selectedClient = userClients[0].client;
+      } else {
+        if (userClients.length > 0) selectedClient = userClients[0].client;
+      }
+
+      res.json({
+        success: true,
+        data: {
+          user: user.toJSON(),
+          token: jwtToken,
+          client: selectedClient ? { id: selectedClient.id, name: selectedClient.name } : null,
+          redirectTo
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async resendVerification(req, res, next) {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ success: false, messageKey: 'verify.errors.emailRequired' });
+      }
+
+      const user = await User.findOne({ where: { email } });
+
+      if (!user || user.emailVerified) {
+        return res.json({ success: true, messageKey: 'verify.resent' });
+      }
+
+      const verificationToken = require('crypto').randomBytes(32).toString('hex');
+      const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      await user.update({ verificationToken, verificationTokenExpiry });
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+      if (emailService.isConfigured()) {
+        try {
+          await emailService.sendVerificationEmail({ to: user.email, name: user.name, verifyUrl });
+        } catch (e) {
+          console.error('Failed to resend verification email:', e.message);
+        }
+      }
+
+      res.json({ success: true, messageKey: 'verify.resent' });
     } catch (error) {
       next(error);
     }

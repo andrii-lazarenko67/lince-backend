@@ -23,7 +23,8 @@ const uploadToCloudinary = (fileBuffer, folder, resourceType = 'auto') => {
         } else {
           resolve({
             url: result.secure_url,
-            publicId: result.public_id
+            publicId: result.public_id,
+            bytes: result.bytes || 0
           });
         }
       }

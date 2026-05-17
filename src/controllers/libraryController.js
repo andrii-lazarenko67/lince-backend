@@ -133,6 +133,7 @@ const libraryController = {
         'documents',
         req.file.originalname
       );
+      await uploadService.incrementStorage(req.clientId, result.bytes);
 
       const document = await Document.create({
         title,
@@ -141,7 +142,7 @@ const libraryController = {
         systemId: systemId || null,
         fileName: req.file.originalname,
         fileUrl: result.secure_url,
-        fileType: req.file.mimetype,
+        fileType: req.file.mimetype.substring(0, 100),
         fileSize: req.file.size,
         publicId: result.public_id,
         uploadedBy,
@@ -299,6 +300,7 @@ const libraryController = {
 
       // Delete from Cloudinary
       if (document.publicId) {
+        await uploadService.decrementStorage(req.clientId, document.fileSize || 0);
         await uploadService.deleteDocument(document.publicId);
       }
 
